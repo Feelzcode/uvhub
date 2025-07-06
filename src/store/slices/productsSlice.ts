@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { Product, ProductsState } from './types';
+import { Product, ProductsState } from '../types';
 
 interface ProductsActions {
     // Actions
