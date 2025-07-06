@@ -88,7 +88,15 @@ export const useCartStore = create<CartState & CartActions>()(
                     set((state) => {
                         if (quantity <= 0) {
                             // Remove item if quantity is 0 or negative
-                            return get().removeFromCart(productId);
+                            const updatedItems = state.items.filter(item => item.productId !== productId);
+                            const newTotal = updatedItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+                            const newItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+
+                            return {
+                                items: updatedItems,
+                                total: newTotal,
+                                itemCount: newItemCount,
+                            };
                         }
 
                         const updatedItems = state.items.map(item =>

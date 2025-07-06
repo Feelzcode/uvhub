@@ -70,7 +70,7 @@ export default function Home() {
                 Shopping Cart
               </h2>
               <p className="text-gray-600">
-                Your cart is persisted using Zustand's persist middleware
+                Your cart is persisted using Zustand&apos;s persist middleware
               </p>
             </div>
             <div className="max-w-2xl">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useProducts } from '@/store/hooks';
 import ProductCard from './ProductCard';
+import { Product } from '@/store';
 
 export default function ProductList() {
     const {
@@ -30,9 +31,9 @@ export default function ProductList() {
         return () => clearTimeout(timeoutId);
     }, [searchTerm, setFilters]);
 
-    const filteredProducts = getFilteredProducts();
+    const filteredProducts: Product[] = getFilteredProducts();
 
-    const categories = Array.from(new Set(products.map(p => p.category)));
+    const categories: string[] = Array.from(new Set(products.map((p: Product) => p.category)));
 
     if (loading) {
         return (
