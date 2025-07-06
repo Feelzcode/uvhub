@@ -1,7 +1,7 @@
 'use client'
 
 import { AppSidebar } from "@/components/AppSidebar";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import ProtectedRouteWrapper from "@/components/auth/ProtectedRouteWrapper";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -17,7 +17,7 @@ export default function AppLayout({
     const breadcrumbs = generateBreadcrumb(pathname)
 
     return (
-        <ProtectedRoute>
+        <ProtectedRouteWrapper>
             <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset>
@@ -47,6 +47,6 @@ export default function AppLayout({
                     </div>
                 </SidebarInset>
             </SidebarProvider>
-        </ProtectedRoute>
+        </ProtectedRouteWrapper>
     )
 }
