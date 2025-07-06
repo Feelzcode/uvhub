@@ -1,6 +1,7 @@
 'use client';
 
 import { useCart, useProducts } from '@/store/hooks';
+import { useCurrency } from '@/store/hooks/useCurrency';
 import { Product } from '@/store/types';
 
 interface ProductCardProps {
@@ -10,6 +11,7 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
     const { addToCart, isInCart } = useCart();
     const { setSelectedProduct } = useProducts();
+    const { formatCurrentPrice } = useCurrency();
 
     const handleAddToCart = () => {
         addToCart(product, 1);
@@ -28,7 +30,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     className="w-full h-48 object-cover"
                 />
                 <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-full text-sm font-semibold">
-                    ${product.price}
+                    {formatCurrentPrice(product.price)}
                 </div>
             </div>
 
@@ -63,10 +65,10 @@ export default function ProductCard({ product }: ProductCardProps) {
                         onClick={handleAddToCart}
                         disabled={isInCart(product.id) || product.stock === 0}
                         className={`flex-1 py-2 px-4 rounded-md transition-colors duration-200 ${isInCart(product.id)
-                                ? 'bg-green-500 text-white cursor-not-allowed'
-                                : product.stock === 0
-                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                            ? 'bg-green-500 text-white cursor-not-allowed'
+                            : product.stock === 0
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                : 'bg-blue-500 text-white hover:bg-blue-600'
                             }`}
                     >
                         {isInCart(product.id) ? 'In Cart' : product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
