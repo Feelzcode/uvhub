@@ -12,6 +12,10 @@ const images = [
     {
         page: 'forgot-password',    
         src: '/images/forgot-password.jpg'
+    },
+    {
+        page: 'reset-password',
+        src: '/images/reset-password.jpg'
     }
 ];
 

@@ -8,44 +8,21 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { resetPassword, validateAuthSession } from "./actions"
-import { useFormStatus } from "react-dom"
+import { resetPassword, validateResetToken } from "./actions"
 import { ResetPasswordFormData, resetPasswordSchema } from "@/utils/schema"
+import { useSearchParams } from "next/navigation"
 
-
-// Separate component to use useFormStatus
-function SubmitButton() {
-  const { pending } = useFormStatus()
-  
-  return (
-    <Button
-      type="submit"
-      className="w-full"
-      disabled={pending}
-    >
-      {pending ? (
-        <>
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          Resetting...
-        </>
-      ) : (
-        'Reset Password'
-      )}
-    </Button>
-  )
-}
 
 export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isValidSession, setIsValidSession] = useState<boolean | null>(null);
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors,isSubmitting, isSubmitSuccessful },
   } = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
@@ -54,14 +31,17 @@ export default function ResetPasswordPage() {
     },
   });
 
-  // Validate session on component mount
+  // I should validate the code that is available as a query parameter here
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
+
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const result = await validateAuthSession()
+        const result = await validateResetToken(token || '')
         
-        if (!result.isAuthenticated) {
-          setError('Invalid or expired reset link. Please request a new password reset.');
+        if (!result.success) {
+          setError(result.error || 'Invalid or expired reset link. Please request a new password reset.');
           setIsValidSession(false);
         } else {
           setIsValidSession(true);
@@ -73,7 +53,7 @@ export default function ResetPasswordPage() {
     };
 
     checkSession();
-  }, []);
+  }, [token]);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     setError(null);
@@ -88,15 +68,13 @@ export default function ResetPasswordPage() {
 
       if (!result.success) {
         setError(result.error || 'Something went wrong');
-      } else {
-        setIsSuccess(true);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     }
   };
 
-  if (isSuccess) {
+  if (isSubmitSuccessful) {
     return (
       <div className="flex flex-col items-center gap-6 text-center">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
@@ -214,7 +192,20 @@ export default function ResetPasswordPage() {
           )}
         </div>
 
-        <SubmitButton />
+        <Button
+          type="submit"
+          className="w-full cursor-pointer"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Resetting...
+            </>
+          ) : (
+            'Reset Password'
+          )}
+        </Button>
 
         <div className="text-center">
           <Link

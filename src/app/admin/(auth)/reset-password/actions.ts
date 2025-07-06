@@ -7,13 +7,13 @@ export async function resetPassword(formData: FormData) {
   try {
     const password = formData.get('password') as string
     const confirmPassword = formData.get('confirmPassword') as string
-    
+
     // Validate password
-    const validatedFields = resetPasswordSchema.safeParse({ 
-      password, 
-      confirmPassword 
+    const validatedFields = resetPasswordSchema.safeParse({
+      password,
+      confirmPassword
     })
-    
+
     if (!validatedFields.success) {
       return {
         error: validatedFields.error.errors[0]?.message || 'Invalid password',
@@ -22,7 +22,7 @@ export async function resetPassword(formData: FormData) {
     }
 
     const supabase = await createClient()
-    
+
     // Update the user's password
     const { error } = await supabase.auth.updateUser({
       password: password,
@@ -51,12 +51,12 @@ export async function resetPassword(formData: FormData) {
 }
 
 // Validate if user is authenticated (has valid session)
-export async function validateAuthSession() {
+export async function validateAuthSession(code: string) {
   try {
     const supabase = await createClient()
-    
-    const { data: { user }, error } = await supabase.auth.getUser()
-    
+
+    const { data: { user }, error } = await supabase.auth.getUser(code)
+
     if (error || !user) {
       return {
         isAuthenticated: false,
@@ -76,4 +76,32 @@ export async function validateAuthSession() {
       error: 'Failed to validate session',
     }
   }
-} 
+}
+
+export async function validateResetToken(token: string) {
+  try {
+    const supabase = await createClient()
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: token,
+      type: 'recovery',
+    });
+
+    if (error) {
+      return {
+        success: false,
+        error: 'Invalid or expired reset link',
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Reset token validated successfully',
+    }
+  } catch (error) {
+    console.error('Reset token validation error:', error)
+    return {
+      success: false,
+      error: 'Failed to validate reset token',
+    }
+  }
+}

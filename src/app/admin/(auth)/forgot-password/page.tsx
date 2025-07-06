@@ -10,31 +10,9 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { forgotPassword } from "./actions"
-import { useFormStatus } from "react-dom"
 import { type ForgotPasswordFormData, forgotPasswordSchema } from "@/utils/schema"
 
 
-// Separate component to use useFormStatus
-function SubmitButton() {
-    const { pending } = useFormStatus()
-
-    return (
-        <Button
-            type="submit"
-            className="w-full"
-            disabled={pending}
-        >
-            {pending ? (
-                <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Sending...
-                </>
-            ) : (
-                'Send reset link'
-            )}
-        </Button>
-    )
-}
 
 export default function ForgotPasswordPage() {
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -43,7 +21,7 @@ export default function ForgotPasswordPage() {
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        formState: { errors, isSubmitting },
     } = useForm<ForgotPasswordFormData>({
         resolver: zodResolver(forgotPasswordSchema),
         defaultValues: {
@@ -126,7 +104,20 @@ export default function ForgotPasswordPage() {
                     )}
                 </div>
 
-                <SubmitButton />
+                <Button
+                    type="submit"
+                    className="w-full cursor-pointer"
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? (
+                        <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending...
+                        </>
+                    ) : (
+                        'Send reset link'
+                    )}
+                </Button>
 
                 <div className="text-center">
                     <Link
