@@ -1,28 +1,54 @@
+export interface Category {
+  id: string;
+  name: string;
+  description: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
   image: string;
-  category: string;
+  category: Category;
   stock: number;
   rating: number;
   reviews: number;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface OrderItem {
+  id: string;
+  orderId: string;
   productId: string;
   quantity: number;
   price: number;
-  product: Product;
+  created_at: Date;
+  product?: Product; // Optional for when we join with products
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface Order {
   id: string;
-  userId: string;
-  items: OrderItem[];
+  customer: Customer;
   total: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   shippingAddress: {
@@ -33,8 +59,9 @@ export interface Order {
     country: string;
   };
   paymentMethod: string;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
+  items?: OrderItem[]; // Optional for when we join with order items
 }
 
 export interface CartItem {
@@ -99,6 +126,19 @@ export interface User extends SupabaseUser {
   };
 }
 
+export interface FileState {
+  file: File | null;
+  isUploading: boolean;
+  error: string;
+}
+
+export interface FileActions {
+  uploadFile: (file: File) => Promise<void>;
+  setFile: (file: File | null) => void;
+  setIsUploading: (isUploading: boolean) => void;
+  setError: (error: string) => void;
+}
+
 export interface UserActions {
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
@@ -141,4 +181,8 @@ export interface RootState {
   products: ProductsState;
   orders: OrdersState;
   cart: CartState;
+  file: FileState;
+  user: UserState;
+  fileActions: FileActions;
+  userActions: UserActions;
 } 

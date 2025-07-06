@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { Product, ProductsState } from '../types';
+import { Category, Product, ProductsState } from '../types';
 
 interface ProductsActions {
     // Actions
@@ -75,7 +75,7 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
             getFilteredProducts: () => {
                 const { products, filters } = get();
                 return products.filter((product) => {
-                    const matchesCategory = !filters.category || product.category === filters.category;
+                    const matchesCategory = !filters.category || product.category === filters.category as unknown as Category;
                     const matchesPrice = product.price >= filters.minPrice && product.price <= filters.maxPrice;
                     const matchesSearch = !filters.search ||
                         product.name.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -90,7 +90,7 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                 return products.find((product) => product.id === id);
             },
 
-            getProductsByCategory: (category) => {
+            getProductsByCategory: (category: Category) => {
                 const { products } = get();
                 return products.filter((product) => product.category === category);
             },
