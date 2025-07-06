@@ -7,11 +7,11 @@ import { usePathname } from "next/navigation";
 const images = [
     {
         page: 'sign-in',
-        src: '/images/auth/sign-in.jpg'
+        src: '/images/sign-in.jpg'
     },
     {
         page: 'forgot-password',    
-        src: '/images/auth/forgot-password.jpg'
+        src: '/images/forgot-password.jpg'
     }
 ];
 
@@ -32,7 +32,7 @@ export default function GuestLayout({
                         <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
                             <GalleryVerticalEnd className="size-4" />
                         </div>
-                        Acme Inc.
+                        <h1 className="text-2xl font-bold">UV Hub</h1>
                     </a>
                 </div>
                 <div className="flex flex-1 items-center justify-center">
@@ -46,6 +46,7 @@ export default function GuestLayout({
                     src={images.find(image => image.page === page)?.src || ''}
                     alt="Image"
                     className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+                    fill
                 />
             </div>
         </div>

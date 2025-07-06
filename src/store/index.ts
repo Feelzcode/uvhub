@@ -2,6 +2,7 @@
 export { useProductsStore } from './slices/productsSlice';
 export { useOrdersStore } from './slices/ordersSlice';
 export { useCartStore } from './slices/cartSlice';
+export { useUserStore } from './slices/userSlice';
 
 // Export types
 export type {
@@ -9,9 +10,11 @@ export type {
     Order,
     OrderItem,
     CartItem,
+    User,
     ProductsState,
     OrdersState,
     CartState,
+    UserState,
     RootState,
 } from './types';
 

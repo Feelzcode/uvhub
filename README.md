@@ -11,6 +11,7 @@ A modern e-commerce application built with Next.js 15, TypeScript, and Zustand f
 - **Modern UI**: Beautiful interface built with Tailwind CSS and shadcn/ui components
 - **TypeScript**: Full type safety throughout the application
 - **Responsive Design**: Mobile-first responsive design
+- **Authentication**: Complete authentication system with password reset functionality
 
 ## 🛠️ Tech Stack
 
@@ -22,6 +23,8 @@ A modern e-commerce application built with Next.js 15, TypeScript, and Zustand f
 - **Icons**: Lucide React
 - **Package Manager**: Bun
 - **Database**: Supabase (configured)
+- **Email**: Nodemailer for password reset emails
+- **Form Validation**: Zod + React Hook Form
 
 ## 📋 Prerequisites
 
@@ -65,7 +68,33 @@ Add your environment variables:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Email Configuration (for password reset)
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Optional: Analytics
+NEXT_PUBLIC_GA_ID=your_google_analytics_id
 ```
+
+#### Email Setup Instructions
+
+For password reset functionality, you need to configure email settings:
+
+1. **Gmail Setup** (Recommended):
+
+   - Enable 2-factor authentication on your Gmail account
+   - Generate an App Password:
+     - Go to Google Account settings
+     - Security → 2-Step Verification → App passwords
+     - Generate a new app password for "Mail"
+   - Use your Gmail address as `EMAIL_USER`
+   - Use the generated app password as `EMAIL_PASS`
+
+2. **Other Email Providers**:
+   - Update the email service in `src/lib/email.ts`
+   - Configure appropriate SMTP settings
 
 ### 4. Run the Development Server
 
@@ -85,6 +114,16 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 uvhub-app/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
+│   │   ├── admin/              # Admin authentication pages
+│   │   │   └── (auth)/         # Auth route group
+│   │   │       ├── sign-in/    # Login page
+│   │   │       ├── forgot-password/ # Password reset request
+│   │   │       └── reset-password/  # Password reset form
+│   │   ├── admin/              # Admin authentication pages
+│   │   │   └── (auth)/         # Auth route group
+│   │   │       ├── sign-in/    # Login page with actions.ts
+│   │   │       ├── forgot-password/ # Password reset with actions.ts
+│   │   │       └── reset-password/  # Password reset with actions.ts
 │   │   ├── globals.css         # Global styles
 │   │   ├── layout.tsx          # Root layout
 │   │   └── page.tsx            # Home page
@@ -101,7 +140,10 @@ uvhub-app/
 │   │   ├── index.ts            # Store exports
 │   │   └── types.ts            # TypeScript type definitions
 │   ├── lib/                    # Utility libraries
-│   │   └── sampleData.ts       # Sample data for development
+│   │   ├── email.ts            # Email utilities (Nodemailer)
+│   │   ├── auth.ts             # Authentication utilities
+│   │   ├── sampleData.ts       # Sample data for development
+│   │   └── test-setup.ts       # Test user setup
 │   ├── utils/                  # Utility functions
 │   └── middleware.ts           # Next.js middleware
 ├── public/                     # Static assets
@@ -116,6 +158,7 @@ uvhub-app/
 This project uses [shadcn/ui](https://ui.shadcn.com/) for consistent and accessible UI components. The components are built on top of Radix UI primitives and styled with Tailwind CSS.
 
 ### Key Components Used:
+
 - **ProductCard**: Displays product information with add to cart functionality
 - **ProductList**: Shows filtered product grid with search and category filters
 - **CartSummary**: Shopping cart with quantity management and total calculation
@@ -136,6 +179,23 @@ bun lint         # Run ESLint
 npm run lint     # Run ESLint
 ```
 
+## 🔐 Authentication Features
+
+The application includes a complete authentication system:
+
+### Password Reset Flow:
+
+1. **Forgot Password**: User enters email address
+2. **Email Sent**: Supabase sends password reset email
+3. **Session Validation**: Secure session validation
+4. **Password Reset**: User sets new password via Server Actions
+5. **Success**: Redirect to login with new credentials
+
+### Test Users (Development):
+
+- `admin@example.com` / `password123`
+- `test@example.com` / `test123`
+
 ## 🤝 Contributing
 
 We welcome contributions! Please follow these guidelines:
@@ -149,6 +209,7 @@ Use the following format for branch names:
 ```
 
 **Types:**
+
 - `feat/` - New features
 - `fix/` - Bug fixes
 - `docs/` - Documentation changes
@@ -158,6 +219,7 @@ Use the following format for branch names:
 - `chore/` - Maintenance tasks
 
 **Examples:**
+
 ```
 feat/add-payment-integration
 fix/cart-persistence-issue
@@ -178,6 +240,7 @@ Use conventional commit messages:
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -187,6 +250,7 @@ Use conventional commit messages:
 - `chore`: Maintenance tasks
 
 **Examples:**
+
 ```
 feat(cart): add persistent cart storage
 fix(products): resolve filtering by category
@@ -238,6 +302,11 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
+# Email Configuration (for password reset)
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
 # Optional: Analytics
 NEXT_PUBLIC_GA_ID=your_google_analytics_id
 ```
@@ -279,3 +348,4 @@ If you encounter any issues or have questions:
 - [shadcn/ui](https://ui.shadcn.com/) for beautiful components
 - [Tailwind CSS](https://tailwindcss.com/) for styling
 - [Supabase](https://supabase.com/) for backend services
+- [Nodemailer](https://nodemailer.com/) for email functionality
