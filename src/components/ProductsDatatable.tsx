@@ -99,19 +99,26 @@ import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import { createCategory } from "@/app/admin/dashboard/products/actions"
 import { toast } from "sonner"
+import { useUppyWithSupabase } from "@/hooks/use-uppy-with-supabase"
+import { getPublicUrlOfUploadedFile } from "@/lib/utils"
+import { PaginatedResponse } from "@/store/types"
+import { useProductsStore } from "@/store"
+import { getPaginatedProducts, getPaginatedCustomers, getPaginatedCategories } from "@/app/admin/dashboard/products/actions"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { productSchema, ProductSchemaType } from "@/utils/schema"
 
-// Pagination response type
-interface PaginatedResponse<T> {
-    documents: T[];
-    total: number;
-    meta: {
-        page: number;
-        limit: number;
-        totalPages: number;
-        previousPage: number | null;
-        nextPage: number | null;
-    };
-}
 
 // Create a separate component for the drag handle
 function DragHandle({ id }: { id: string }) {
@@ -130,6 +137,151 @@ function DragHandle({ id }: { id: string }) {
             <span className="sr-only">Drag to reorder</span>
         </Button>
     )
+}
+
+// Create a separate component for product actions
+function ProductActions({ product }: { product: Product }) {
+    const { deleteProduct, updateProduct, loading } = useProductsStore();
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = React.useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+
+    const formData = useForm<ProductSchemaType>({
+        defaultValues: {
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            stock: product.stock,
+            image: product.image,
+        },
+        resolver: zodResolver(productSchema),
+    });
+
+    const handleDelete = async () => {
+        await deleteProduct(product.id);
+        setIsDeleteDialogOpen(false);
+    };
+
+    const handleEdit = () => {
+        setIsEditDrawerOpen(true);
+    };
+
+    const handleSave = async (data: ProductSchemaType) => {
+        try {
+            await updateProduct(product.id, data);
+            setIsEditDrawerOpen(false);
+            toast.success("Product updated successfully");
+        }
+        catch (error) {
+            console.error(error);
+            toast.error("Failed to update product");
+        }
+    };
+    return (
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+                        size="icon"
+                    >
+                        <IconDotsVertical />
+                        <span className="sr-only">Open menu</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-32">
+                    <DropdownMenuItem>
+                        <IconEye className="mr-2 size-4" />
+                        View
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleEdit}>
+                        <IconEdit className="mr-2 size-4" />
+                        Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={(e) => e.preventDefault()}
+                            >
+                                <IconTrash className="mr-2 size-4" />
+                                Delete
+                            </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the product &quot;{product.name}&quot; and remove it from your database.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={handleDelete}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                    Delete
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Edit Drawer */}
+            <Drawer open={isEditDrawerOpen} onOpenChange={setIsEditDrawerOpen}>
+                <DrawerContent>
+                    <DrawerHeader className="gap-1">
+                        <DrawerTitle>Edit Product: {product.name}</DrawerTitle>
+                        <DrawerDescription>
+                            Update product details
+                        </DrawerDescription>
+                    </DrawerHeader>
+                    <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
+                        <form className="flex flex-col gap-4" onSubmit={formData.handleSubmit(handleSave)} id="edit-product-form">
+                            <div className="flex flex-col gap-3">
+                                <Label htmlFor="edit-name">Product Name</Label>
+                                <Input id="edit-name" {...formData.register('name')} defaultValue={product.name} />
+                                {formData.formState.errors.name && <p className="text-red-500">{formData.formState.errors.name.message}</p>}
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                <Label htmlFor="edit-description">Description</Label>
+                                <Input id="edit-description" {...formData.register('description')} defaultValue={product.description} />
+                                {formData.formState.errors.description && <p className="text-red-500">{formData.formState.errors.description.message}</p>}
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-3">
+                                    <Label htmlFor="edit-price">Price</Label>
+                                    <Input id="edit-price" type="number" step="0.01" {...formData.register('price')} defaultValue={product.price} />
+                                    {formData.formState.errors.price && <p className="text-red-500">{formData.formState.errors.price.message}</p>}
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    <Label htmlFor="edit-stock">Stock</Label>
+                                    <Input id="edit-stock" type="number" {...formData.register('stock')} defaultValue={product.stock} />
+                                    {formData.formState.errors.stock && <p className="text-red-500">{formData.formState.errors.stock.message}</p>}
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                <Label htmlFor="edit-image">Image URL</Label>
+                                <Input id="edit-image" {...formData.register('image')} defaultValue={product.image} />
+                                {formData.formState.errors.image && <p className="text-red-500">{formData.formState.errors.image.message}</p>}
+                            </div>
+                        </form>
+                    </div>
+                    <DrawerFooter>
+                        <Button type="submit" className="cursor-pointer" form="edit-product-form" disabled={loading}>
+                            {loading ? <IconLoader2 className="animate-spin" /> : "Save Changes"}
+                        </Button>
+                        <DrawerClose asChild>
+                            <Button variant="outline">Cancel</Button>
+                        </DrawerClose>
+                    </DrawerFooter>
+                </DrawerContent>
+            </Drawer>
+        </>
+    );
 }
 
 // Product columns
@@ -222,41 +374,15 @@ const productColumns: ColumnDef<Product>[] = [
         header: "Created",
         cell: ({ row }) => (
             <div className="text-sm text-muted-foreground">
-                {row.original.created_at.toLocaleDateString()}
+                {new Date(row.original.created_at).toDateString()}
             </div>
         ),
     },
     {
         id: "actions",
-        cell: () => (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-                        size="icon"
-                    >
-                        <IconDotsVertical />
-                        <span className="sr-only">Open menu</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-32">
-                    <DropdownMenuItem>
-                        <IconEye className="mr-2 size-4" />
-                        View
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        <IconEdit className="mr-2 size-4" />
-                        Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem variant="destructive">
-                        <IconTrash className="mr-2 size-4" />
-                        Delete
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        ),
+        cell: ({ row }) => {
+            return <ProductActions product={row.original} />
+        },
     },
 ]
 
@@ -558,8 +684,9 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
         category: '',
         image: '',
     })
-    const [uploadedFiles, setUploadedFiles] = React.useState<File[]>([])
     const [isSubmitting, setIsSubmitting] = React.useState(false)
+    const uppy = useUppyWithSupabase({ bucketName: 'file-bucket', folderName: 'products' });
+    const { categories, addProduct } = useProductsStore();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -567,11 +694,15 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
 
         try {
             // Here you would call your API to create the product
-            console.log('Creating product:', formData)
-            console.log('Uploaded files:', uploadedFiles)
-
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            await addProduct({
+                name: formData.name,
+                description: formData.description,
+                price: Number(formData.price),
+                stock: Number(formData.stock),
+                category: formData.category as unknown as Category,
+                image: formData.image,
+                rating: 0,
+            });
 
             onClose()
         } catch (error) {
@@ -581,9 +712,12 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
         }
     }
 
-    const handleFileChange = (files: FileList | null) => {
+    const handleFileChange = async (files: FileList | null) => {
         if (files) {
-            setUploadedFiles(Array.from(files))
+            uppy.addFile(files[0])
+            const response = await uppy.upload();
+            const uploadedFile = response?.successful?.map((file) => getPublicUrlOfUploadedFile(file.meta.objectName as string))[0];
+            setFormData(prev => ({ ...prev, image: uploadedFile ?? '' }))
         }
     }
 
@@ -606,10 +740,11 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                             <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Electronics">Electronics</SelectItem>
-                            <SelectItem value="Clothing">Clothing</SelectItem>
-                            <SelectItem value="Home & Garden">Home & Garden</SelectItem>
-                            <SelectItem value="Sports">Sports</SelectItem>
+                            {categories.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                    {category.name}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
@@ -650,16 +785,15 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
             </div>
 
             <div className="space-y-2">
-                <Label>Product Images</Label>
+                <Label>Product Image</Label>
                 <FileInput
                     onFileChange={handleFileChange}
                     accept="image/*"
-                    multiple={true}
-                    maxFiles={5}
+                    maxFiles={1}
                     maxSize={5 * 1024 * 1024} // 5MB
                 >
                     <p className="text-xs text-muted-foreground">
-                        Upload product images (PNG, JPG, GIF up to 5MB each)
+                        Upload product image (PNG, JPG, GIF up to 5MB)
                     </p>
                 </FileInput>
             </div>
@@ -768,24 +902,55 @@ export function ProductsDataTable({
     const [activeTab, setActiveTab] = React.useState("products")
     const [isCreateProductDialogOpen, setIsCreateProductDialogOpen] = React.useState(false)
     const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = React.useState(false)
+    const [currentProductsData, setCurrentProductsData] = React.useState(productsData)
+    const [currentCustomersData, setCurrentCustomersData] = React.useState(customersData)
+    const [currentCategoriesData, setCurrentCategoriesData] = React.useState(categoriesData)
+
+    // Update state when prop changes
+    React.useEffect(() => {
+        setCurrentProductsData(productsData)
+        setCurrentCustomersData(customersData)
+        setCurrentCategoriesData(categoriesData)
+    }, [productsData, customersData, categoriesData])
 
     // Internal pagination handlers
-    const handleProductsPageChange = React.useCallback((updaterOrValue: Updater<PaginationState> | PaginationState) => {
+    const handleProductsPageChange = React.useCallback(async (updaterOrValue: Updater<PaginationState> | PaginationState) => {
         const pagination = typeof updaterOrValue === 'function' ? updaterOrValue({ pageIndex: 0, pageSize: 10 }) : updaterOrValue
         console.log('Products page change:', pagination)
-        // Example: loadProducts(pagination.pageIndex + 1, pagination.pageSize)
+        // Call the server action directly
+        const nextPage = await getPaginatedProducts({
+            page: pagination.pageIndex + 1,
+            limit: pagination.pageSize
+        })
+        if (nextPage) {
+            setCurrentProductsData(nextPage)
+        }
     }, [])
 
-    const handleCustomersPageChange = React.useCallback((updaterOrValue: Updater<PaginationState> | PaginationState) => {
+    const handleCustomersPageChange = React.useCallback(async (updaterOrValue: Updater<PaginationState> | PaginationState) => {
         const pagination = typeof updaterOrValue === 'function' ? updaterOrValue({ pageIndex: 0, pageSize: 10 }) : updaterOrValue
         console.log('Customers page change:', pagination)
-        // Example: loadCustomers(pagination.pageIndex + 1, pagination.pageSize)
+        // Call the server action directly
+        const nextPage = await getPaginatedCustomers({
+            page: pagination.pageIndex + 1,
+            limit: pagination.pageSize
+        })
+        if (nextPage) {
+            setCurrentCustomersData(nextPage)
+        }
     }, [])
 
-    const handleCategoriesPageChange = React.useCallback((updaterOrValue: Updater<PaginationState> | PaginationState) => {
+    const handleCategoriesPageChange = React.useCallback(async (updaterOrValue: Updater<PaginationState> | PaginationState) => {
         const pagination = typeof updaterOrValue === 'function' ? updaterOrValue({ pageIndex: 0, pageSize: 10 }) : updaterOrValue
         console.log('Categories page change:', pagination)
-        // Example: loadCategories(pagination.pageIndex + 1, pagination.pageSize)
+        // Call the server action directly
+        const nextPage = await getPaginatedCategories({
+            page: pagination.pageIndex + 1,
+            limit: pagination.pageSize
+        })
+        if (nextPage) {
+            setCurrentCategoriesData(nextPage)
+        }
     }, [])
 
     return (
@@ -883,28 +1048,28 @@ export function ProductsDataTable({
                 className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
             >
                 <DataTable
-                    data={productsData.documents}
+                    data={currentProductsData.documents}
                     columns={productColumns}
                     pagination={{
-                        pageIndex: productsData.meta.page - 1,
-                        pageSize: productsData.meta.limit,
+                        pageIndex: currentProductsData.meta.page - 1,
+                        pageSize: currentProductsData.meta.limit,
                     }}
                     onPaginationChange={handleProductsPageChange}
                 />
                 <div className="flex items-center justify-between px-4">
                     <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-                        Showing {productsData.documents.length} of {productsData.total} products
+                        Showing {currentProductsData.documents.length} of {currentProductsData.total} products
                     </div>
                     <div className="flex w-full items-center gap-8 lg:w-fit">
                         <div className="flex w-fit items-center justify-center text-sm font-medium">
-                            Page {productsData.meta.page} of {productsData.meta.totalPages}
+                            Page {currentProductsData.meta.page} of {currentProductsData.meta.totalPages}
                         </div>
                         <div className="ml-auto flex items-center gap-2 lg:ml-0">
                             <Button
                                 variant="outline"
                                 className="hidden h-8 w-8 p-0 lg:flex"
-                                onClick={() => handleProductsPageChange({ pageIndex: 0, pageSize: productsData.meta.limit })}
-                                disabled={!productsData.meta.previousPage}
+                                onClick={() => handleProductsPageChange({ pageIndex: 0, pageSize: currentProductsData.meta.limit })}
+                                disabled={!currentProductsData.meta.previousPage}
                             >
                                 <span className="sr-only">Go to first page</span>
                                 <IconChevronsLeft />
@@ -914,10 +1079,10 @@ export function ProductsDataTable({
                                 className="size-8"
                                 size="icon"
                                 onClick={() => handleProductsPageChange({
-                                    pageIndex: (productsData.meta.previousPage || 1) - 1,
-                                    pageSize: productsData.meta.limit
+                                    pageIndex: (currentProductsData.meta.previousPage || 1) - 1,
+                                    pageSize: currentProductsData.meta.limit
                                 })}
-                                disabled={!productsData.meta.previousPage}
+                                disabled={!currentProductsData.meta.previousPage}
                             >
                                 <span className="sr-only">Go to previous page</span>
                                 <IconChevronLeft />
@@ -927,10 +1092,10 @@ export function ProductsDataTable({
                                 className="size-8"
                                 size="icon"
                                 onClick={() => handleProductsPageChange({
-                                    pageIndex: (productsData.meta.nextPage || 1) - 1,
-                                    pageSize: productsData.meta.limit
+                                    pageIndex: (currentProductsData.meta.nextPage || 1) + 1,
+                                    pageSize: currentProductsData.meta.limit
                                 })}
-                                disabled={!productsData.meta.nextPage}
+                                disabled={!currentProductsData.meta.nextPage}
                             >
                                 <span className="sr-only">Go to next page</span>
                                 <IconChevronRight />
@@ -940,10 +1105,10 @@ export function ProductsDataTable({
                                 className="hidden size-8 lg:flex"
                                 size="icon"
                                 onClick={() => handleProductsPageChange({
-                                    pageIndex: productsData.meta.totalPages - 1,
-                                    pageSize: productsData.meta.limit
+                                    pageIndex: currentProductsData.meta.totalPages - 1,
+                                    pageSize: currentProductsData.meta.limit
                                 })}
-                                disabled={!productsData.meta.nextPage}
+                                disabled={!currentProductsData.meta.nextPage}
                             >
                                 <span className="sr-only">Go to last page</span>
                                 <IconChevronsRight />
@@ -958,28 +1123,28 @@ export function ProductsDataTable({
                 className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
             >
                 <DataTable
-                    data={customersData.documents}
+                    data={currentCustomersData.documents}
                     columns={customerColumns}
                     pagination={{
-                        pageIndex: customersData.meta.page - 1,
-                        pageSize: customersData.meta.limit,
+                        pageIndex: currentCustomersData.meta.page - 1,
+                        pageSize: currentCustomersData.meta.limit,
                     }}
                     onPaginationChange={handleCustomersPageChange}
                 />
                 <div className="flex items-center justify-between px-4">
                     <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-                        Showing {customersData.documents.length} of {customersData.total} customers
+                        Showing {currentCustomersData.documents.length} of {currentCustomersData.total} customers
                     </div>
                     <div className="flex w-full items-center gap-8 lg:w-fit">
                         <div className="flex w-fit items-center justify-center text-sm font-medium">
-                            Page {customersData.meta.page} of {customersData.meta.totalPages}
+                            Page {currentCustomersData.meta.page} of {currentCustomersData.meta.totalPages}
                         </div>
                         <div className="ml-auto flex items-center gap-2 lg:ml-0">
                             <Button
                                 variant="outline"
                                 className="hidden h-8 w-8 p-0 lg:flex"
-                                onClick={() => handleCustomersPageChange({ pageIndex: 0, pageSize: customersData.meta.limit })}
-                                disabled={!customersData.meta.previousPage}
+                                onClick={() => handleCustomersPageChange({ pageIndex: 0, pageSize: currentCustomersData.meta.limit })}
+                                disabled={!currentCustomersData.meta.previousPage}
                             >
                                 <span className="sr-only">Go to first page</span>
                                 <IconChevronsLeft />
@@ -989,10 +1154,10 @@ export function ProductsDataTable({
                                 className="size-8"
                                 size="icon"
                                 onClick={() => handleCustomersPageChange({
-                                    pageIndex: (customersData.meta.previousPage || 1) - 1,
-                                    pageSize: customersData.meta.limit
+                                    pageIndex: (currentCustomersData.meta.previousPage || 1) - 1,
+                                    pageSize: currentCustomersData.meta.limit
                                 })}
-                                disabled={!customersData.meta.previousPage}
+                                disabled={!currentCustomersData.meta.previousPage}
                             >
                                 <span className="sr-only">Go to previous page</span>
                                 <IconChevronLeft />
@@ -1002,10 +1167,10 @@ export function ProductsDataTable({
                                 className="size-8"
                                 size="icon"
                                 onClick={() => handleCustomersPageChange({
-                                    pageIndex: (customersData.meta.nextPage || 1) - 1,
-                                    pageSize: customersData.meta.limit
+                                    pageIndex: (currentCustomersData.meta.nextPage || 1) - 1,
+                                    pageSize: currentCustomersData.meta.limit
                                 })}
-                                disabled={!customersData.meta.nextPage}
+                                disabled={!currentCustomersData.meta.nextPage}
                             >
                                 <span className="sr-only">Go to next page</span>
                                 <IconChevronRight />
@@ -1015,10 +1180,10 @@ export function ProductsDataTable({
                                 className="hidden size-8 lg:flex"
                                 size="icon"
                                 onClick={() => handleCustomersPageChange({
-                                    pageIndex: customersData.meta.totalPages - 1,
-                                    pageSize: customersData.meta.limit
+                                    pageIndex: currentCustomersData.meta.totalPages - 1,
+                                    pageSize: currentCustomersData.meta.limit
                                 })}
-                                disabled={!customersData.meta.nextPage}
+                                disabled={!currentCustomersData.meta.nextPage}
                             >
                                 <span className="sr-only">Go to last page</span>
                                 <IconChevronsRight />
@@ -1033,28 +1198,28 @@ export function ProductsDataTable({
                 className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
             >
                 <DataTable
-                    data={categoriesData.documents}
+                    data={currentCategoriesData.documents}
                     columns={categoryColumns}
                     pagination={{
-                        pageIndex: categoriesData.meta.page - 1,
-                        pageSize: categoriesData.meta.limit,
+                        pageIndex: currentCategoriesData.meta.page - 1,
+                        pageSize: currentCategoriesData.meta.limit,
                     }}
                     onPaginationChange={handleCategoriesPageChange}
                 />
                 <div className="flex items-center justify-between px-4">
                     <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-                        Showing {categoriesData.documents.length} of {categoriesData.total} categories
+                        Showing {currentCategoriesData.documents.length} of {currentCategoriesData.total} categories
                     </div>
                     <div className="flex w-full items-center gap-8 lg:w-fit">
                         <div className="flex w-fit items-center justify-center text-sm font-medium">
-                            Page {categoriesData.meta.page} of {categoriesData.meta.totalPages}
+                            Page {currentCategoriesData.meta.page} of {currentCategoriesData.meta.totalPages}
                         </div>
                         <div className="ml-auto flex items-center gap-2 lg:ml-0">
                             <Button
                                 variant="outline"
                                 className="hidden h-8 w-8 p-0 lg:flex"
-                                onClick={() => handleCategoriesPageChange({ pageIndex: 0, pageSize: categoriesData.meta.limit })}
-                                disabled={!categoriesData.meta.previousPage}
+                                onClick={() => handleCategoriesPageChange({ pageIndex: 0, pageSize: currentCategoriesData.meta.limit })}
+                                disabled={!currentCategoriesData.meta.previousPage}
                             >
                                 <span className="sr-only">Go to first page</span>
                                 <IconChevronsLeft />
@@ -1064,10 +1229,10 @@ export function ProductsDataTable({
                                 className="size-8"
                                 size="icon"
                                 onClick={() => handleCategoriesPageChange({
-                                    pageIndex: (categoriesData.meta.previousPage || 1) - 1,
-                                    pageSize: categoriesData.meta.limit
+                                    pageIndex: (currentCategoriesData.meta.previousPage || 1) - 1,
+                                    pageSize: currentCategoriesData.meta.limit
                                 })}
-                                disabled={!categoriesData.meta.previousPage}
+                                disabled={!currentCategoriesData.meta.previousPage}
                             >
                                 <span className="sr-only">Go to previous page</span>
                                 <IconChevronLeft />
@@ -1077,10 +1242,10 @@ export function ProductsDataTable({
                                 className="size-8"
                                 size="icon"
                                 onClick={() => handleCategoriesPageChange({
-                                    pageIndex: (categoriesData.meta.nextPage || 1) - 1,
-                                    pageSize: categoriesData.meta.limit
+                                    pageIndex: (currentCategoriesData.meta.nextPage || 1) - 1,
+                                    pageSize: currentCategoriesData.meta.limit
                                 })}
-                                disabled={!categoriesData.meta.nextPage}
+                                disabled={!currentCategoriesData.meta.nextPage}
                             >
                                 <span className="sr-only">Go to next page</span>
                                 <IconChevronRight />
@@ -1090,10 +1255,10 @@ export function ProductsDataTable({
                                 className="hidden size-8 lg:flex"
                                 size="icon"
                                 onClick={() => handleCategoriesPageChange({
-                                    pageIndex: categoriesData.meta.totalPages - 1,
-                                    pageSize: categoriesData.meta.limit
+                                    pageIndex: currentCategoriesData.meta.totalPages - 1,
+                                    pageSize: currentCategoriesData.meta.limit
                                 })}
-                                disabled={!categoriesData.meta.nextPage}
+                                disabled={!currentCategoriesData.meta.nextPage}
                             >
                                 <span className="sr-only">Go to last page</span>
                                 <IconChevronsRight />
@@ -1127,10 +1292,17 @@ const chartConfig = {
 
 function ProductCellViewer({ product }: { product: Product }) {
     const isMobile = useIsMobile()
+    const { categories } = useProductsStore();
+    const [isOpen, setIsOpen] = React.useState(false);
+
     return (
-        <Drawer direction={isMobile ? "bottom" : "right"}>
+        <Drawer open={isOpen} onOpenChange={setIsOpen}>
             <DrawerTrigger asChild>
-                <Button variant="link" className="text-foreground w-fit px-0 text-left">
+                <Button
+                    variant="link"
+                    className="text-foreground w-fit px-0 text-left"
+                    onClick={() => setIsOpen(true)}
+                >
                     {product.name}
                 </Button>
             </DrawerTrigger>
@@ -1222,12 +1394,11 @@ function ProductCellViewer({ product }: { product: Product }) {
                                         <SelectValue placeholder="Select a category" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Electronics">Electronics</SelectItem>
-                                        <SelectItem value="Clothing">Clothing</SelectItem>
-                                        <SelectItem value="Home & Garden">Home & Garden</SelectItem>
-                                        <SelectItem value="Sports">Sports</SelectItem>
-                                        <SelectItem value="Books">Books</SelectItem>
-                                        <SelectItem value="Toys">Toys</SelectItem>
+                                        {
+                                            categories?.map((category) => (
+                                                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                                            ))
+                                        }
                                     </SelectContent>
                                 </Select>
                             </div>

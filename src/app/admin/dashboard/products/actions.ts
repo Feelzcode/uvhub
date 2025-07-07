@@ -1,20 +1,10 @@
 'use server'
 
-import { Category, Customer, Product } from "@/store/types";
+import { Category, Customer, PaginatedResponse, Product } from "@/store/types";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
 
-interface PaginatedResponse<T> {
-    documents: T[];
-    total: number;
-    meta: {
-        page: number;
-        limit: number;
-        totalPages: number;
-        previousPage: number | null;
-        nextPage: number | null;
-    };
-}
+
 
 const paginationSchema = z.object({
     page: z.number().min(1).default(1),
@@ -32,10 +22,25 @@ export async function getPaginatedProducts(params: { page: number, limit: number
     const { search } = searchSchema.parse({ search: params.search });
 
     const supabase = await createClient()
-    const { data, error, count } = await supabase.from('products').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range((page - 1) * limit, page * limit - 1);
+    const { data, error, count } = await supabase
+        .from('products')
+        .select(`
+            *,
+            category:categories(*)
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
 
     if (search && search.length > 0) {
-        const { data: searchData, error: searchError, count: searchCount } = await supabase.from('products').select('*', { count: 'exact' }).textSearch('name', search).order('created_at', { ascending: false }).range((page - 1) * limit, page * limit - 1);
+        const { data: searchData, error: searchError, count: searchCount } = await supabase
+            .from('products')
+            .select(`
+                *,
+                category:categories(*)
+            `, { count: 'exact' })
+            .textSearch('name', search)
+            .order('created_at', { ascending: false })
+            .range((page - 1) * limit, page * limit - 1);
         if (searchError) {
             console.error(searchError)
             return {
@@ -92,17 +97,35 @@ export async function getPaginatedProducts(params: { page: number, limit: number
 
 export async function getAllProducts() {
     const supabase = await createClient()
-    const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+    console.log('Fetching products from database...');
+    
+    // First try without the category join to see if basic query works
+    const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+    
+    console.log('Supabase response:', { data, error });
+    
     if (error) {
-        console.error(error)
+        console.error('Database error:', error)
         return []
     }
+    
+    console.log('Products returned:', data);
     return data;
 }
 
 export async function getProductById(id: string) {
     const supabase = await createClient()
-    const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+    const { data, error } = await supabase
+        .from('products')
+        .select(`
+            *,
+            category:categories(*)
+        `)
+        .eq('id', id)
+        .single();
     if (error) {
         console.error(error)
         return null
@@ -110,9 +133,16 @@ export async function getProductById(id: string) {
     return data;
 }
 
-export async function createProduct(product: Product) {
+export async function createProduct(product: Partial<Product>) {
     const supabase = await createClient()
-    const { data, error } = await supabase.from('products').insert(product).select().single();
+    const { data, error } = await supabase
+        .from('products')
+        .insert(product)
+        .select(`
+            *,
+            category:categories(*)
+        `)
+        .single();
     if (error) {
         console.error(error)
         return null
@@ -122,7 +152,15 @@ export async function createProduct(product: Product) {
 
 export async function updateProduct(id: string, product: Product) {
     const supabase = await createClient()
-    const { data, error } = await supabase.from('products').update(product).eq('id', id).select().single();
+    const { data, error } = await supabase
+        .from('products')
+        .update(product)
+        .eq('id', id)
+        .select(`
+            *,
+            category:categories(*)
+        `)
+        .single();
     if (error) {
         console.error(error)
         return null

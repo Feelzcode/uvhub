@@ -151,6 +151,18 @@ export interface UserState {
   error: string | null;
 }
 
+export interface PaginatedResponse<T> {
+  documents: T[];
+  total: number;
+  meta: {
+    page: number;
+    limit: number;
+    totalPages: number;
+    previousPage: number | null;
+    nextPage: number | null;
+  };
+}
+
 export interface ProductsState {
   products: Product[];
   loading: boolean;
@@ -162,6 +174,7 @@ export interface ProductsState {
     maxPrice: number;
     search: string;
   };
+  categories: Category[];
 }
 
 export interface OrdersState {
@@ -185,4 +198,59 @@ export interface RootState {
   user: UserState;
   fileActions: FileActions;
   userActions: UserActions;
+}
+
+// Upload Response Interfaces
+export interface UploadFileMeta {
+  name: string;
+  type: string;
+  bucketName: string;
+  objectName: string;
+  contentType: string;
+}
+
+export interface UploadProgress {
+  uploadStarted: number;
+  uploadComplete: boolean;
+  bytesUploaded: number;
+  bytesTotal: number;
+  percentage: number;
+}
+
+export interface UploadTus {
+  uploadUrl: string;
+}
+
+export interface UploadResponseBody {
+  xhr: Record<string, any>;
+}
+
+export interface UploadResponse {
+  uploadURL: string;
+  status: number;
+  body: UploadResponseBody;
+}
+
+export interface UploadedFile {
+  source: string;
+  id: string;
+  name: string;
+  extension: string;
+  meta: UploadFileMeta;
+  type: string;
+  data: Record<string, any>;
+  progress: UploadProgress;
+  size: number;
+  isGhost: boolean;
+  isRemote: boolean;
+  tus: UploadTus;
+  response: UploadResponse;
+  uploadURL: string;
+  isPaused: boolean;
+}
+
+export interface UploadResult {
+  successful: UploadedFile[];
+  failed: any[];
+  uploadID: string;
 } 

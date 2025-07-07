@@ -11,9 +11,13 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { SignInFormData, signInSchema } from "@/utils/schema"
+import { useSearchParams } from "next/navigation"
 
 export default function SignInPage(){
     const [showPassword, setShowPassword] = useState<boolean>(false);
+    // get the query parameter from the url
+    const query = useSearchParams();
+    const redirectTo = query.get('redirectTo');
     
     const {
         register,
@@ -36,7 +40,7 @@ export default function SignInPage(){
             formData.append('password', data.password)
             
             // Call the Server Action
-            await login(formData)
+            await login(formData, redirectTo ?? undefined)
         } catch (error) {
             // Handle errors from Server Action
             if (error instanceof Error) {
