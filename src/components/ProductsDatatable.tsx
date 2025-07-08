@@ -117,7 +117,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { productSchema, ProductSchemaType } from "@/utils/schema"
+import { productInputSchema, ProductInputType, transformProductInput } from "@/utils/schema"
 
 
 // Create a separate component for the drag handle
@@ -144,16 +144,17 @@ function ProductActions({ product }: { product: Product }) {
     const { deleteProduct, updateProduct, loading } = useProductsStore();
     const [isEditDrawerOpen, setIsEditDrawerOpen] = React.useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+    const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
 
-    const formData = useForm<ProductSchemaType>({
+    const formData = useForm<ProductInputType>({
         defaultValues: {
             name: product.name,
             description: product.description,
-            price: product.price,
-            stock: product.stock,
+            price: product.price.toString(),
+            stock: product.stock.toString(),
             image: product.image,
         },
-        resolver: zodResolver(productSchema),
+        resolver: zodResolver(productInputSchema),
     });
 
     const handleDelete = async () => {
@@ -165,9 +166,10 @@ function ProductActions({ product }: { product: Product }) {
         setIsEditDrawerOpen(true);
     };
 
-    const handleSave = async (data: ProductSchemaType) => {
+    const handleSave = async (data: ProductInputType) => {
         try {
-            await updateProduct(product.id, data);
+            const transformedData = transformProductInput(data);
+            await updateProduct(product.id, transformedData);
             setIsEditDrawerOpen(false);
             toast.success("Product updated successfully");
         }
@@ -176,6 +178,10 @@ function ProductActions({ product }: { product: Product }) {
             toast.error("Failed to update product");
         }
     };
+
+    const handleView = () => {
+        setIsViewDrawerOpen(true);
+    }
     return (
         <>
             <DropdownMenu>
@@ -190,11 +196,11 @@ function ProductActions({ product }: { product: Product }) {
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-32">
-                    <DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={handleView}>
                         <IconEye className="mr-2 size-4" />
                         View
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleEdit}>
+                    <DropdownMenuItem className="cursor-pointer" onClick={handleEdit}>
                         <IconEdit className="mr-2 size-4" />
                         Edit
                     </DropdownMenuItem>
@@ -202,6 +208,7 @@ function ProductActions({ product }: { product: Product }) {
                     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                         <AlertDialogTrigger asChild>
                             <DropdownMenuItem
+                                className="cursor-pointer"
                                 variant="destructive"
                                 onSelect={(e) => e.preventDefault()}
                             >
@@ -243,29 +250,29 @@ function ProductActions({ product }: { product: Product }) {
                         <form className="flex flex-col gap-4" onSubmit={formData.handleSubmit(handleSave)} id="edit-product-form">
                             <div className="flex flex-col gap-3">
                                 <Label htmlFor="edit-name">Product Name</Label>
-                                <Input id="edit-name" {...formData.register('name')} defaultValue={product.name} />
+                                <Input id="edit-name" {...formData.register('name')} />
                                 {formData.formState.errors.name && <p className="text-red-500">{formData.formState.errors.name.message}</p>}
                             </div>
                             <div className="flex flex-col gap-3">
                                 <Label htmlFor="edit-description">Description</Label>
-                                <Input id="edit-description" {...formData.register('description')} defaultValue={product.description} />
+                                <Input id="edit-description" {...formData.register('description')} />
                                 {formData.formState.errors.description && <p className="text-red-500">{formData.formState.errors.description.message}</p>}
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-3">
                                     <Label htmlFor="edit-price">Price</Label>
-                                    <Input id="edit-price" type="number" step="0.01" {...formData.register('price')} defaultValue={product.price} />
+                                    <Input id="edit-price" type="number" step="0.01" {...formData.register('price')} />
                                     {formData.formState.errors.price && <p className="text-red-500">{formData.formState.errors.price.message}</p>}
                                 </div>
                                 <div className="flex flex-col gap-3">
                                     <Label htmlFor="edit-stock">Stock</Label>
-                                    <Input id="edit-stock" type="number" {...formData.register('stock')} defaultValue={product.stock} />
+                                    <Input id="edit-stock" type="number" {...formData.register('stock')} />
                                     {formData.formState.errors.stock && <p className="text-red-500">{formData.formState.errors.stock.message}</p>}
                                 </div>
                             </div>
                             <div className="flex flex-col gap-3">
                                 <Label htmlFor="edit-image">Image URL</Label>
-                                <Input id="edit-image" {...formData.register('image')} defaultValue={product.image} />
+                                <Input id="edit-image" {...formData.register('image')} />
                                 {formData.formState.errors.image && <p className="text-red-500">{formData.formState.errors.image.message}</p>}
                             </div>
                         </form>
@@ -278,6 +285,49 @@ function ProductActions({ product }: { product: Product }) {
                             <Button variant="outline">Cancel</Button>
                         </DrawerClose>
                     </DrawerFooter>
+                </DrawerContent>
+            </Drawer>
+
+            {/* View Drawer */}
+            <Drawer open={isViewDrawerOpen} onOpenChange={setIsViewDrawerOpen}>
+                <DrawerContent>
+                    <DrawerHeader>
+                        <DrawerTitle>View Product: {product.name}</DrawerTitle>
+                    </DrawerHeader>
+                    <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="view-name">Product Name</Label>
+                            <Input id="view-name" value={product.name} disabled />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="view-description">Description</Label>
+                            <Input id="view-description" value={product.description} disabled />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="view-price">Price</Label>
+                            <Input id="view-price" value={product.price.toString()} disabled />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="view-stock">Stock</Label>
+                            <Input id="view-stock" value={product.stock.toString()} disabled />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="view-image">Image</Label>
+                            <Image src={product.image} alt={product.name} width={100} height={100} />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="view-category">Category</Label>
+                            <Input id="view-category" value={product.category.name} disabled />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="view-created-at">Created At</Label>
+                            <Input id="view-created-at" value={new Date(product.created_at).toLocaleDateString()} disabled />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="view-updated-at">Updated At</Label>
+                            <Input id="view-updated-at" value={new Date(product.updated_at).toLocaleDateString()} disabled />
+                        </div>
+                    </div>
                 </DrawerContent>
             </Drawer>
         </>
