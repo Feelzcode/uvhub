@@ -47,11 +47,12 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
         setError: (error) => set({ error, loading: false }),
 
         detectLocation: async () => {
-          const { setLoading, setError, setLocation, setCurrency, location, currentCurrency } = get();
+          const { setLoading, setError, setLocation, setCurrency, location } = get();
 
           // Check if we already have location data
           if (location) {
-            console.log('Using cached location data:', location);
+            // set the current currency to the currency of the location
+            setCurrency(location.countryCode === 'NG' ? 'NGN' : location.countryCode === 'GH' ? 'GHS' : 'USD');
             return; // Exit early if location is already detected
           }
 

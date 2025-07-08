@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useCurrencyStore } from '../slices/currencySlice';
+import { Currency } from '../types';
 
 export const useCurrency = () => {
     const {
@@ -35,7 +36,7 @@ export const useCurrency = () => {
     const getCurrentCurrencyInfo = () => currencies[currentCurrency];
 
     // Helper function to format price with current currency
-    const formatCurrentPrice = (price: number) => formatPrice(price, currentCurrency);
+    const formatCurrentPrice = (price: number, currency: Currency) => formatPrice(price, currency);
 
     // Helper function to format price in USD
     const formatUSDPrice = (price: number) => formatPrice(price, 'USD');

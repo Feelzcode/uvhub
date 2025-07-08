@@ -2,13 +2,14 @@
 
 import { useCart, useProducts } from '@/store/hooks';
 import { useCurrency } from '@/store/hooks/useCurrency';
-import { Product } from '@/store/types';
+import { Currency, Product } from '@/store/types';
 
 interface ProductCardProps {
     product: Product;
+    currency: Currency;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, currency }: ProductCardProps) {
     const { addToCart, isInCart } = useCart();
     const { setSelectedProduct } = useProducts();
     const { formatCurrentPrice } = useCurrency();
@@ -30,7 +31,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     className="w-full h-48 object-cover"
                 />
                 <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-full text-sm font-semibold">
-                    {formatCurrentPrice(product.price)}
+                    {formatCurrentPrice(product.price, currency)}
                 </div>
             </div>
 
