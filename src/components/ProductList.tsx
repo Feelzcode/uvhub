@@ -1,29 +1,33 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useProducts } from '@/store/hooks';
 import ProductCard from './ProductCard';
-import { Product } from '@/store';
+import { Product, useProductsStore } from '@/store';
 import { useCurrency } from '@/store/hooks/useCurrency';
 
 export default function ProductList() {
     const { currentCurrency } = useCurrency();
+
     const {
-        products,
-        loading,
-        error,
+        categories,
         filters,
         setFilters,
-        clearFilters,
         getFilteredProducts,
-        fetchProducts,
-    } = useProducts();
+        getProducts,
+        loading,
+        error,
+        clearFilters,
+        products,
+        getCategories
+    } = useProductsStore();
 
     const [searchTerm, setSearchTerm] = useState(filters.search);
 
     useEffect(() => {
-        fetchProducts();
-    }, [fetchProducts]);
+        console.log('ProductList useEffect running - calling getProducts and getCategories');
+        getProducts();
+        getCategories();
+    }, [getProducts, getCategories]);
 
     useEffect(() => {
         const timeoutId = setTimeout(() => {
@@ -33,9 +37,7 @@ export default function ProductList() {
         return () => clearTimeout(timeoutId);
     }, [searchTerm, setFilters]);
 
-    const filteredProducts: Product[] = getFilteredProducts();
-
-    const categories: string[] = Array.from(new Set(products.map((p: Product) => p.category)));
+    const displayProducts: Product[] = getFilteredProducts();
 
     if (loading) {
         return (
@@ -50,7 +52,7 @@ export default function ProductList() {
             <div className="text-center py-12">
                 <p className="text-red-500">Error: {error}</p>
                 <button
-                    onClick={fetchProducts}
+                    onClick={getProducts}
                     className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
                 >
                     Retry
@@ -92,8 +94,8 @@ export default function ProductList() {
                         >
                             <option value="">All Categories</option>
                             {categories.map((category) => (
-                                <option key={category} value={category}>
-                                    {category}
+                                <option key={category.id} value={category.id}>
+                                    {category.name}
                                 </option>
                             ))}
                         </select>
@@ -127,12 +129,12 @@ export default function ProductList() {
             {/* Results */}
             <div className="mb-4">
                 <p className="text-gray-600">
-                    Showing {filteredProducts.length} of {products.length} products
+                    Showing {displayProducts.length} of {products.length} products
                 </p>
             </div>
 
             {/* Product Grid */}
-            {filteredProducts.length === 0 ? (
+            {displayProducts.length === 0 ? (
                 <div className="text-center py-12">
                     <p className="text-gray-500">No products found matching your criteria</p>
                 </div>

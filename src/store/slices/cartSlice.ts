@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { CartItem, CartState, Product } from '../types';
 
 interface CartActions {
@@ -141,6 +141,7 @@ export const useCartStore = create<CartState & CartActions>()(
             }),
             {
                 name: 'cart-storage',
+                storage: createJSONStorage(() => localStorage),
                 partialize: (state) => ({ items: state.items }),
             }
         ),

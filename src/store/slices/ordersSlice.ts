@@ -71,7 +71,7 @@ export const useOrdersStore = create<OrdersState & OrdersActions>()(
 
             getOrdersByUser: (userId) => {
                 const { orders } = get();
-                return orders.filter((order) => order.userId === userId);
+                return orders.filter((order) => order.customer.id === userId);
             },
 
             getTotalRevenue: () => {

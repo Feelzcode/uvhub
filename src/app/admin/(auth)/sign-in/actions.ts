@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { toast } from 'sonner'
 
-export async function login(formData: FormData) {
+export async function login(formData: FormData, redirectTo?: string) {
     const supabase = await createClient()
 
     // type-casting here for convenience
@@ -16,6 +16,8 @@ export async function login(formData: FormData) {
         password: formData.get('password') as string,
     }
 
+    console.log(data, 'Data being passed to the auth endpoint');
+
     const { error } = await supabase.auth.signInWithPassword(data)
 
     if (error) {
@@ -23,5 +25,8 @@ export async function login(formData: FormData) {
     }
 
     revalidatePath('/', 'layout')
+
+    if (redirectTo) redirect(redirectTo) 
+
     redirect('/admin/dashboard')
 }
