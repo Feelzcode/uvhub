@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 
 export default function CurrencyDisplay() {
     const {
-        currentCurrency,
         location,
         loading,
         error,
