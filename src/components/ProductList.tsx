@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import ProductCard from './ProductCard';
 import { Product, useProductsStore } from '@/store';
+import { useCurrency } from '@/store/hooks/useCurrency';
 
 export default function ProductList() {
+    const { currentCurrency } = useCurrency();
 
     const {
         categories,
@@ -20,13 +22,6 @@ export default function ProductList() {
     } = useProductsStore();
 
     const [searchTerm, setSearchTerm] = useState(filters.search);
-
-    // Debug logging
-    console.log('ProductList render - products:', products);
-    console.log('ProductList render - loading:', loading);
-    console.log('ProductList render - error:', error);
-    console.log('ProductList render - categories:', categories);
-    console.log('Applied product filters', filters);
 
     useEffect(() => {
         console.log('ProductList useEffect running - calling getProducts and getCategories');
@@ -145,8 +140,8 @@ export default function ProductList() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {displayProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} />
+                    {filteredProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} currency={currentCurrency} />
                     ))}
                 </div>
             )}

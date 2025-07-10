@@ -70,6 +70,23 @@ export interface CartItem {
   product: Product;
 }
 
+// Currency Types
+export type Currency = 'NGN' | 'GHS' | 'USD';
+
+export interface CurrencyInfo {
+  code: Currency;
+  symbol: string;
+  name: string;
+  exchangeRate: number; // Rate relative to USD
+}
+
+export interface LocationInfo {
+  country: string;
+  countryCode: string;
+  city?: string;
+  region?: string;
+}
+
 // Supabase User Interfaces
 export interface UserIdentity {
   identity_id: string;
@@ -151,6 +168,7 @@ export interface UserState {
   error: string | null;
 }
 
+
 export interface PaginatedResponse<T> {
   documents: T[];
   total: number;
@@ -161,6 +179,24 @@ export interface PaginatedResponse<T> {
     previousPage: number | null;
     nextPage: number | null;
   };
+
+// Currency State
+export interface CurrencyState {
+  currentCurrency: Currency;
+  location: LocationInfo | null;
+  loading: boolean;
+  error: string | null;
+  currencies: Record<Currency, CurrencyInfo>;
+}
+
+export interface CurrencyActions {
+  setCurrency: (currency: Currency) => void;
+  setLocation: (location: LocationInfo) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  detectLocation: () => Promise<void>;
+  formatPrice: (price: number, currency?: Currency) => string;
+  convertPrice: (price: number, fromCurrency: Currency, toCurrency: Currency) => number;
 }
 
 export interface ProductsState {
@@ -253,4 +289,6 @@ export interface UploadResult {
   successful: UploadedFile[];
   failed: any[];
   uploadID: string;
+  user: UserState;
+  currency: CurrencyState & CurrencyActions;
 } 

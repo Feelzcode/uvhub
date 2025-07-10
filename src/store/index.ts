@@ -2,7 +2,11 @@
 export { useProductsStore } from './slices/productsSlice';
 export { useOrdersStore } from './slices/ordersSlice';
 export { useCartStore } from './slices/cartSlice';
+export { useCurrencyStore } from './slices/currencySlice';
 export { useUserStore } from './slices/userSlice';
+
+// Export hooks
+export { useCurrency } from './hooks/useCurrency';
 
 // Export types
 export type {
@@ -16,6 +20,13 @@ export type {
     CartState,
     UserState,
     RootState,
+    SupabaseUser,
+    UserActions,
+    Currency,
+    CurrencyInfo,
+    LocationInfo,
+    CurrencyState,
+    CurrencyActions,
 } from './types';
 
 // Re-export Zustand utilities for convenience

@@ -1,9 +1,11 @@
 'use client';
 
 import { useCart } from '@/store/hooks';
+import { useCurrency } from '@/store/hooks/useCurrency';
 
 export default function CartSummary() {
     const { items, total, itemCount, removeFromCart, updateQuantity, clearCart } = useCart();
+    const { formatCurrentPrice, currentCurrency } = useCurrency();
 
     if (itemCount === 0) {
         return (
@@ -37,7 +39,7 @@ export default function CartSummary() {
 
                         <div className="flex-1">
                             <h3 className="font-medium text-gray-800">{item.product.name}</h3>
-                            <p className="text-sm text-gray-500">${item.product.price}</p>
+                            <p className="text-sm text-gray-500">{formatCurrentPrice(item.product.price, currentCurrency)}</p>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -57,7 +59,7 @@ export default function CartSummary() {
                         </div>
 
                         <div className="text-right">
-                            <p className="font-medium">${(item.product.price * item.quantity).toFixed(2)}</p>
+                            <p className="font-medium">{formatCurrentPrice(item.product.price * item.quantity, currentCurrency)}</p>
                             <button
                                 onClick={() => removeFromCart(item.productId)}
                                 className="text-red-500 hover:text-red-700 text-sm"
@@ -72,7 +74,7 @@ export default function CartSummary() {
             <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-4">
                     <span className="text-lg font-medium">Total ({itemCount} items):</span>
-                    <span className="text-xl font-bold text-blue-600">${total.toFixed(2)}</span>
+                    <span className="text-xl font-bold text-blue-600">{formatCurrentPrice(total, currentCurrency)}</span>
                 </div>
 
                 <button className="w-full bg-blue-500 text-white py-3 px-4 rounded-md hover:bg-blue-600 transition-colors duration-200">
