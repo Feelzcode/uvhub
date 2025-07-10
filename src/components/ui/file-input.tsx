@@ -17,18 +17,17 @@ export interface FileInputProps
   children?: React.ReactNode
 }
 
-const FileInput = React.forwardRef<HTMLInputElement, FileInputProps>(
-  ({ 
-    className, 
-    onFileChange, 
-    onFileRemove, 
-    multiple = false, 
-    accept, 
-    maxFiles = 5,
-    maxSize = 5 * 1024 * 1024, // 5MB default
-    children,
-    ...props 
-  }, ref) => {
+const FileInput = ({ 
+  className, 
+  onFileChange, 
+  onFileRemove, 
+  multiple = false, 
+  accept, 
+  maxFiles = 5,
+  maxSize = 5 * 1024 * 1024, // 5MB default
+  children,
+  ...props 
+}: FileInputProps) => {
     const [files, setFiles] = React.useState<File[]>([])
     const [dragActive, setDragActive] = React.useState(false)
     const inputRef = React.useRef<HTMLInputElement>(null)
@@ -166,7 +165,6 @@ const FileInput = React.forwardRef<HTMLInputElement, FileInputProps>(
       </div>
     )
   }
-)
 
 FileInput.displayName = "FileInput"
 

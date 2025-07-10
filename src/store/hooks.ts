@@ -86,16 +86,15 @@ export const useOrders = () => {
         setLoading(true);
         try {
             // Simulate API call - replace with actual API
-            // For demo purposes, we'll use sample data
+            // For demo purposes, we'll use empty array since sampleOrders was removed
             await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-            const { sampleOrders } = await import('@/lib/sampleData');
-            setOrders(sampleOrders);
+            setOrders([]);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch orders');
         }
     }, [setOrders, setLoading, setError]);
 
-    const createOrder = useCallback(async (orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const createOrder = useCallback(async (orderData: Omit<Order, 'id' | 'created_at' | 'updated_at'>) => {
         setLoading(true);
         try {
             // Simulate API call - replace with actual API

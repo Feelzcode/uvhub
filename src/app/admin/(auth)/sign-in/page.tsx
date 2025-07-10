@@ -6,19 +6,19 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { login } from "./actions"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { SignInFormData, signInSchema } from "@/utils/schema"
 import { useSearchParams } from "next/navigation"
 
-export default function SignInPage(){
+function SignInForm() {
     const [showPassword, setShowPassword] = useState<boolean>(false);
     // get the query parameter from the url
     const query = useSearchParams();
     const redirectTo = query.get('redirectTo');
-    
+
     const {
         register,
         handleSubmit,
@@ -38,7 +38,7 @@ export default function SignInPage(){
             const formData = new FormData()
             formData.append('email', data.email)
             formData.append('password', data.password)
-            
+
             // Call the Server Action
             await login(formData, redirectTo ?? undefined)
         } catch (error) {
@@ -65,21 +65,21 @@ export default function SignInPage(){
                     Enter your email below to login to your account
                 </p>
             </div>
-            
+
             {/* Root error display */}
             {errors.root && (
                 <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
                     {errors.root.message}
                 </div>
             )}
-            
+
             <div className="grid gap-6">
                 <div className="grid gap-3">
                     <Label htmlFor="email">Email</Label>
-                    <Input 
-                        id="email" 
-                        type="email" 
-                        placeholder="m@example.com" 
+                    <Input
+                        id="email"
+                        type="email"
+                        placeholder="m@example.com"
                         {...register('email')}
                         className={errors.email ? 'border-red-500' : ''}
                     />
@@ -98,16 +98,16 @@ export default function SignInPage(){
                         </Link>
                     </div>
                     <div className="relative">
-                        <Input 
-                            id="password" 
-                            type={showPassword ? "text" : "password"} 
+                        <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
                             {...register('password')}
                             className={errors.password ? 'border-red-500' : ''}
                         />
-                        <Button 
-                            type="button" 
-                            variant="outline" 
-                            className="absolute right-0 top-0 h-full p-2 cursor-pointer" 
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="absolute right-0 top-0 h-full p-2 cursor-pointer"
                             onClick={() => setShowPassword(!showPassword)}
                         >
                             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -117,14 +117,22 @@ export default function SignInPage(){
                         <p className="text-sm text-red-500">{errors.password.message}</p>
                     )}
                 </div>
-                <Button 
-                    type="submit" 
-                    className="w-full cursor-pointer" 
+                <Button
+                    type="submit"
+                    className="w-full cursor-pointer"
                     disabled={isSubmitting}
                 >
                     {isSubmitting ? <Loader2 className="animate-spin" /> : "Login"}
                 </Button>
             </div>
         </form>
+    )
+}
+
+export default function SignInPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <SignInForm />
+        </Suspense>
     )
 }

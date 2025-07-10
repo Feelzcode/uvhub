@@ -1,5 +1,5 @@
-async function ProductDetails({ params }: { params: { id: string } }) {
-    const { id } = params;
+async function ProductDetails({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
   return (
     <div>ProductDetails {id}</div>
   )

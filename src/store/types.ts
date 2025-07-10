@@ -179,6 +179,7 @@ export interface PaginatedResponse<T> {
     previousPage: number | null;
     nextPage: number | null;
   };
+}
 
 // Currency State
 export interface CurrencyState {
@@ -258,7 +259,7 @@ export interface UploadTus {
 }
 
 export interface UploadResponseBody {
-  xhr: Record<string, any>;
+  xhr: Record<string, unknown>;
 }
 
 export interface UploadResponse {
@@ -274,7 +275,7 @@ export interface UploadedFile {
   extension: string;
   meta: UploadFileMeta;
   type: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   progress: UploadProgress;
   size: number;
   isGhost: boolean;
@@ -287,8 +288,8 @@ export interface UploadedFile {
 
 export interface UploadResult {
   successful: UploadedFile[];
-  failed: any[];
+  failed: unknown[];
   uploadID: string;
   user: UserState;
   currency: CurrencyState & CurrencyActions;
-} 
+}
