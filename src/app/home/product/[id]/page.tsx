@@ -91,6 +91,7 @@
 import { useRouter, useParams } from 'next/navigation';
 import { useCart, useProducts } from '@/store/hooks';
 import { Star, ChevronLeft, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 
 export default function ProductDetails() {
   const router = useRouter();
@@ -134,11 +135,16 @@ export default function ProductDetails() {
       {/* Main Product Section */}
       <div className="bg-white rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden mb-16">
         <div className="md:w-1/2 bg-gray-100 flex items-center justify-center p-8">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-80 object-contain rounded-xl shadow-md"
-          />
+          <div className="relative w-full h-80">
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              className="object-contain rounded-xl shadow-md"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
+            />
+          </div>
         </div>
         <div className="md:w-1/2 p-8 flex flex-col">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
@@ -196,11 +202,13 @@ export default function ProductDetails() {
                 key={similarProduct.id} 
                 className="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 relative"
               >
-                <div className="h-48 overflow-hidden relative">
-                  <img 
-                    src={similarProduct.image} 
-                    alt={similarProduct.name} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                <div className="relative h-48 overflow-hidden">
+                  <Image
+                    src={similarProduct.image}
+                    alt={similarProduct.name}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-40 transition-all duration-500 flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <button 

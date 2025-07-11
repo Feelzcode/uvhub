@@ -2,6 +2,7 @@
 import React from 'react';
 import { HeartPulse, Truck, Wrench, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const AboutPage = () => {
   return (
@@ -9,7 +10,7 @@ const AboutPage = () => {
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-blue-600 to-purple-600 text-white py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">Our Mission at Ursula's Vitality Hub</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">Our Mission at Ursula&apos;s Vitality Hub</h1>
           <p className="text-xl max-w-3xl mx-auto">
             Empowering longer, healthier, and more vibrant lives across Africa through premium fitness solutions.
           </p>
@@ -23,23 +24,26 @@ const AboutPage = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                Welcome to <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Ursula's Vitality Hub</span>
+                Welcome to <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Ursula&apos;s Vitality Hub</span>
               </h2>
               <p className="text-lg text-gray-700 mb-6">
-                We are not just selling gym equipment; we're providing the tools for a longer, healthier, and more vibrant life across Africa.
+                We are not just selling gym equipment; we&apos;re providing the tools for a longer, healthier, and more vibrant life across Africa.
               </p>
               <p className="text-lg text-gray-700 mb-6">
-                Imagine boosting your energy, strengthening your heart, and safeguarding your future against illness - that's the power we deliver. From Accra to Nairobi, Lagos to Cape Town, our top-tier, durable equipment empowers your journey to peak vitality.
+                Imagine boosting your energy, strengthening your heart, and safeguarding your future against illness - that&apos;s the power we deliver. From Accra to Nairobi, Lagos to Cape Town, our top-tier, durable equipment empowers your journey to peak vitality.
               </p>
               <p className="text-lg text-gray-700">
-                Whether you're building a home gym or upgrading a commercial space, invest in your health with Ursula's Vitality Hub - your partner in prolonging life and maximizing wellness, delivered right to your door!
+                Whether you&apos;re building a home gym or upgrading a commercial space, invest in your health with Ursula&apos;s Vitality Hub - your partner in prolonging life and maximizing wellness, delivered right to your door!
               </p>
             </div>
-            <div className="bg-gray-100 rounded-xl overflow-hidden h-96">
-              <img 
+            <div className="relative bg-gray-100 rounded-xl overflow-hidden h-96">
+              <Image 
                 src="/about-hero.jpg" 
                 alt="Happy customers using our equipment"
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
               />
             </div>
           </div>
@@ -87,10 +91,10 @@ const AboutPage = () => {
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-6">Ready to Transform Your Health?</h2>
             <p className="text-xl mb-8">
-              We understand that convenience is key to consistency. That's why we offer FREE delivery and professional installation of all your equipment.
+              We understand that convenience is key to consistency. That&apos;s why we offer FREE delivery and professional installation of all your equipment.
             </p>
             <p className="text-xl mb-8">
-              You pick the gear, and we'll handle the rest, ensuring it's set up perfectly and ready for your first workout. No hidden fees, no hassle - just pure focus on your well-being.
+              You pick the gear, and we&apos;ll handle the rest, ensuring it&apos;s set up perfectly and ready for your first workout. No hidden fees, no hassle - just pure focus on your well-being.
             </p>
             <Link 
               href="/home/all-products"
