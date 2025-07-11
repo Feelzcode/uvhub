@@ -93,7 +93,7 @@ const AboutPage = () => {
               You pick the gear, and we'll handle the rest, ensuring it's set up perfectly and ready for your first workout. No hidden fees, no hassle - just pure focus on your well-being.
             </p>
             <Link 
-              href="/products"
+              href="/home/all-products"
               className="inline-block bg-white text-blue-600 font-bold px-8 py-3 rounded-lg hover:bg-gray-100 transition-colors"
             >
               Explore Our Products

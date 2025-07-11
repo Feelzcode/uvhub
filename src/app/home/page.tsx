@@ -1377,11 +1377,8 @@ const useCounter = (end: number, duration: number = 2000) => {
 const Home = () => {
   // All hooks at the top!
   const [showWhatsApp, setShowWhatsApp] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
+ 
   const [currentSlide, setCurrentSlide] = useState(0);
-
-  const { cart } = useEcommerce();
   const { addToCart, isInCart } = useCart();
   
   const {
@@ -1457,9 +1454,7 @@ const router = useRouter();
   }
 
   const filteredProducts: Product[] = getFilteredProducts();
-const navigate =()=>{
-  router.push('/cart');
-}
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
