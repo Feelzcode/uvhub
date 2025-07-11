@@ -1,19 +1,8 @@
 'use server'
 
 import { Category, Customer, PaginatedResponse, Product } from "@/store/types";
+import { paginationSchema, searchSchema } from "@/utils/schema";
 import { createClient } from "@/utils/supabase/server";
-import { z } from "zod";
-
-
-
-const paginationSchema = z.object({
-    page: z.number().min(1).default(1),
-    limit: z.number().min(1).default(10),
-});
-
-const searchSchema = z.object({
-    search: z.string().optional(),
-});
 
 
 // Products Information
@@ -255,6 +244,16 @@ export async function getAllCustomers() {
 export async function getCustomerById(id: string) {
     const supabase = await createClient()
     const { data, error } = await supabase.from('customers').select('*').eq('id', id).single();
+    if (error) {
+        console.error(error)
+        return null
+    }
+    return data;
+}
+
+export async function getCustomerByEmail(email: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase.from('customers').select('*').eq('email', email).single();
     if (error) {
         console.error(error)
         return null

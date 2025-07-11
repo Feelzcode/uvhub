@@ -1,12 +1,18 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { Order, OrdersState } from '../types';
+import { Customer, Order, OrderItem, OrdersState } from '../types';
+import { getAllOrders, placeOrder } from '@/app/admin/dashboard/orders/actions';
 
 interface OrdersActions {
     // Actions
-    setOrders: (orders: Order[]) => void;
-    addOrder: (order: Order) => void;
-    updateOrder: (id: string, updates: Partial<Order>) => void;
+    setOrders: () => Promise<void>;
+    placeOrder: (orderDetails: {
+        customer: Customer,
+        items: Omit<OrderItem, 'id' | 'created_at' | 'orderId'>[],
+        total: number,
+        paymentMethod: string,
+    }) => Promise<Order | null>;
+    updateOrder: (id: string, updates: Partial<Order>) => Promise<Order | null>;
     deleteOrder: (id: string) => void;
     setSelectedOrder: (order: Order | null) => void;
     setLoading: (loading: boolean) => void;
@@ -33,12 +39,35 @@ export const useOrdersStore = create<OrdersState & OrdersActions>()(
             ...initialState,
 
             // Actions
-            setOrders: (orders) => set({ orders, loading: false, error: null }),
+            setOrders: async () => {
+                set({ loading: true, error: null });
+                try {
+                    const orders = await getAllOrders();
+                    set({ orders, loading: false, error: null });
+                } catch (error) {
+                    console.error(error);
+                    set({ error: error instanceof Error ? error.message : 'Failed to fetch orders', loading: false });
+                }
+            },
 
-            addOrder: (order) =>
-                set((state) => ({
-                    orders: [...state.orders, order]
-                })),
+            placeOrder: async (orderDetails) => {
+                set({ loading: true, error: null });
+                try {
+                    const newOrder = await placeOrder(orderDetails);
+                    if (newOrder) {
+                        set((state) => ({
+                            orders: [...state.orders, newOrder],
+                            loading: false,
+                            error: null
+                        }));
+                    } else {
+                        set({ error: 'Failed to place order', loading: false });
+                    }
+                } catch (error) {
+                    console.error(error);
+                    set({ error: error instanceof Error ? error.message : 'Failed to place order', loading: false });
+                }
+            },
 
             updateOrder: (id, updates) =>
                 set((state) => ({

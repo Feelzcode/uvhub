@@ -1,4 +1,13 @@
+import { Order } from '@/store/types';
 import nodemailer from 'nodemailer';
+import {
+    compileOrderConfirmation,
+    compilePasswordReset,
+    compileWelcome,
+    compileOrderShipped,
+    compileTemplate,
+    type EmailTemplateName
+} from './email-templates';
 
 // Create transporter
 const transporter = nodemailer.createTransport({
@@ -33,27 +42,75 @@ export const sendEmail = async (options: EmailOptions) => {
     }
 };
 
-// For custom email notifications (optional - Supabase handles password reset emails)
-export const sendCustomPasswordResetEmail = async (email: string, resetUrl: string) => {
-    const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">Password Reset Request</h2>
-      <p>You requested a password reset for your account.</p>
-      <p>Click the button below to reset your password:</p>
-      <a href="${resetUrl}" 
-         style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 20px 0;">
-        Reset Password
-      </a>
-      <p>If the button doesn't work, copy and paste this link into your browser:</p>
-      <p style="word-break: break-all; color: #666;">${resetUrl}</p>
-      <p>This link will expire in 1 hour.</p>
-      <p>If you didn't request this password reset, please ignore this email.</p>
-    </div>
-  `;
+// Generic template email sender
+export const sendTemplateEmail = async (
+    templateName: EmailTemplateName,
+    data: Record<string, unknown>,
+    to: string
+) => {
+    try {
+        const html = compileTemplate(templateName, data);
+        const subject = data.subject as string || 'Message from UVHub';
+
+        return sendEmail({
+            to,
+            subject,
+            html,
+        });
+    } catch (error) {
+        console.error(`Error sending template email ${templateName}:`, error);
+        throw new Error(`Failed to send ${templateName} email`);
+    }
+};
+
+// Order Confirmation Email
+export const sendOrderConfirmationEmail = async (order: Order) => {
+    const html = compileOrderConfirmation(order);
+
+    return sendEmail({
+        to: order.customer.email,
+        subject: 'Order Confirmation - UVHub',
+        html,
+    });
+};
+
+// Password Reset Email
+export const sendPasswordResetEmail = async (email: string, resetUrl: string, customerName: string) => {
+    const html = compilePasswordReset({
+        customerName,
+        resetUrl,
+    });
 
     return sendEmail({
         to: email,
-        subject: 'Password Reset Request - UVHub Admin',
+        subject: 'Password Reset Request - UVHub',
         html,
     });
-}; 
+};
+
+// Welcome Email
+export const sendWelcomeEmail = async (email: string, userData: Record<string, unknown>) => {
+    const html = compileWelcome(userData);
+
+    return sendEmail({
+        to: email,
+        subject: 'Welcome to UVHub!',
+        html,
+    });
+};
+
+// Order Shipped Email
+export const sendOrderShippedEmail = async (email: string, shipmentData: Record<string, unknown>) => {
+    const html = compileOrderShipped(shipmentData);
+
+    return sendEmail({
+        to: email,
+        subject: 'Your Order Has Been Shipped - UVHub',
+        html,
+    });
+};
+
+// Legacy function for backward compatibility
+export const sendOrderPlacedEmail = async (order: Order) => {
+    return sendOrderConfirmationEmail(order);
+};

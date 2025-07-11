@@ -1,23 +1,32 @@
 'use client'
-
-import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { IconTrendingUp, IconTrendingDown, IconShoppingCart, IconUsers, IconCurrencyDollar } from '@tabler/icons-react'
+import React from 'react'
+import { Badge } from "@/components/ui/badge"
+import {
+    Card,
+    CardAction,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card"
+import { TrendingUp } from 'lucide-react'
+import { Customer, Order } from '@/store/types'
 import { useCurrencyStore } from '@/store'
 
-function DashboardCardsSections({
-    totalRevenue,
-    totalProducts,
-    totalOrders,
-    totalCustomers
-}: {
-    totalRevenue: number,
-    totalProducts: number,
-    totalOrders: number,
-    totalCustomers: number
-}) {
+function OrdersOverview({ orders, customers }: { orders: Order[], customers: Customer[] }) {
+    const { currentCurrency, formatPrice } = useCurrencyStore();
 
-    const { formatPrice, currentCurrency } = useCurrencyStore()
+    // calculate the growth rate for the last 30 days
+    const last30Days = new Date(new Date().setDate(new Date().getDate() - 30));
+    const ordersLast30Days = orders.filter(order => {
+        // Convert string date to Date object for comparison
+        const orderDate = new Date(order.created_at);
+        return orderDate > last30Days;
+    });
+
+    // Calculate growth rate, handling division by zero
+    const growthRate = orders.length > 0 ? (ordersLast30Days.length / orders.length) * 100 : 0;
+    const growthRatePercentage = growthRate;
 
     return (
         <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
@@ -25,43 +34,20 @@ function DashboardCardsSections({
                 <CardHeader>
                     <CardDescription>Total Revenue</CardDescription>
                     <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                        {formatPrice(totalRevenue, currentCurrency)}
+                        {formatPrice(orders.reduce((acc, order) => acc + order.total, 0), currentCurrency)}
                     </CardTitle>
                     <CardAction>
                         <Badge variant="outline">
-                            <IconCurrencyDollar />
-                            +12.5%
+                            +{formatPrice(orders.reduce((acc, order) => acc + order.total, 0), currentCurrency)}
                         </Badge>
                     </CardAction>
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1.5 text-sm">
                     <div className="line-clamp-1 flex gap-2 font-medium">
-                        Trending up this month <IconTrendingUp className="size-4" />
+                        Total Revenue <TrendingUp className="size-4" />
                     </div>
                     <div className="text-muted-foreground">
-                        Visitors for the last 6 months
-                    </div>
-                </CardFooter>
-            </Card>
-            <Card className="@container/card">
-                <CardHeader>
-                    <CardDescription>Total Products</CardDescription>
-                    <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                        {totalProducts}
-                    </CardTitle>
-                    <CardAction>
-                        <Badge variant="outline">
-                            <IconShoppingCart />
-                            -20%
-                        </Badge>
-                    </CardAction>
-                </CardHeader>
-                <CardFooter className="flex-col items-start gap-1.5 text-sm">
-                    <div className="line-clamp-1 flex gap-2 font-medium">
-                        Down 20% this period <IconTrendingDown className="size-4" />
-                    </div>
-                    <div className="text-muted-foreground">
-                        Acquisition needs attention
+                        Total Revenue {currentCurrency}
                     </div>
                 </CardFooter>
             </Card>
@@ -69,44 +55,66 @@ function DashboardCardsSections({
                 <CardHeader>
                     <CardDescription>Total Orders</CardDescription>
                     <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                        {totalOrders}
+                        {orders.length}
                     </CardTitle>
                     <CardAction>
                         <Badge variant="outline">
-                            <IconShoppingCart />
-                            +12.5%
+                            <TrendingUp />
+                            +{orders.length}
                         </Badge>
                     </CardAction>
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1.5 text-sm">
                     <div className="line-clamp-1 flex gap-2 font-medium">
-                        Strong user retention <IconTrendingUp className="size-4" />
+                        Total Orders <TrendingUp className="size-4" />
                     </div>
-                    <div className="text-muted-foreground">Engagement exceed targets</div>
+                    <div className="text-muted-foreground">
+                        Total Orders
+                    </div>
                 </CardFooter>
             </Card>
             <Card className="@container/card">
                 <CardHeader>
                     <CardDescription>Total Customers</CardDescription>
                     <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                        {totalCustomers}
+                        {customers.length}
                     </CardTitle>
                     <CardAction>
                         <Badge variant="outline">
-                            <IconUsers />
-                            +4.5%
+                            <TrendingUp />
+                            +{customers.length}
                         </Badge>
                     </CardAction>
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1.5 text-sm">
                     <div className="line-clamp-1 flex gap-2 font-medium">
-                        Steady performance increase <IconTrendingUp className="size-4" />
+                        Total Customers <TrendingUp className="size-4" />
                     </div>
-                    <div className="text-muted-foreground">Meets growth projections</div>
+                    <div className="text-muted-foreground">Total Customers</div>
+                </CardFooter>
+            </Card>
+            <Card className="@container/card">
+                <CardHeader>
+                    <CardDescription>Growth Rate</CardDescription>
+                    <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                        {growthRatePercentage}%
+                    </CardTitle>
+                    <CardAction>
+                        <Badge variant="outline">
+                            <TrendingUp />
+                            +{growthRatePercentage}%
+                        </Badge>
+                    </CardAction>
+                </CardHeader>
+                <CardFooter className="flex-col items-start gap-1.5 text-sm">
+                    <div className="line-clamp-1 flex gap-2 font-medium">
+                        Growth Rate <TrendingUp className="size-4" />
+                    </div>
+                    <div className="text-muted-foreground">Growth Rate</div>
                 </CardFooter>
             </Card>
         </div>
     )
 }
 
-export default DashboardCardsSections
+export default OrdersOverview
