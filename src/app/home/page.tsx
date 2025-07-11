@@ -1732,6 +1732,7 @@ import { useCart, useProducts } from "@/store/hooks";
 import { Product } from "@/store/types";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useCurrencyStore } from "@/store";
 
 // --- Static Data ---
 const heroSlides = [
@@ -1797,6 +1798,7 @@ const Home = () => {
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const { addToCart, isInCart } = useCart();
+  const { currentCurrency, formatPrice } = useCurrencyStore();
   
   const {
     
@@ -1923,7 +1925,7 @@ const Home = () => {
                     {product.badge && (
                       <span className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-medium">{product.badge}</span>
                     )}
-                    <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-md font-bold text-sm">${product.price}</div>
+                    <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-md font-bold text-sm">{formatPrice(product.price, currentCurrency)}</div>
                   </div>
                   <div className="p-3">
                     <h3 className="font-medium text-gray-900 text-sm truncate">{product.name}</h3>
@@ -2061,9 +2063,9 @@ const Home = () => {
                     </div>
                     <div className="flex justify-between items-center mt-4">
                       <div>
-                        <span className="text-2xl font-bold text-gray-900">${product.price}</span>
+                        <span className="text-2xl font-bold text-gray-900">{formatPrice(product.price, currentCurrency)}</span>
                         {product.price && (
-                          <span className="text-gray-500 line-through ml-2">${product.price}</span>
+                          <span className="text-gray-500 line-through ml-2">{formatPrice(product.price, currentCurrency)}</span>
                         )}
                       </div>
                       <button

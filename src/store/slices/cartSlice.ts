@@ -4,6 +4,7 @@ import { CartItem, CartState, Product } from '../types';
 
 interface CartActions {
     // Actions
+    getCartItems: (state: CartState) => CartItem[] | [];
     addToCart: (product: Product, quantity?: number) => void;
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number) => void;
@@ -124,6 +125,10 @@ export const useCartStore = create<CartState & CartActions>()(
                     return items.find(item => item.productId === productId);
                 },
 
+                getCartItems: (state) => {
+                    return state.items;
+                },
+
                 isInCart: (productId) => {
                     const { items } = get();
                     return items.some(item => item.productId === productId);
@@ -142,7 +147,11 @@ export const useCartStore = create<CartState & CartActions>()(
             {
                 name: 'cart-storage',
                 storage: createJSONStorage(() => localStorage),
-                partialize: (state) => ({ items: state.items }),
+                partialize: (state) => ({
+                    items: state.items,
+                    itemCount: state.itemCount,
+                    total: state.total,
+                }),
             }
         ),
         {

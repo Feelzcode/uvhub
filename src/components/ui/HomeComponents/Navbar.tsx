@@ -1,18 +1,16 @@
 "use client"
-import { useEcommerce } from '@/store/hooks';
+
+import { useCartStore } from '@/store';
 import { Menu, ShoppingCart, X } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import React, { useState } from 'react'
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const {cart} = useEcommerce();
-  const router = useRouter();
-  
-  const navigateToCart = () => {
-    router.push('/cart');
-  };
+  const { items } = useCartStore();
+
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
 
   const navItems = [
     { name: 'Home', path: '/home' },
@@ -29,8 +27,8 @@ const Navbar = () => {
             <Link href="/home" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">uvHub</Link>
             <nav className="hidden md:flex space-x-8">
               {navItems.map((item) => (
-                <Link 
-                  key={item.name} 
+                <Link
+                  key={item.name}
                   href={item.path}
                   className="relative text-gray-700 hover:text-blue-600 transition-all duration-300 py-2 px-3 rounded-lg hover:bg-blue-50"
                 >
@@ -39,12 +37,12 @@ const Navbar = () => {
               ))}
             </nav>
             <div className="flex items-center space-x-4">
-              <button onClick={navigateToCart} className="relative p-2 text-gray-700 hover:text-blue-600 transition-colors">
+              <Link href="/cart" className="relative p-2 text-gray-700 hover:text-blue-600 transition-colors">
                 <ShoppingCart className="w-6 h-6" />
-                {cart.itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-bounce">{cart.itemCount}</span>
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-bounce">{itemCount}</span>
                 )}
-              </button>
+              </Link>
               <button className="md:hidden p-2 text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 <Menu className="w-6 h-6" />
               </button>
@@ -52,7 +50,7 @@ const Navbar = () => {
           </div>
         </div>
       </header>
-      
+
       {mobileMenuOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 md:hidden">
           <div className="bg-white w-4/5 h-full ml-auto p-6 transform transition-transform duration-300">

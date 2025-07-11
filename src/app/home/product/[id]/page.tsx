@@ -88,14 +88,15 @@
 
 'use client';
 
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useCart, useProducts } from '@/store/hooks';
 import { Star, ChevronLeft, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 
-export default function ProductDetails() {
+export default function ProductDetails({ id }: {
+  id: string
+}) {
   const router = useRouter();
-  const { id } = useParams();
   const { products } = useProducts();
   const { addToCart, isInCart } = useCart();
 
@@ -188,18 +189,18 @@ export default function ProductDetails() {
         <div className="mb-16">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900">Similar Products</h2>
-            <button 
+            <button
               onClick={() => router.push(`/home/all-products`)}
               className="flex items-center text-blue-600 hover:underline"
             >
-              View all in {product.category} <ArrowRight className="w-4 h-4 ml-1" />
+              View all in {product.category.name} <ArrowRight className="w-4 h-4 ml-1" />
             </button>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {similarProducts.map((similarProduct) => (
-              <div 
-                key={similarProduct.id} 
+              <div
+                key={similarProduct.id}
                 className="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 relative"
               >
                 <div className="relative h-48 overflow-hidden">
@@ -211,7 +212,7 @@ export default function ProductDetails() {
                     sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-40 transition-all duration-500 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <button 
+                    <button
                       onClick={() => router.push(`/home/product/${similarProduct.id}`)}
                       className="bg-white bg-opacity-90 text-gray-900 px-4 py-2 rounded-lg font-medium transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 hover:bg-opacity-100 flex items-center shadow-md text-sm"
                     >
@@ -220,7 +221,7 @@ export default function ProductDetails() {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="p-4 flex flex-col">
                   <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">{similarProduct.name}</h3>
                   <div className="flex justify-between items-center mt-2">
