@@ -5,7 +5,8 @@ import {
     Command,
     LifeBuoy,
     Send,
-    SquareTerminal,
+    ShoppingBag,
+    ShoppingCart,
 } from "lucide-react"
 
 import { NavMain } from "@/components/NavMain"
@@ -24,21 +25,15 @@ import {
 const data = {
     navMain: [
         {
-            title: "Components",
-            url: "#",
-            icon: SquareTerminal,
-            isActive: true,
-            items: [
-                {
-                    title: "Products",
-                    url: "/admin/dashboard/products",
-                },
-                {
-                    title: "Orders",
-                    url: "/admin/dashboard/orders",
-                },
-            ],
-        }
+            title: "Products",
+            url: "/admin/dashboard/products",
+            icon: ShoppingCart,
+        },
+        {
+            title: "Orders",
+            url: "/admin/dashboard/orders",
+            icon: ShoppingBag,
+        },
     ],
     navSecondary: [
         {
