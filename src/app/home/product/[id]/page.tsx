@@ -161,7 +161,7 @@ export default function ProductDetails({ id }: {
           </div>
           <p className="text-gray-700 mb-6">{product.description}</p>
           <div className="flex items-center gap-4 mb-8">
-            <span className="text-sm text-gray-500">Category: <span className="font-medium text-gray-700">{product.category}</span></span>
+            <span className="text-sm text-gray-500">Category: <span className="font-medium text-gray-700">{product.category.name}</span></span>
             <span className={`text-sm font-medium ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
               {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
             </span>
