@@ -1,0 +1,75 @@
+{{#> base}}
+    <h2>📦 Your Order is on the Way!</h2>
+    
+    <p>Hi {{customerName}},</p>
+    
+    <p>Great news! Your order has been shipped and is on its way to you. Here are the tracking details:</p>
+    
+    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 12px; padding: 30px; text-align: center; margin: 30px 0;">
+        <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 12px;">🚚 Order Shipped!</h3>
+        <p style="font-size: 18px; margin-bottom: 20px;">Estimated delivery: <strong>{{estimatedDelivery}}</strong></p>
+        <p style="font-size: 14px; opacity: 0.9;">Tracking Number: <strong>{{trackingNumber}}</strong></p>
+    </div>
+    
+    <div class="info-card">
+        <div class="info-row">
+            <span class="info-label">Order ID:</span>
+            <span class="info-value">#{{orderId}}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Shipping Method:</span>
+            <span class="info-value">{{shippingMethod}}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Carrier:</span>
+            <span class="info-value">{{carrier}}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Shipped Date:</span>
+            <span class="info-value">{{shippedDate}}</span>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{{trackingUrl}}" class="button">Track Package</a>
+    </div>
+    
+    <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 30px 0;">
+        <h3 style="color: #166534; font-size: 18px; font-weight: 600; margin-bottom: 12px;">📍 Delivery Address</h3>
+        <p style="color: #166534; margin-bottom: 4px;">{{shippingAddress.street}}</p>
+        <p style="color: #166534; margin-bottom: 4px;">{{shippingAddress.city}}, {{shippingAddress.state}} {{shippingAddress.zipCode}}</p>
+        <p style="color: #166534; margin-bottom: 0;">{{shippingAddress.country}}</p>
+    </div>
+    
+    <h3 style="color: #1f2937; font-size: 20px; font-weight: 600; margin: 30px 0 20px 0;">📋 What's in your package:</h3>
+    
+    {{#each orderItems}}
+    <div style="display: flex; align-items: center; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; background-color: #ffffff;">
+        <div style="width: 60px; height: 60px; background-color: #f3f4f6; border-radius: 8px; margin-right: 16px; display: flex; align-items: center; justify-content: center;">
+            {{#if productImage}}
+                <img src="{{productImage}}" alt="{{productName}}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+            {{else}}
+                <span style="color: #9ca3af; font-size: 24px;">📦</span>
+            {{/if}}
+        </div>
+        <div style="flex: 1;">
+            <h4 style="color: #1f2937; font-size: 16px; font-weight: 600; margin-bottom: 4px;">{{productName}}</h4>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 4px;">Quantity: {{quantity}}</p>
+        </div>
+    </div>
+    {{/each}}
+    
+    <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 30px 0;">
+        <h3 style="color: #92400e; font-size: 18px; font-weight: 600; margin-bottom: 12px;">💡 Delivery Tips</h3>
+        <ul style="color: #92400e; font-size: 14px; padding-left: 20px;">
+            <li>Make sure someone is available to receive the package</li>
+            <li>Check your doorstep or mailbox if you're not home</li>
+            <li>Contact the carrier if you have delivery instructions</li>
+            <li>Report any issues within 48 hours of delivery</li>
+        </ul>
+    </div>
+    
+    <p>We hope you love your purchase! If you have any questions about your order or need assistance, please don't hesitate to contact our support team.</p>
+    
+    <p>Happy shopping!<br>The {{companyName}} Team</p>
+{{/base}} 

@@ -1,30 +1,12 @@
 /* eslint-disable prefer-const */
 'use server'
 
-import { Order } from "@/store/types";
+import { Customer, Order, OrderItem, PaginatedResponse } from "@/store/types";
 import { createClient } from "@/utils/supabase/server";
-import { z } from "zod";
+import { paginationSchema, searchSchema } from "@/utils/schema";
+import { createCustomer, getCustomerByEmail } from "../products/actions";
+import { sendOrderPlacedEmail } from "@/lib/email";
 
-interface PaginatedResponse<T> {
-    documents: T[];
-    total: number;
-    meta: {
-        page: number;
-        limit: number;
-        totalPages: number;
-        previousPage: number | null;
-        nextPage: number | null;
-    };
-}
-
-const paginationSchema = z.object({
-    page: z.number().min(1).default(1),
-    limit: z.number().min(1).default(10),
-});
-
-const searchSchema = z.object({
-    search: z.string().optional(),
-});
 
 // Order Information
 export async function getPaginatedPendingOrders(params: { page: number, limit: number, search?: string }): Promise<PaginatedResponse<Order>> {
@@ -177,14 +159,14 @@ export async function getPaginatedCancelledOrders(params: { page: number, limit:
     };
 }
 
-export async function getAllOrders() {
+export async function getAllOrders(): Promise<Order[]> {
     const supabase = await createClient();
     const { data, error } = await supabase.from('orders').select('*');
     if (error) {
         console.error(error);
-        return { documents: [], total: 0, meta: { page: 1, limit: 10, totalPages: 0, previousPage: null, nextPage: null } };
+        return [];
     }
-    return data;
+    return data || [];
 }
  
 export async function getOrderById(id: string) {
@@ -197,7 +179,7 @@ export async function getOrderById(id: string) {
     return data;
 }
 
-export async function createOrder(order: Order) {
+export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'updated_at'>): Promise<Order | null> {
     const supabase = await createClient();
     const { data, error } = await supabase.from('orders').insert(order).select().single();
     if (error) {
@@ -225,4 +207,57 @@ export async function deleteOrder(id: string) {
         return null;
     }
     return data;
+}
+
+export async function createOrderItems(items: Omit<OrderItem, 'id' | 'created_at' | 'orderId'>[]): Promise<OrderItem | null> {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from('order_items').insert(items).select().single();
+    
+    if (error) {
+        console.error(error);
+        return null;
+    }
+    return data;
+}
+
+export async function placeOrder(orderDetails: {
+    customer: Customer,
+    items: Omit<OrderItem, 'id' | 'created_at' | 'orderId'>[],
+    total: number,
+    paymentMethod: string,
+}): Promise<Order | null> {
+    let customer: Customer;
+    // get the customer information
+    // check if the record exists and if not create it
+    customer = await getCustomerByEmail(orderDetails.customer.email);
+    if (!customer) {
+        customer = await createCustomer(orderDetails.customer);
+    }
+
+    // create the order
+    const order = await createOrder({
+        customer: customer,
+        total: orderDetails.total,
+        status: 'pending',
+        paymentMethod: orderDetails.paymentMethod,
+        shippingAddress: {
+            street: customer.address.street,
+            city: customer.address.city,
+            state: customer.address.state,
+            zipCode: customer.address.zipCode,
+            country: customer.address.country,
+        }
+    });
+
+    // get the item information
+    await createOrderItems(orderDetails.items.map((item) => ({
+        ...item,
+        orderId: order?.id,
+    })));
+
+    // send an email to the customer and the admin
+    await sendOrderPlacedEmail(order!);
+
+    // return a response with the created order
+    return order;
 }
