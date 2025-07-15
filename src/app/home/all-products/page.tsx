@@ -1,158 +1,292 @@
-'use client';
+// 'use client';
 
-import { useRouter, useParams } from 'next/navigation';
-import { useCart, useProducts } from '@/store/hooks';
-import { Star, ChevronLeft, ArrowRight } from 'lucide-react';
-import Image from 'next/image';
+// import { useProducts } from '@/store/hooks';
+// import { Star, Filter, X, ChevronLeft } from 'lucide-react';
+// import { useRouter } from 'next/navigation';
+// import { useState, useEffect } from 'react';
+// import Link from 'next/link';
 
-export default function ProductDetails() {
-  const router = useRouter();
-  const { id } = useParams();
-  const { products } = useProducts();
-  const { addToCart, isInCart } = useCart();
+// interface ProductFilters {
+//   category?: string;
+//   minPrice?: number;
+//   maxPrice?: number;
+//   search?: string;
+// }
 
-  // Find the current product
-  const product = products.find((p) => p.id === id);
+// export default function AllEquipmentPage() {
+//   const { 
+//     products, 
+//     loading, 
+//     error, 
+//     filters, 
+//     setFilters, 
+//     clearFilters,
+//     fetchProducts
+//   } = useProducts();
+  
+//   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+//   const router = useRouter();
 
-  // Find similar products (same category, excluding current product)
-  const similarProducts = products
-    .filter(p => p.category === product?.category && p.id !== id)
-    .slice(0, 4); // Show max 4 similar products
+//   // Fetch products on mount
+//   useEffect(() => {
+//     fetchProducts();
+//   }, [fetchProducts]);
 
-  if (!product) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <p className="text-gray-500 text-lg mb-4">Product not found.</p>
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-blue-600 hover:underline"
-        >
-          <ChevronLeft className="w-5 h-5" />
-          Back
-        </button>
-      </div>
-    );
-  }
+//   // Get unique categories from products
+//   const categories = products && products.length > 0 
+//     ? [...new Set(products
+//         .filter(p => p?.category) // Only include products with category
+//         .map(p => p.category))
+//       ] 
+//     : [];
 
+//   // Filter products based on active filters
+//   const filteredProducts = products?.filter(product => {
+//     if (filters.category && product.category !== filters.category) return false;
+//     return true;
+//   }) || [];
+
+//   const handleSetCategoryFilter = (category: string) => {
+//     setFilters({ ...filters, category });
+//   };
+
+//   const handleClearCategoryFilter = () => {
+//     const newFilters = { ...filters };
+//     delete newFilters.category;
+//     setFilters(newFilters);
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="flex justify-center items-center min-h-[60vh]">
+//         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+//       </div>
+//     );
+//   }
+
+//   if (error) {
+//     return (
+//       <div className="text-center py-16">
+//         <p className="text-red-500">Error loading products: {error}</p>
+//         <button
+//           onClick={fetchProducts}
+//           className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+//         >
+//           Retry
+//         </button>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+//       {/* Header with back button and mobile filter toggle */}
+//       <div className="flex items-center justify-between mb-8">
+//         <Link href="/home" className="flex items-center gap-2 text-blue-600 hover:underline">
+//           <ChevronLeft className="w-5 h-5" />
+//           Back to Home
+//         </Link>
+//         <button
+//           onClick={() => setMobileFiltersOpen(true)}
+//           className="lg:hidden flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg"
+//         >
+//           <Filter className="w-5 h-5" />
+//           Filters
+//         </button>
+//       </div>
+
+//       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+//         {/* Desktop Filters Sidebar */}
+//         <div className="hidden lg:block">
+//           <div className="bg-white p-6 rounded-xl shadow-md sticky top-4">
+//             <div className="flex justify-between items-center mb-6">
+//               <h2 className="font-bold text-lg">Filters</h2>
+//               {filters.category && (
+//                 <button
+//                   onClick={handleClearCategoryFilter}
+//                   className="text-sm text-blue-600 hover:underline flex items-center"
+//                 >
+//                   <X className="w-4 h-4 mr-1" />
+//                   Clear
+//                 </button>
+//               )}
+//             </div>
+
+//             <div className="space-y-6">
+//               <div>
+//                 <h3 className="font-medium text-gray-900 mb-3">Categories</h3>
+//                 <div className="space-y-2">
+//                   <button
+//                     onClick={handleClearCategoryFilter}
+//                     className={`block w-full text-left px-3 py-2 rounded-lg transition-colors ${!filters.category ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+//                   >
+//                     All Categories
+//                   </button>
+//                   {categories.map((category) => (
+//                     <button
+//                       key={category}
+//                       onClick={() => handleSetCategoryFilter(category)}
+//                       className={`block w-full text-left px-3 py-2 rounded-lg transition-colors ${filters.category === category ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+//                     >
+//                       {category}
+//                     </button>
+//                   ))}
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Mobile Filters Overlay */}
+//         {mobileFiltersOpen && (
+//           <div className="fixed inset-0 z-50 lg:hidden">
+//             <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setMobileFiltersOpen(false)} />
+//             <div className="absolute inset-y-0 right-0 w-full max-w-xs bg-white shadow-xl overflow-y-auto">
+//               <div className="p-6">
+//                 <div className="flex justify-between items-center mb-6">
+//                   <h2 className="font-bold text-lg">Filters</h2>
+//                   <button onClick={() => setMobileFiltersOpen(false)}>
+//                     <X className="w-6 h-6" />
+//                   </button>
+//                 </div>
+
+//                 <div className="space-y-6">
+//                   <div>
+//                     <h3 className="font-medium text-gray-900 mb-3">Categories</h3>
+//                     <div className="space-y-2">
+//                       <button
+//                         onClick={handleClearCategoryFilter}
+//                         className={`block w-full text-left px-3 py-2 rounded-lg transition-colors ${!filters.category ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+//                       >
+//                         All Categories
+//                       </button>
+//                       {categories.map((category) => (
+//                         <button
+//                           key={category}
+//                           onClick={() => handleSetCategoryFilter(category)}
+//                           className={`block w-full text-left px-3 py-2 rounded-lg transition-colors ${filters.category === category ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+//                         >
+//                           {category}
+//                         </button>
+//                       ))}
+//                     </div>
+//                   </div>
+//                 </div>
+
+//                 <div className="mt-8 flex gap-3">
+//                   <button
+//                     onClick={clearFilters}
+//                     className="flex-1 bg-gray-100 hover:bg-gray-200 py-3 rounded-lg font-medium"
+//                   >
+//                     Clear All
+//                   </button>
+//                   <button
+//                     onClick={() => setMobileFiltersOpen(false)}
+//                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium"
+//                   >
+//                     Apply
+//                   </button>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+
+//         {/* Product Grid */}
+//         <div className="lg:col-span-3">
+//           {filters.category && (
+//             <div className="mb-6 flex items-center justify-between">
+//               <div className="flex items-center">
+//                 <span className="text-gray-600 mr-2">Filtered by:</span>
+//                 <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+//                   {filters.category}
+//                   <button
+//                     onClick={handleClearCategoryFilter}
+//                     className="ml-2 text-blue-600 hover:text-blue-800"
+//                   >
+//                     <X className="w-4 h-4" />
+//                   </button>
+//                 </span>
+//               </div>
+//               <button
+//                 onClick={clearFilters}
+//                 className="text-sm text-blue-600 hover:underline"
+//               >
+//                 Clear all filters
+//               </button>
+//             </div>
+//           )}
+
+//           {filteredProducts.length > 0 ? (
+//             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+//               {filteredProducts.map((product) => (
+//                 <div
+//                   key={product.id}
+//                   onClick={() => router.push(`/home/product/${product.id}`)}
+//                   className="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer"
+//                 >
+//                   <div className="h-48 overflow-hidden relative bg-gray-100">
+//                     <img
+//                       src={product.image || '/placeholder-product.jpg'}
+//                       alt={product.name}
+//                       className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
+//                     />
+//                   </div>
+//                   <div className="p-4">
+//                     <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+//                       {product.name}
+//                     </h3>
+//                     <div className="flex justify-between items-center mt-2">
+//                       <div>
+//                         <span className="text-lg font-bold text-gray-900">${product.price}</span>
+//                         {product.originalPrice && (
+//                           <span className="text-gray-500 line-through text-sm ml-2">
+//                             ${product.originalPrice}
+//                           </span>
+//                         )}
+//                       </div>
+//                       <div className="flex items-center bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+//                         <Star className="w-3 h-3 text-yellow-500 fill-current" />
+//                         <span className="ml-1">{product.rating}</span>
+//                       </div>
+//                     </div>
+//                     <div className="mt-2 text-sm text-gray-500">
+//                       {product.category}
+//                     </div>
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+//           ) : (
+//             <div className="text-center py-16 px-6 bg-white rounded-lg shadow-md">
+//               <h3 className="text-xl font-semibold text-gray-800">No Products Found</h3>
+//               <p className="text-gray-500 mt-2">
+//                 {filters.category
+//                   ? `No products in "${filters.category}" category`
+//                   : 'No products available'}
+//               </p>
+//               {filters.category && (
+//                 <button
+//                   onClick={clearFilters}
+//                   className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+//                 >
+//                   Clear filters
+//                 </button>
+//               )}
+//             </div>
+//           )}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+import React from 'react'
+
+const page = () => {
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4">
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-blue-600 hover:underline mb-6"
-      >
-        <ChevronLeft className="w-5 h-5" />
-        Back to Products
-      </button>
-
-      {/* Main Product Section */}
-      <div className="bg-white rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden mb-16">
-        <div className="md:w-1/2 bg-gray-100 flex items-center justify-center p-8">
-          <div className="relative w-full h-80">
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              className="object-contain rounded-xl shadow-md"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              priority
-            />
-          </div>
-        </div>
-        <div className="md:w-1/2 p-8 flex flex-col">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl font-semibold text-blue-600">${product.price}</span>
-            {product.price && (
-              <span className="text-gray-400 line-through text-lg">${product.price}</span>
-            )}
-            <span className="flex items-center ml-4 text-yellow-500 font-medium">
-              <Star className="w-5 h-5 mr-1 fill-current" />
-              {product.rating}
-            </span>
-          </div>
-          <p className="text-gray-700 mb-6">{product.description}</p>
-          <div className="flex items-center gap-4 mb-8">
-            <span className="text-sm text-gray-500">Category: <span className="font-medium text-gray-700">{product.category}</span></span>
-            <span className={`text-sm font-medium ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
-              {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
-            </span>
-          </div>
-          <button
-            onClick={() => addToCart(product, 1)}
-            disabled={isInCart(product.id) || product.stock === 0}
-            className={`w-full py-4 rounded-lg font-semibold text-lg shadow-md transition-all duration-300
-              ${isInCart(product.id) || product.stock === 0
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 hover:scale-105'
-              }`}
-          >
-            {isInCart(product.id)
-              ? 'Already in Cart'
-              : product.stock === 0
-                ? 'Out of Stock'
-                : 'Add to Cart'}
-          </button>
-        </div>
-      </div>
-
-      {/* Similar Products Section */}
-      {similarProducts.length > 0 && (
-        <div className="mb-16">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Similar Products</h2>
-            <button 
-              onClick={() => router.push(`/home/all-products`)}
-              className="flex items-center text-blue-600 hover:underline"
-            >
-              View all in {product.category} <ArrowRight className="w-4 h-4 ml-1" />
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {similarProducts.map((similarProduct) => (
-              <div 
-                key={similarProduct.id} 
-                className="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 relative"
-              >
-                <div className="relative h-48 overflow-hidden">
-                  <Image
-                    src={similarProduct.image}
-                    alt={similarProduct.name}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-40 transition-all duration-500 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <button 
-                      onClick={() => router.push(`/home/product/${similarProduct.id}`)}
-                      className="bg-white bg-opacity-90 text-gray-900 px-4 py-2 rounded-lg font-medium transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 hover:bg-opacity-100 flex items-center shadow-md text-sm"
-                    >
-                      View Details
-                      <ArrowRight className="w-3 h-3 ml-2" />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="p-4 flex flex-col">
-                  <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">{similarProduct.name}</h3>
-                  <div className="flex justify-between items-center mt-2">
-                    <div>
-                      <span className="text-lg font-bold text-gray-900">${similarProduct.price}</span>
-                      {similarProduct.price && (
-                        <span className="text-gray-500 line-through text-sm ml-2">${similarProduct.price}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
-                      <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                      <span className="ml-1">{similarProduct.rating}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    <div>page</div>
+  )
 }
+
+export default page

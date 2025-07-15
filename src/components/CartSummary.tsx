@@ -2,6 +2,7 @@
 
 import { useCartStore } from '@/store';
 import { useCurrencyStore } from '@/store';
+import Link from 'next/link';
 
 export default function CartSummary() {
     const hasHydrated = useCartStore.persist.hasHydrated();
@@ -86,9 +87,9 @@ export default function CartSummary() {
                     <span className="text-xl font-bold text-blue-600">{formatPrice(total, currentCurrency)}</span>
                 </div>
 
-                <button className="w-full bg-blue-500 text-white py-3 px-4 rounded-md hover:bg-blue-600 transition-colors duration-200">
-                    Proceed to Checkout
-                </button>
+                <Link href="/home/check-out" className="w-full bg-blue-500 text-white py-3 px-4 rounded-md hover:bg-blue-600 transition-colors duration-200 block text-center">
+  Proceed to Checkout
+</Link>
             </div>
         </div>
     );

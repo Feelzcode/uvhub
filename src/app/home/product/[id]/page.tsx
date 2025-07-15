@@ -150,9 +150,9 @@ export default function ProductDetails({ id }: {
         <div className="md:w-1/2 p-8 flex flex-col">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl font-semibold text-blue-600">${product.price}</span>
+            <span className="text-xl font-semibold text-blue-600">N{product.price}</span>
             {product.price && (
-              <span className="text-gray-400 line-through text-lg">${product.price}</span>
+              <span className="text-gray-400 line-through text-lg">N{product.price}</span>
             )}
             <span className="flex items-center ml-4 text-yellow-500 font-medium">
               <Star className="w-5 h-5 mr-1 fill-current" />

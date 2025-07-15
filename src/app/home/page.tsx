@@ -1742,12 +1742,105 @@ const heroSlides = [
 ];
 
 const horizontalProducts = [
-  { id: "1", name: "Adjustable Bench", price: 299, image: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=300&auto=format&fit=crop", badge: "Best Seller" },
-  { id: "2", name: "Olympic Plates", price: 199, image: "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=300&auto=format&fit=crop", badge: "New" },
-  { id: "3", name: "Resistance Bands", price: 49, image: "https://images.unsplash.com/photo-1595079835353-9d5c8b456e10?w=300&auto=format&fit=crop" },
-  { id: "4", name: "Jump Rope", price: 29, image: "https://images.unsplash.com/photo-1594737625785-a6cbdabd333d?w=300&auto=format&fit=crop" },
-  { id: "5", name: "Kettlebell", price: 89, image: "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?w=300&auto=format&fit=crop", badge: "Popular" },
-  { id: "6", name: "Yoga Mat", price: 39, image: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=300&auto=format&fit=crop" },
+  { id: "1", name: "Adjustable Bench", price: 200000, image: "/images/img_gym7.jpeg", badge: "Best Seller" },
+  { id: "2", name: "Olympic Plates", price: 15000, image: "/images/img_gym9.jpeg", badge: "New" },
+  { id: "3", name: "Resistance Bands", price: 100000, image: "/images/img_gym10.jpeg" },
+  { id: "4", name: "Jump Rope", price: 20000, image: "/images/img_gym11.jpeg" },
+  { id: "5", name: "Kettlebell", price: 150000, image: "/images/img_gym6.jpeg", badge: "Popular" },
+  { id: "6", name: "Yoga Mat", price: 200000, image: "/images/img-gym8.jpeg" },
+];
+export const dummyProducts: Product[] = [
+  {
+    id: "1",
+    name: "Adjustable Dumbbell Set",
+    description: "High-quality adjustable dumbbell set ranging from 5 to 50 lbs. Perfect for home workouts.",
+    price: 100000,
+    image: "/images/img_gym.jpg",
+    category: "Strength Equipment" as any,
+    stock: 25,
+    rating: 4.8,
+    reviews: 120,
+    created_at: new Date("2024-05-10"),
+    updated_at: new Date("2024-06-01"),
+  },
+  {
+    id: "2",
+    name: "Yoga Mat",
+    description: "Non-slip, extra thick yoga mat with carrying strap for comfort and easy transport.",
+    price: 150000,
+    image: "/images/img_gym12.jpeg",
+    category: "Accessories" as any,
+    stock: 100,
+    rating: 4.6,
+    reviews: 90,
+    created_at: new Date("2024-05-12"),
+    updated_at: new Date("2024-06-02"),
+  },
+  {
+    id: "3",
+    name: "Kettlebell - 20 lbs",
+    description: "Cast iron kettlebell with powder coating for durability and better grip.",
+    price: 200000,
+    image: "/images/img_gym2.jpg",
+    category: "Strength Equipment" as any,
+    stock: 50,
+    rating: 4.7,
+    reviews: 60,
+    created_at: new Date("2024-05-15"),
+    updated_at: new Date("2024-06-05"),
+  },
+  {
+    id: "4",
+    name: "Resistance Bands Set",
+    description: "Set of 5 resistance bands with different resistance levels for full-body workouts.",
+    price: 300000,
+    image: "/images/img_gym7.jpeg",
+    category: "Accessories" as any,
+    stock: 80,
+    rating: 4.5,
+    reviews: 75,
+    created_at: new Date("2024-05-18"),
+    updated_at: new Date("2024-06-07"),
+  },
+  {
+    id: "5",
+    name: "Treadmill",
+    description: "Compact foldable treadmill with adjustable incline and built-in heart rate monitor.",
+    price: 200000,
+    image: "/images/img_gym10.jpeg",
+    category: "Cardio Equipment" as any,
+    stock: 10,
+    rating: 4.3,
+    reviews: 35,
+    created_at: new Date("2024-05-20"),
+    updated_at: new Date("2024-06-08"),
+  },
+  {
+    id: "6",
+    name: "Pull-Up Bar",
+    description: "Doorway pull-up bar with multiple grip positions for upper body strength training.",
+    price: 100000,
+    image: "/images/img-gym8.jpeg",
+    category: "Strength Equipment" as any,
+    stock: 40,
+    rating: 4.4,
+    reviews: 50,
+    created_at: new Date("2024-05-22"),
+    updated_at: new Date("2024-06-09"),
+  },
+  {
+    id: "7",
+    name: "Foam Roller",
+    description: "High-density foam roller for deep tissue massage and muscle recovery.",
+    price: 200000,
+    image: "/images/img_gym9.jpeg",
+    category: "Accessories" as any,
+    stock: 70,
+    rating: 4.6,
+    reviews: 45,
+    created_at: new Date("2024-05-24"),
+    updated_at: new Date("2024-06-10"),
+  },
 ];
 
 const testimonials = [
@@ -1950,26 +2043,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Why Choose Us */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose EliteGym?</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">We&apos;re committed to providing the best fitness equipment and service experience</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {whyUsFeatures.map((feature, index) => (
-              <div key={index} className="text-center p-6 rounded-xl hover:bg-gray-50 transition-all duration-300 transform hover:-translate-y-2">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4"><feature.icon className="w-8 h-8 text-white" /></div>
-                <h3 className="font-semibold text-gray-900 text-lg mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Products Section */}
+       {/* Products Section */}
       <section className="py-16 bg-gray-50" id="products">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -2096,6 +2170,27 @@ const Home = () => {
           )}
         </div>
       </section>
+
+      {/* Why Choose Us */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose uvHub?</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">We&apos;re committed to providing the best fitness equipment and service experience</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {whyUsFeatures.map((feature, index) => (
+              <div key={index} className="text-center p-6 rounded-xl hover:bg-gray-50 transition-all duration-300 transform hover:-translate-y-2">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4"><feature.icon className="w-8 h-8 text-white" /></div>
+                <h3 className="font-semibold text-gray-900 text-lg mb-2">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+     
 
       {/* Testimonials */}
       <section className="py-16 bg-white">
