@@ -30,7 +30,7 @@ const DeliveryReadinessNotice = () => (
         </div>
 
         <p>
-          If you're not ready yet, no problem! You can save our number (<span className="font-semibold">08160486223</span>) and contact us when you're prepared to proceed.
+          If you&apos;re not ready yet, no problem! You can save our number (<span className="font-semibold">08160486223</span>) and contact us when you&apos;re prepared to proceed.
         </p>
       </div>
     </CardContent>
@@ -67,7 +67,6 @@ export default function CheckoutPage() {
 
     const orderDetails = {
         customer: {
-            id: 'temp-' + Date.now(),
             name: formData.name,
             email: formData.email,
             phone: formData.phone,
@@ -77,12 +76,10 @@ export default function CheckoutPage() {
                 state: formData.state,
                 zipCode: formData.zipCode,
                 country: formData.country,
-            },
-            created_at: new Date(),
-            updated_at: new Date(),
+            }
         },
         items: items.map(item => ({
-            productId: item.productId,
+            product_id: item.productId,
             quantity: item.quantity,
             price: item.product.price,
         })),
@@ -272,7 +269,7 @@ export default function CheckoutPage() {
                 <div className="pt-4">
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full cursor-pointer"
                     disabled={loading}
                   >
                     {loading ? (

@@ -22,8 +22,8 @@ export interface Product {
 
 export interface OrderItem {
   id: string;
-  orderId: string;
-  productId: string;
+  order_id: string;
+  product_id: string;
   quantity: number;
   price: number;
   created_at: Date;
@@ -48,20 +48,21 @@ export interface Customer {
 
 export interface Order {
   id: string;
-  customer: Customer;
+  customer_id: string;
   total: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  shippingAddress: {
+  shipping_address: {
     street: string;
     city: string;
     state: string;
     zipCode: string;
     country: string;
   };
-  paymentMethod: string;
+  payment_method: string;
   created_at: Date;
   updated_at: Date;
-  items?: OrderItem[]; // Optional for when we join with order items
+  items?: OrderItem[];
+  customer?: Customer;// Optional for when we join with order items
 }
 
 export interface CartItem {

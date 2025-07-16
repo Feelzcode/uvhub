@@ -2,6 +2,7 @@
 import Handlebars from 'handlebars';
 import fs from 'fs';
 import path from 'path';
+import { Order } from '@/store';
 
 // Register custom helpers
 Handlebars.registerHelper('formatCurrency', function(amount: number, currency: string = 'NGN', locale: string = 'en-NG') {
@@ -87,18 +88,18 @@ export const compileTemplate = (templateName: string, data: any) => {
 };
 
 // Specific email template functions
-export const compileOrderConfirmation = (orderData: any) => {
+export const compileOrderConfirmation = (orderData: Order) => {
     return compileTemplate('order-confirmation', {
         subject: 'Order Confirmation - UVHub',
-        customerName: orderData.customer.name,
+        customerName: orderData.customer?.name ?? 'Valued Customer',
         orderId: orderData.id,
-        orderDate: new Date(orderData.created_at).toLocaleDateString(),
+        orderDate: orderData.created_at ? new Date(orderData.created_at).toLocaleDateString() : '',
         orderTotal: orderData.total,
-        currency: '$',
-        paymentMethod: orderData.paymentMethod,
+        currency: 'NGN',
+        paymentMethod: orderData.payment_method,
         orderStatus: orderData.status,
         orderItems: orderData.items || [],
-        shippingAddress: orderData.shippingAddress,
+        shippingAddress: orderData.shipping_address,
         orderTrackingUrl: `${process.env.NEXT_PUBLIC_APP_URL}/orders/${orderData.id}`
     });
 };

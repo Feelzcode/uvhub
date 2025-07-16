@@ -10,11 +10,11 @@ export default function CartSummary() {
     const { formatPrice, currentCurrency } = useCurrencyStore();
 
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-    
+
     if (!hasHydrated) {
         return <div>Loading cart...</div>;
     }
-    
+
     if (totalQuantity === 0) {
         return (
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -87,9 +87,9 @@ export default function CartSummary() {
                     <span className="text-xl font-bold text-blue-600">{formatPrice(total, currentCurrency)}</span>
                 </div>
 
-                <Link href="/home/check-out" className="w-full bg-blue-500 text-white py-3 px-4 rounded-md hover:bg-blue-600 transition-colors duration-200 block text-center">
-  Proceed to Checkout
-</Link>
+                <Link href="/home/check-out" className="w-full bg-blue-500 text-white py-3 px-4 rounded-md hover:bg-blue-600 transition-colors duration-200 block text-center cursor-pointer">
+                    Proceed to Checkout
+                </Link>
             </div>
         </div>
     );

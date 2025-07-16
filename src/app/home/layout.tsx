@@ -9,12 +9,11 @@ interface LayoutProps {
 export default function HomeLayout({ children }: LayoutProps) {
   return (
     <>
-      <Navbar/>
-
+      <Navbar />
       <main>
         {children}
       </main>
-<Footer/>
+      <Footer />
     </>
   );
 }

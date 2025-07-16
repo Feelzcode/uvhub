@@ -79,7 +79,7 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
             setLocation(locationInfo);
 
             // Set currency based on country
-            let currency: Currency = 'USD';
+            let currency: Currency = 'NGN';
 
             if (locationData.country_code === 'NG') {
               currency = 'NGN';
@@ -94,25 +94,22 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
             setError(error instanceof Error ? error.message : 'Failed to detect location');
 
             // Fallback to USD if location detection fails
-            setCurrency('USD');
+            setCurrency('NGN');
           } finally {
             setLoading(false);
           }
         },
 
-        formatPrice: (price, currency) => {
+        formatPrice: (price) => {
           const { currencies, currentCurrency } = get();
-          const targetCurrency = currency || currentCurrency;
-          const currencyInfo = currencies[targetCurrency];
+          const currencyInfo = currencies[currentCurrency];
 
           // Convert price if needed
           let displayPrice = price;
-          if (currency !== targetCurrency) {
-            displayPrice = get().convertPrice(price, currency || 'USD', targetCurrency);
-          }
+          displayPrice = get().convertPrice(price, currentCurrency || 'NGN', currentCurrency);
 
           // Format based on currency
-          switch (targetCurrency) {
+          switch (currentCurrency) {
             case 'NGN':
               return `${currencyInfo.symbol}${displayPrice.toLocaleString('en-NG', {
                 minimumFractionDigits: 0,
@@ -125,7 +122,7 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
                 maximumFractionDigits: 2,
               })}`;
 
-            case 'USD':
+            case 'NGN':
             default:
               return `${currencyInfo.symbol}${displayPrice.toLocaleString('en-US', {
                 minimumFractionDigits: 2,

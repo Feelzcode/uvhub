@@ -183,9 +183,6 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                     set({ loading: true, error: null });
                     try {
                         const products = await getAllProducts();
-                        console.log('Products fetched:', products);
-                        console.log('Products type:', typeof products);
-                        console.log('Products length:', products?.length);
 
                         if (!products) {
                             console.error('getAllProducts returned null/undefined');

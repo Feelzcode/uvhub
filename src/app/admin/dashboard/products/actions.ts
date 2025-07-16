@@ -86,22 +86,17 @@ export async function getPaginatedProducts(params: { page: number, limit: number
 
 export async function getAllProducts() {
     const supabase = await createClient()
-    console.log('Fetching products from database...');
-    
+
     // First try without the category join to see if basic query works
     const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false });
-    
-    console.log('Supabase response:', { data, error });
-    
+
     if (error) {
         console.error('Database error:', error)
         return []
     }
-    
-    console.log('Products returned:', data);
     return data;
 }
 
@@ -264,24 +259,33 @@ export async function getCustomerByEmail(email: string) {
 export async function createCustomer(customer: Partial<Customer>) {
     const supabase = await createClient()
 
-    // check if the customer already exists first
+    // Log the customer object before any operation
+    console.log('Attempting to create customer with data:', customer);
+
+    // // check if the customer already exists first
     const { data: existingCustomer, error: existingCustomerError } = await supabase.from('customers').select('*').eq('email', customer.email).single();
     if (existingCustomerError) {
-        console.error(existingCustomerError)
+        console.error('Error checking for existing customer:', existingCustomerError);
+        console.error('Error details:', JSON.stringify(existingCustomerError, null, 2));
         return null
     }
 
     // if the customer already exists, return the customer
     if (existingCustomer) {
+        console.log('Customer already exists:', existingCustomer);
         return existingCustomer;
     }
 
     // if the customer does not exist, create the customer
-    const { data, error } = await supabase.from('customers').insert(customer).select().single();
+    const insertResponse = await supabase.from('customers').insert(customer).select().single();
+    const { data, error } = insertResponse;
+    console.log('Insert response:', insertResponse);
     if (error) {
-        console.error(error)
+        console.error('Error inserting new customer:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         return null
     }
+    console.log('Customer created successfully:', data);
     return data;
 }
 

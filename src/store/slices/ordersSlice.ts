@@ -7,8 +7,8 @@ interface OrdersActions {
     // Actions
     setOrders: () => Promise<void>;
     placeOrder: (orderDetails: {
-        customer: Customer,
-        items: Omit<OrderItem, 'id' | 'created_at' | 'orderId'>[],
+        customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>,
+        items: Omit<OrderItem, 'id' | 'created_at' | 'order_id'>[],
         total: number,
         paymentMethod: string,
     }) => Promise<Order | null>;
@@ -100,7 +100,7 @@ export const useOrdersStore = create<OrdersState & OrdersActions>()(
 
             getOrdersByUser: (userId) => {
                 const { orders } = get();
-                return orders.filter((order) => order.customer.id === userId);
+                return orders.filter((order) => order.customer_id === userId);
             },
 
             getTotalRevenue: () => {

@@ -5,7 +5,7 @@ import { Customer, Order, OrderItem, PaginatedResponse } from "@/store/types";
 import { createClient } from "@/utils/supabase/server";
 import { paginationSchema, searchSchema } from "@/utils/schema";
 import { createCustomer, getCustomerByEmail } from "../products/actions";
-import { sendOrderPlacedEmail } from "@/lib/email";
+// import { sendOrderPlacedEmail } from "@/lib/email";
 
 
 // Order Information
@@ -221,8 +221,8 @@ export async function createOrderItems(items: Omit<OrderItem, 'id' | 'created_at
 }
 
 export async function placeOrder(orderDetails: {
-    customer: Customer,
-    items: Omit<OrderItem, 'id' | 'created_at' | 'orderId'>[],
+    customer: Omit<Customer, 'id'|'created_at'|'updated_at'>,
+    items: Omit<OrderItem, 'id' | 'created_at' | 'order_id'>[],
     total: number,
     paymentMethod: string,
 }): Promise<Order | null> {
@@ -230,17 +230,20 @@ export async function placeOrder(orderDetails: {
     // get the customer information
     // check if the record exists and if not create it
     customer = await getCustomerByEmail(orderDetails.customer.email);
+    console.log(customer, 'The existing customer details');
     if (!customer) {
         customer = await createCustomer(orderDetails.customer);
     }
 
+    console.log(customer, 'The created customer details');
+
     // create the order
     const order = await createOrder({
-        customer: customer,
+        customer_id: customer.id,
         total: orderDetails.total,
         status: 'pending',
-        paymentMethod: orderDetails.paymentMethod,
-        shippingAddress: {
+        payment_method: orderDetails.paymentMethod,
+        shipping_address: {
             street: customer.address.street,
             city: customer.address.city,
             state: customer.address.state,
@@ -252,11 +255,11 @@ export async function placeOrder(orderDetails: {
     // get the item information
     await createOrderItems(orderDetails.items.map((item) => ({
         ...item,
-        orderId: order?.id,
+        order_id: order?.id as string,
     })));
 
     // send an email to the customer and the admin
-    await sendOrderPlacedEmail(order!);
+    // await sendOrderPlacedEmail(order!);
 
     // return a response with the created order
     return order;
