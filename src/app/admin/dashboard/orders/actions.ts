@@ -168,7 +168,7 @@ export async function getAllOrders(): Promise<Order[]> {
     }
     return data || [];
 }
- 
+
 export async function getOrderById(id: string) {
     const supabase = await createClient();
     const { data, error } = await supabase.from('orders').select('*').eq('id', id).single();
@@ -209,10 +209,9 @@ export async function deleteOrder(id: string) {
     return data;
 }
 
-export async function createOrderItems(items: Omit<OrderItem, 'id' | 'created_at' | 'orderId'>[]): Promise<OrderItem | null> {
+export async function createOrderItems(items: Omit<OrderItem, 'id' | 'created_at' | 'orderId'>[]): Promise<OrderItem[] | null> {
     const supabase = await createClient();
-    const { data, error } = await supabase.from('order_items').insert(items).select().single();
-    
+    const { data, error } = await supabase.from('order_items').insert(items).select();
     if (error) {
         console.error(error);
         return null;
@@ -221,7 +220,7 @@ export async function createOrderItems(items: Omit<OrderItem, 'id' | 'created_at
 }
 
 export async function placeOrder(orderDetails: {
-    customer: Omit<Customer, 'id'|'created_at'|'updated_at'>,
+    customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>,
     items: Omit<OrderItem, 'id' | 'created_at' | 'order_id'>[],
     total: number,
     paymentMethod: string,
@@ -230,37 +229,39 @@ export async function placeOrder(orderDetails: {
     // get the customer information
     // check if the record exists and if not create it
     customer = await getCustomerByEmail(orderDetails.customer.email);
-    console.log(customer, 'The existing customer details');
-    if (!customer) {
-        customer = await createCustomer(orderDetails.customer);
-    }
 
-    console.log(customer, 'The created customer details');
-
-    // create the order
-    const order = await createOrder({
-        customer_id: customer.id,
-        total: orderDetails.total,
-        status: 'pending',
-        payment_method: orderDetails.paymentMethod,
-        shipping_address: {
-            street: customer.address.street,
-            city: customer.address.city,
-            state: customer.address.state,
-            zipCode: customer.address.zipCode,
-            country: customer.address.country,
+    try {
+        if (!customer) {
+            customer = await createCustomer(orderDetails.customer);
         }
-    });
 
-    // get the item information
-    await createOrderItems(orderDetails.items.map((item) => ({
-        ...item,
-        order_id: order?.id as string,
-    })));
+        // create the order
+        const order = await createOrder({
+            customer_id: customer.id,
+            total: orderDetails.total,
+            status: 'pending',
+            payment_method: orderDetails.paymentMethod,
+            shipping_address: {
+                street: customer.address.street,
+                city: customer.address.city,
+                state: customer.address.state,
+                zipCode: customer.address.zipCode,
+                country: customer.address.country,
+            }
+        });
 
-    // send an email to the customer and the admin
-    // await sendOrderPlacedEmail(order!);
+        // get the item information
+        await createOrderItems(orderDetails.items.map((item) => ({
+            ...item,
+            order_id: order?.id as string,
+        })));
 
-    // return a response with the created order
-    return order;
+        // send an email to the customer and the admin
+        // await sendOrderPlacedEmail(order!);
+
+        return order;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
 }

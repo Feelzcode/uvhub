@@ -5,7 +5,8 @@ import {
   MessageCircle, Star, Package, TrendingUp, Users, Award, Shield, Truck, CheckCircle, Quote,
   ArrowRight,
 } from "lucide-react";
-import { useCart, useProducts } from "@/store/hooks";
+import { useCart } from "@/store/hooks";
+import { useProductsStore } from '@/store'
 import { Product } from "@/store/types";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -170,7 +171,7 @@ const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const { addToCart, isInCart } = useCart();
   const { currentCurrency, formatPrice } = useCurrencyStore();
-  
+
   const {
     loading,
     error,
@@ -178,14 +179,14 @@ const Home = () => {
     setFilters,
     clearFilters,
     getFilteredProducts,
-    fetchProducts,
-  } = useProducts();
+    getProducts,
+  } = useProductsStore();
   const [searchTerm, setSearchTerm] = useState(filters.search);
   const router = useRouter();
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    getProducts();
+  }, [getProducts]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -320,7 +321,7 @@ const Home = () => {
         </div>
       </section>
 
-       {/* Products Section */}
+      {/* Products Section */}
       <section className="py-16 bg-gray-50" id="products">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -369,12 +370,12 @@ const Home = () => {
               <button onClick={clearFilters} className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">Clear Filters</button>
             </div>
           </div>
-         
+
           {filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {filteredProducts.map((product: Product) => (
-                <div 
-                  key={product.id} 
+                <div
+                  key={product.id}
                   className="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 relative"
                 >
                   {/* Product Image with View Details Overlay */}
@@ -388,7 +389,7 @@ const Home = () => {
                     />
                     {/* View Details Overlay */}
                     <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-40 transition-all duration-500 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <button 
+                      <button
                         onClick={() => router.push(`/home/product/${product.id}`)}
                         className="bg-white bg-opacity-90 text-gray-900 px-6 py-3 rounded-lg font-medium transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 hover:bg-opacity-100 flex items-center shadow-md"
                       >
@@ -397,7 +398,7 @@ const Home = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* Product Content */}
                   <div className="p-6 flex flex-col">
                     <div className="flex-grow">
@@ -424,13 +425,12 @@ const Home = () => {
                         onClick={() => {
                           addToCart(product, 1);
                         }}
-                        className={`px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 ${
-                          isInCart(product.id) 
+                        className={`px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 ${isInCart(product.id)
                             ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
                             : product.stock === 0
                               ? 'bg-red-100 text-red-600 cursor-not-allowed'
                               : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
-                        }`}
+                          }`}
                       >
                         {isInCart(product.id) ? 'Added to Cart' : product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                       </button>
@@ -467,7 +467,7 @@ const Home = () => {
         </div>
       </section>
 
-     
+
 
       {/* Testimonials */}
       <section className="py-16 bg-white">
@@ -483,7 +483,7 @@ const Home = () => {
                   <Quote className="w-8 h-8 text-blue-500 mr-3" />
                   <div className="flex">{[...Array(testimonial.rating)].map((_, i) => (<Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />))}</div>
                 </div>
-<p className="text-gray-700 mb-4 italic">&quot;{testimonial.content}&quot;</p>
+                <p className="text-gray-700 mb-4 italic">&quot;{testimonial.content}&quot;</p>
                 <div className="flex items-center">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden mr-4">
                     <Image

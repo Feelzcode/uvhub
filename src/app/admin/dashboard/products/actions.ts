@@ -90,7 +90,11 @@ export async function getAllProducts() {
     // First try without the category join to see if basic query works
     const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+            *,
+            category:categories(*)`,
+            { count: 'exact' }
+        )
         .order('created_at', { ascending: false });
 
     if (error) {

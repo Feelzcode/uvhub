@@ -185,7 +185,6 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                         const products = await getAllProducts();
 
                         if (!products) {
-                            console.error('getAllProducts returned null/undefined');
                             set({ products: [], loading: false, error: 'No products returned from server' });
                             return;
                         }

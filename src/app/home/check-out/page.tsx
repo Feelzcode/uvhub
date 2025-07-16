@@ -2,11 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useCartStore, useOrdersStore } from '@/store';
+import { useCartStore, useCurrencyStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const DeliveryReadinessNotice = () => (
   <Card className="mb-6 bg-yellow-50 border-yellow-200">
@@ -40,7 +41,9 @@ const DeliveryReadinessNotice = () => (
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, total, clearCart } = useCartStore();
-  const { placeOrder, loading } = useOrdersStore();
+  const [loading, setLoading] = useState(false);
+  // const { placeOrder, loading } = useOrdersStore();
+  const { formatPrice, currentCurrency } = useCurrencyStore();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -64,6 +67,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
     const orderDetails = {
         customer: {
@@ -88,16 +92,25 @@ export default function CheckoutPage() {
     };
 
     try {
-        const order = await placeOrder(orderDetails);
+      const response = await fetch("/api/check-out", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderDetails),
+      });
+      const order = await response.json();
+      console.log(order, 'The placed order');
         if (order) {
+          setLoading(false);
             clearCart();
             router.push(`/order-confirmation/${order.id}`);
         } else {
-            alert('Failed to place order. Please try again or contact support.');
+            toast.error('Failed to place order. Please try again or contact support.');
         }
     } catch (error) {
         console.error('Error placing order:', error);
-        alert('An error occurred while placing your order. Please try again.');
+        toast.error('An error occurred while placing your order. Please try again.');
+    } finally {
+      setLoading(false);
     }
 };
 
@@ -116,7 +129,7 @@ export default function CheckoutPage() {
               <CardTitle>Shipping Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" method='post'>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium mb-1">
@@ -307,7 +320,7 @@ export default function CheckoutPage() {
                       <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                     </div>
                     <div className="font-medium">
-                      ${(item.product.price * item.quantity).toFixed(2)}
+                      {formatPrice(Number((item.product.price * item.quantity).toFixed(2)), currentCurrency)}
                     </div>
                   </div>
                 ))}
@@ -315,7 +328,7 @@ export default function CheckoutPage() {
                 <div className="space-y-2 pt-4">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>{formatPrice(Number(total.toFixed(2)), currentCurrency)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
@@ -323,7 +336,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between font-bold text-lg pt-2">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>{formatPrice(Number(total.toFixed(2)), currentCurrency)}</span>
                   </div>
                 </div>
               </div>
