@@ -94,7 +94,8 @@ const Home = () => {
 
   useEffect(() => {
     getProducts();
-  }, [getProducts]);
+    clearFilters();
+  }, [getProducts, clearFilters]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
