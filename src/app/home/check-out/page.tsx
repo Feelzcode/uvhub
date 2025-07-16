@@ -31,7 +31,7 @@ const DeliveryReadinessNotice = () => (
         </div>
 
         <p>
-          If you&apos;re not ready yet, no problem! You can save our number (<span className="font-semibold">08160486223</span>) and contact us when you&apos;re prepared to proceed.
+          If you&apos;re not ready yet, no problem! You can save our number (<span className="font-semibold">09026520028</span>) and contact us when you&apos;re prepared to proceed.
         </p>
       </div>
     </CardContent>

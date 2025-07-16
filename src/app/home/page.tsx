@@ -21,12 +21,12 @@ const heroSlides = [
 ];
 
 const horizontalProducts = [
-  { id: "1", name: "Adjustable Bench", price: 200000, image: "/images/img_gym7.jpeg", badge: "Best Seller" },
+  { id: "1", name: "Wonder core", price: 200000, image: "/images/img_gym7.jpeg", badge: "Best Seller" },
   { id: "2", name: "Olympic Plates", price: 15000, image: "/images/img_gym9.jpeg", badge: "New" },
   { id: "3", name: "Resistance Bands", price: 100000, image: "/images/img_gym10.jpeg" },
-  { id: "4", name: "Jump Rope", price: 20000, image: "/images/img_gym11.jpeg" },
-  { id: "5", name: "Kettlebell", price: 150000, image: "/images/img_gym6.jpeg", badge: "Popular" },
-  { id: "6", name: "Yoga Mat", price: 200000, image: "/images/img-gym8.jpeg" },
+  { id: "4", name: "Massage chair", price: 20000, image: "/images/img_gym11.jpeg" },
+  { id: "5", name: "Kettlebell", price: 150000, image: "/images/kettlebell.jpeg", badge: "Popular" },
+  { id: "6", name: "Dumbbell Rack", price: 200000, image: "/images/dumbbell_rack.webp" },
 ];
 
 
@@ -425,7 +425,7 @@ const Home = () => {
               </div>
             </div>
             <div className="bg-gray-100 rounded-lg p-3 mb-3"><p className="text-sm text-gray-700">Need help choosing equipment?</p></div>
-            <a href="https://wa.me/08160486223?text=Hi%20EliteGym%20team,%20I%20need%20help%20with..." className="block w-full bg-green-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors text-center" target="_blank" rel="noopener noreferrer">Start Chat</a>
+            <a href="https://wa.me/09026520028?text=Hi%20EliteGym%20team,%20I%20need%20help%20with..." className="block w-full bg-green-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors text-center" target="_blank" rel="noopener noreferrer">Start Chat</a>
           </div>
         )}
         <button onClick={() => setShowWhatsApp(!showWhatsApp)} className="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-all duration-300 transform hover:scale-110"><MessageCircle className="w-6 h-6 text-white" /></button>
