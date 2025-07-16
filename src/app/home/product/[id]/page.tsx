@@ -92,13 +92,15 @@ import { useRouter } from 'next/navigation';
 import { useCart, useProducts } from '@/store/hooks';
 import { Star, ChevronLeft, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
+import { use } from 'react';
 
-export default function ProductDetails({ id }: {
-  id: string
-}) {
+type PageProps = { params: Promise<{ id: string }> }
+
+export default function ProductDetails({ params }: PageProps) {
   const router = useRouter();
   const { products } = useProducts();
   const { addToCart, isInCart } = useCart();
+  const id = use(params).id;
 
   // Find the current product
   const product = products.find((p) => p.id === id);

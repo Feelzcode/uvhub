@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 "use client";
 import React, { useState, useEffect } from "react";
@@ -28,99 +29,6 @@ const horizontalProducts = [
   { id: "6", name: "Yoga Mat", price: 200000, image: "/images/img-gym8.jpeg" },
 ];
 
-export const dummyProducts: Product[] = [
-  {
-    id: "6056976E-FC14-484F-BE5D-42F0277CC1DD",
-    name: "Adjustable Dumbbell Set",
-    description: "High-quality adjustable dumbbell set ranging from 5 to 50 lbs. Perfect for home workouts.",
-    price: 100000,
-    image: "/images/img_gym.jpg",
-    category: "Strength Equipment" as string,
-    stock: 25,
-    rating: 4.8,
-    reviews: 120,
-    created_at: new Date("2024-05-10"),
-    updated_at: new Date("2024-06-01"),
-  },
-  {
-    id: "42C7CFE8-AEBF-4CA1-AF5B-3AEF7EC5CD16",
-    name: "Yoga Mat",
-    description: "Non-slip, extra thick yoga mat with carrying strap for comfort and easy transport.",
-    price: 150000,
-    image: "/images/img_gym12.jpeg",
-    category: "Accessories" as any,
-    stock: 100,
-    rating: 4.6,
-    reviews: 90,
-    created_at: new Date("2024-05-12"),
-    updated_at: new Date("2024-06-02"),
-  },
-  {
-    id: "B3D24E09-B457-477E-B208-E22C2136C119",
-    name: "Kettlebell - 20 lbs",
-    description: "Cast iron kettlebell with powder coating for durability and better grip.",
-    price: 200000,
-    image: "/images/img_gym2.jpg",
-    category: "Strength Equipment" as any,
-    stock: 50,
-    rating: 4.7,
-    reviews: 60,
-    created_at: new Date("2024-05-15"),
-    updated_at: new Date("2024-06-05"),
-  },
-  {
-    id: "1882DADB-D131-4B82-AC53-42DFB0908D7A",
-    name: "Resistance Bands Set",
-    description: "Set of 5 resistance bands with different resistance levels for full-body workouts.",
-    price: 300000,
-    image: "/images/img_gym7.jpeg",
-    category: "Accessories" as any,
-    stock: 80,
-    rating: 4.5,
-    reviews: 75,
-    created_at: new Date("2024-05-18"),
-    updated_at: new Date("2024-06-07"),
-  },
-  {
-    id: "CA505DC3-E3F9-4293-9152-0B5C6991075F",
-    name: "Treadmill",
-    description: "Compact foldable treadmill with adjustable incline and built-in heart rate monitor.",
-    price: 200000,
-    image: "/images/img_gym10.jpeg",
-    category: "Cardio Equipment" as any,
-    stock: 10,
-    rating: 4.3,
-    reviews: 35,
-    created_at: new Date("2024-05-20"),
-    updated_at: new Date("2024-06-08"),
-  },
-  {
-    id: "5E536C4C-9894-4BA1-9757-E4B0BF9CB0C6",
-    name: "Pull-Up Bar",
-    description: "Doorway pull-up bar with multiple grip positions for upper body strength training.",
-    price: 100000,
-    image: "/images/img-gym8.jpeg",
-    category: "Strength Equipment" as any,
-    stock: 40,
-    rating: 4.4,
-    reviews: 50,
-    created_at: new Date("2024-05-22"),
-    updated_at: new Date("2024-06-09"),
-  },
-  {
-    id: "F93F92DD-3E16-40F6-8207-3144D392060E",
-    name: "Foam Roller",
-    description: "High-density foam roller for deep tissue massage and muscle recovery.",
-    price: 200000,
-    image: "/images/img_gym9.jpeg",
-    category: "Accessories" as any,
-    stock: 70,
-    rating: 4.6,
-    reviews: 45,
-    created_at: new Date("2024-05-24"),
-    updated_at: new Date("2024-06-10"),
-  },
-];
 
 const testimonials = [
   { id: 1, name: "Sarah Johnson", role: "Fitness Enthusiast", content: "EliteGym equipment transformed my home workout experience. The quality is outstanding and delivery was seamless.", rating: 5, image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop" },
@@ -232,7 +140,7 @@ const Home = () => {
       <div className="text-center py-12">
         <p className="text-red-500">Error: {error}</p>
         <button
-          onClick={fetchProducts}
+          onClick={getProducts}
           className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
         >
           Retry

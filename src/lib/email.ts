@@ -1,4 +1,4 @@
-import { Order } from '@/store/types';
+import { Order, User } from '@/store/types';
 import nodemailer from 'nodemailer';
 import {
     compileOrderConfirmation,
@@ -12,7 +12,7 @@ import {
 // Create transporter
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST as string,
-    port: process.env.EMAIL_PORT as number, // or your email service
+    port: parseInt(process.env.EMAIL_PORT as string), // or your email service
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS, // Use app password for Gmail
@@ -90,7 +90,7 @@ export const sendPasswordResetEmail = async (email: string, resetUrl: string, cu
 };
 
 // Welcome Email
-export const sendWelcomeEmail = async (email: string, userData: Record<string, unknown>) => {
+export const sendWelcomeEmail = async (email: string, userData: User) => {
     const html = compileWelcome(userData);
 
     return sendEmail({

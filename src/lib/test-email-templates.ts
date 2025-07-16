@@ -1,9 +1,12 @@
+import { Order } from '@/store';
 import { 
     compileOrderConfirmation, 
     compilePasswordReset, 
     compileWelcome, 
     compileOrderShipped 
 } from './email-templates';
+import fs from 'fs'
+import path from 'path'
 
 // Sample data for testing
 const sampleOrder = {
@@ -80,7 +83,7 @@ export const testEmailTemplates = () => {
     try {
         // Test Order Confirmation
         console.log('📧 Order Confirmation Template:');
-        const orderConfirmationHtml = compileOrderConfirmation(sampleOrder);
+        const orderConfirmationHtml = compileOrderConfirmation(sampleOrder as unknown as Order);
         console.log('✅ Compiled successfully');
         console.log(`📏 Length: ${orderConfirmationHtml.length} characters\n`);
 
@@ -106,9 +109,6 @@ export const testEmailTemplates = () => {
         
         // Optionally save to files for inspection
         if (process.env.NODE_ENV === 'development') {
-            const fs = require('fs');
-            const path = require('path');
-            
             const outputDir = path.join(process.cwd(), 'email-test-output');
             if (!fs.existsSync(outputDir)) {
                 fs.mkdirSync(outputDir);

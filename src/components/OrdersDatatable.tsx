@@ -108,7 +108,7 @@ function OrderActions({ order }: { order: Order }) {
         defaultValues: {
             status: order.status,
             total: order.total.toString(),
-            customer_id: order.customer.id,
+            customer_id: order.customer?.id,
             order_items: order.items?.map((item: OrderItem) => ({
                 product_id: item.product?.id,
                 quantity: item.quantity.toString(),
@@ -267,7 +267,7 @@ function OrderActions({ order }: { order: Order }) {
                         </div>
                         <div className="flex flex-col gap-3">
                             <Label htmlFor="view-customer-id">Customer ID</Label>
-                            <Input id="view-customer-id" value={order.customer.id} disabled />
+                            <Input id="view-customer-id" value={order.customer?.id} disabled />
                         </div>
                         <div className="flex flex-col gap-3">
                             <Label htmlFor="view-order-items">Order Items</Label>

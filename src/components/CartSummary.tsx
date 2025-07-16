@@ -5,15 +5,10 @@ import { useCurrencyStore } from '@/store';
 import Link from 'next/link';
 
 export default function CartSummary() {
-    const hasHydrated = useCartStore.persist.hasHydrated();
     const { items, total, itemCount, removeFromCart, updateQuantity, clearCart } = useCartStore();
     const { formatPrice, currentCurrency } = useCurrencyStore();
 
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-
-    if (!hasHydrated) {
-        return <div>Loading cart...</div>;
-    }
 
     if (totalQuantity === 0) {
         return (

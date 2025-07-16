@@ -69,7 +69,6 @@ export const useOrders = () => {
         error,
         selectedOrder,
         setOrders,
-        addOrder,
         updateOrder,
         deleteOrder,
         setSelectedOrder,
@@ -88,7 +87,7 @@ export const useOrders = () => {
             // Simulate API call - replace with actual API
             // For demo purposes, we'll use empty array since sampleOrders was removed
             await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-            setOrders([]);
+            setOrders();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch orders');
         }
@@ -104,13 +103,12 @@ export const useOrders = () => {
                 body: JSON.stringify(orderData),
             });
             const newOrder = await response.json();
-            addOrder(newOrder);
             return newOrder;
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create order');
             throw err;
         }
-    }, [addOrder, setLoading, setError]);
+    }, [setLoading, setError]);
 
     return {
         orders,
@@ -118,7 +116,6 @@ export const useOrders = () => {
         error,
         selectedOrder,
         setOrders,
-        addOrder,
         updateOrder,
         deleteOrder,
         setSelectedOrder,
