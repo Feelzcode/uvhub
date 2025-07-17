@@ -38,7 +38,7 @@ const AboutPage = () => {
             </div>
             <div className="relative bg-gray-100 rounded-xl overflow-hidden h-96">
               <Image 
-                src="/about-hero.jpg" 
+                src="/images/about.jpg" 
                 alt="Happy customers using our equipment"
                 fill
                 className="object-cover"

@@ -12,6 +12,7 @@ import { Product } from "@/store/types";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCurrencyStore } from "@/store";
+import Testimonials from "@/components/ui/HomeComponents/Testimonial";
 
 // --- Static Data ---
 const heroSlides = [
@@ -22,19 +23,15 @@ const heroSlides = [
 
 const horizontalProducts = [
   { id: "1", name: "Wonder core", price: 200000, image: "/images/img_gym7.jpeg", badge: "Best Seller" },
-  { id: "2", name: "Olympic Plates", price: 15000, image: "/images/img_gym9.jpeg", badge: "New" },
-  { id: "3", name: "Resistance Bands", price: 100000, image: "/images/img_gym10.jpeg" },
+  { id: "2", name: "Recumbent Bike", price: 15000, image: "/images/recumbent_bike.webp", badge: "New" },
+  { id: "3", name: "Stepper", price: 100000, image: "/images/stepper.jpg" },
   { id: "4", name: "Massage chair", price: 20000, image: "/images/img_gym11.jpeg" },
   { id: "5", name: "Kettlebell", price: 150000, image: "/images/kettlebell.jpeg", badge: "Popular" },
   { id: "6", name: "Dumbbell Rack", price: 200000, image: "/images/dumbbell_rack.webp" },
 ];
 
 
-const testimonials = [
-  { id: 1, name: "Sarah Johnson", role: "Fitness Enthusiast", content: "EliteGym equipment transformed my home workout experience. The quality is outstanding and delivery was seamless.", rating: 5, image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop" },
-  { id: 2, name: "Mike Chen", role: "Personal Trainer", content: "I've recommended EliteGym to all my clients. Professional-grade equipment at reasonable prices.", rating: 5, image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop" },
-  { id: 3, name: "Emily Rodriguez", role: "Gym Owner", content: "Equipped my entire gym with EliteGym products. Excellent durability and customer service.", rating: 5, image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop" },
-];
+
 
 const stats = [
   { icon: Package, label: "Equipment Listed", value: 500, suffix: "+" },
@@ -45,7 +42,7 @@ const stats = [
 const whyUsFeatures = [
   { icon: Award, title: "Premium Quality", description: "Commercial-grade equipment built to last" },
   { icon: Shield, title: "Warranty Protection", description: "Comprehensive warranty on all products" },
-  { icon: Truck, title: "Free Shipping", description: "Free delivery on orders over $500" },
+  { icon: Truck, title: "Free Shipping", description: "Free delivery on all orders" },
   { icon: CheckCircle, title: "Expert Support", description: "24/7 customer service and installation help" },
 ];
 
@@ -378,41 +375,8 @@ const Home = () => {
 
 
 
-      {/* Testimonials */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">What Our Clients Say</h2>
-            <p className="text-gray-600">Real feedback from satisfied customers</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial) => (
-              <div key={testimonial.id} className="bg-gray-50 rounded-xl p-6 hover:bg-gray-100 transition-all duration-300 transform hover:-translate-y-2">
-                <div className="flex items-center mb-4">
-                  <Quote className="w-8 h-8 text-blue-500 mr-3" />
-                  <div className="flex">{[...Array(testimonial.rating)].map((_, i) => (<Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />))}</div>
-                </div>
-                <p className="text-gray-700 mb-4 italic">&quot;{testimonial.content}&quot;</p>
-                <div className="flex items-center">
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden mr-4">
-                    <Image
-                      src={testimonial.image}
-                      alt={testimonial.name}
-                      fill
-                      className="object-cover"
-                      sizes="48px"
-                    />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                    <div className="text-gray-600 text-sm">{testimonial.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+     
+      <Testimonials/>
 
       {/* WhatsApp Floating Button */}
       <div className="fixed bottom-6 right-6 z-50">
@@ -426,7 +390,7 @@ const Home = () => {
               </div>
             </div>
             <div className="bg-gray-100 rounded-lg p-3 mb-3"><p className="text-sm text-gray-700">Need help choosing equipment?</p></div>
-            <a href="https://wa.me/09026520028?text=Hi%20EliteGym%20team,%20I%20need%20help%20with..." className="block w-full bg-green-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors text-center" target="_blank" rel="noopener noreferrer">Start Chat</a>
+            <a href="https://wa.me/09026520028?text=Hi%20uvHubGym%20team,%20I%20need%20help%20with..." className="block w-full bg-green-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors text-center" target="_blank" rel="noopener noreferrer">Start Chat</a>
           </div>
         )}
         <button onClick={() => setShowWhatsApp(!showWhatsApp)} className="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-all duration-300 transform hover:scale-110"><MessageCircle className="w-6 h-6 text-white" /></button>
