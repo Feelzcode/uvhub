@@ -89,26 +89,37 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCart, useProducts } from '@/store/hooks';
+import { useCart } from '@/store/hooks';
 import { Star, ChevronLeft, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
+import { Product, useProductsStore } from '@/store';
 
 type PageProps = { params: Promise<{ id: string }> }
 
 export default function ProductDetails({ params }: PageProps) {
   const router = useRouter();
-  const { products } = useProducts();
+  const { getProductById, getProductsByCategory } = useProductsStore();
   const { addToCart, isInCart } = useCart();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [similarProducts, setsimilarProducts] = useState<Product[] | []>([]);
   const id = use(params).id;
 
   // Find the current product
-  const product = products.find((p) => p.id === id);
+  useEffect(() => {
+    async function getDetails() {
+      const product = getProductById(id);
+      if (product) {
+        const products = getProductsByCategory(product.category?.id as string);
 
-  // Find similar products (same category, excluding current product)
-  const similarProducts = products
-    .filter(p => p.category === product?.category && p.id !== id)
-    .slice(0, 4); // Show max 4 similar products
+        setProduct(product);
+        setsimilarProducts(products!);
+      }
+    }
+
+    getDetails();
+  }, [id, getProductById, getProductsByCategory]);
+
 
   if (!product) {
     return (
@@ -187,7 +198,7 @@ export default function ProductDetails({ params }: PageProps) {
       </div>
 
       {/* Similar Products Section */}
-      {similarProducts.length > 0 && (
+      {similarProducts?.length > 0 && (
         <div className="mb-16">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900">Similar Products</h2>
