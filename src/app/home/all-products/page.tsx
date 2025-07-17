@@ -9,12 +9,7 @@ import Image from 'next/image';
 import { Product, Category } from '@/store/types';
 import { useProductsStore } from '@/store';
 
-// interface ProductFilters {
-//   category?: string; // category id
-//   minPrice?: number;
-//   maxPrice?: number;
-//   search?: string;
-// }
+
 
 export default function AllEquipmentPage() {
   const {
@@ -23,7 +18,6 @@ export default function AllEquipmentPage() {
     filters,
     setFilters,
     clearFilters,
-    // getFilteredProducts,
     getProducts,
   } = useProductsStore();
   const {
