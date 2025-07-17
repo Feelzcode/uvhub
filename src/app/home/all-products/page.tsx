@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Product, Category } from '@/store/types';
-import { useProductsStore } from '@/store';
+import { useProductsStore, useCurrencyStore } from '@/store';
 
 
 
@@ -23,6 +23,7 @@ export default function AllEquipmentPage() {
   const {
     products,
   } = useProducts();
+  const { formatPrice, currentCurrency } = useCurrencyStore();
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const router = useRouter();
@@ -35,12 +36,12 @@ export default function AllEquipmentPage() {
   // Get unique categories from products (as objects)
   const categories: Category[] = products && products.length > 0
     ? Array.from(
-        new Map(
-          products
-            .filter((p): p is Product & { category: Category } => !!p && !!p.category && !!p.category.id)
-            .map((p) => [p.category.id, p.category])
-        ).values()
-      )
+      new Map(
+        products
+          .filter((p): p is Product & { category: Category } => !!p && !!p.category && !!p.category.id)
+          .map((p) => [p.category.id, p.category])
+      ).values()
+    )
     : [];
 
   // Filter products based on active filters
@@ -244,10 +245,10 @@ export default function AllEquipmentPage() {
                     </h3>
                     <div className="flex justify-between items-center mt-2">
                       <div>
-                        <span className="text-lg font-bold text-gray-900">₦{product.price}</span>
+                        <span className="text-lg font-bold text-gray-900">{formatPrice(product.price, currentCurrency)}</span>
                         {product.price && (
                           <span className="text-gray-500 line-through text-sm ml-2">
-                            ₦{product.price}
+                            {formatPrice(product.price, currentCurrency)}
                           </span>
                         )}
                       </div>
