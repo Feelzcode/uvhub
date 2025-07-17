@@ -52,7 +52,7 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
           // Check if we already have location data
           if (location) {
             // set the current currency to the currency of the location
-            setCurrency(location.countryCode === 'NG' ? 'NGN' : location.countryCode === 'GH' ? 'GHS' : 'USD');
+            setCurrency(location.countryCode === 'NG' ? 'NGN' : 'GHS');
             return; // Exit early if location is already detected
           }
 

@@ -1,91 +1,3 @@
-// 'use client';
-
-// import { useRouter, useParams } from 'next/navigation';
-// import { useCart, useProducts } from '@/store/hooks';
-// import { Star, ChevronLeft } from 'lucide-react';
-
-// export default function ProductDetails() {
-//   const router = useRouter();
-//   const { id } = useParams(); // expects [id].tsx route
-//   const { products } = useProducts();
-//   const { addToCart, isInCart } = useCart();
-
-//   // Find the product by id
-//   const product = products.find((p) => p.id === id);
-
-//   if (!product) {
-//     return (
-//       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-//         <p className="text-gray-500 text-lg mb-4">Product not found.</p>
-//         <button
-//           onClick={() => router.back()}
-//           className="flex items-center gap-2 text-blue-600 hover:underline"
-//         >
-//           <ChevronLeft className="w-5 h-5" />
-//           Back
-//         </button>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="max-w-4xl mx-auto py-12 px-4">
-//       <button
-//         onClick={() => router.back()}
-//         className="flex items-center gap-2 text-blue-600 hover:underline mb-6"
-//       >
-//         <ChevronLeft className="w-5 h-5" />
-//         Back to Products
-//       </button>
-//       <div className="bg-white rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden">
-//         <div className="md:w-1/2 bg-gray-100 flex items-center justify-center p-8">
-//           <img
-//             src={product.image}
-//             alt={product.name}
-//             className="w-full h-80 object-contain rounded-xl shadow-md"
-//           />
-//         </div>
-//         <div className="md:w-1/2 p-8 flex flex-col">
-//           <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-//           <div className="flex items-center gap-2 mb-4">
-//             <span className="text-xl font-semibold text-blue-600">${product.price}</span>
-//             {product.price && (
-//               <span className="text-gray-400 line-through text-lg">${product.price}</span>
-//             )}
-//             <span className="flex items-center ml-4 text-yellow-500 font-medium">
-//               <Star className="w-5 h-5 mr-1" />
-//               {product.rating}
-//             </span>
-//           </div>
-//           <p className="text-gray-700 mb-6">{product.description}</p>
-//           <div className="flex items-center gap-4 mb-8">
-//             <span className="text-sm text-gray-500">Category: <span className="font-medium text-gray-700">{product.category}</span></span>
-//             <span className={`text-sm font-medium ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
-//               {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
-//             </span>
-//           </div>
-//           <button
-//             onClick={() => addToCart(product, 1)}
-//             disabled={isInCart(product.id) || product.stock === 0}
-//             className={`w-full py-4 rounded-lg font-semibold text-lg shadow-md transition-all duration-300
-//               ${isInCart(product.id) || product.stock === 0
-//                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-//                 : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 hover:scale-105'
-//               }`}
-//           >
-//             {isInCart(product.id)
-//               ? 'Already in Cart'
-//               : product.stock === 0
-//                 ? 'Out of Stock'
-//                 : 'Add to Cart'}
-//           </button>
-//         </div>
-//       </div>
-//       {/* Optionally, add reviews/testimonials here */}
-//     </div>
-//   );
-// }
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -93,7 +5,7 @@ import { useCart } from '@/store/hooks';
 import { Star, ChevronLeft, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { use, useEffect, useState } from 'react';
-import { Product, useProductsStore } from '@/store';
+import { Product, useCurrencyStore, useProductsStore } from '@/store';
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -103,6 +15,7 @@ export default function ProductDetails({ params }: PageProps) {
   const { addToCart, isInCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setsimilarProducts] = useState<Product[] | []>([]);
+  const { formatPrice, currentCurrency } = useCurrencyStore();
   const id = use(params).id;
 
   // Find the current product
@@ -163,9 +76,9 @@ export default function ProductDetails({ params }: PageProps) {
         <div className="md:w-1/2 p-8 flex flex-col">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl font-semibold text-blue-600">N{product.price}</span>
+            <span className="text-xl font-semibold text-blue-600">{formatPrice(product.price, currentCurrency)}</span>
             {product.price && (
-              <span className="text-gray-400 line-through text-lg">N{product.price}</span>
+              <span className="text-gray-400 line-through text-lg">{formatPrice(product.price, currentCurrency)}</span>
             )}
             <span className="flex items-center ml-4 text-yellow-500 font-medium">
               <Star className="w-5 h-5 mr-1 fill-current" />
