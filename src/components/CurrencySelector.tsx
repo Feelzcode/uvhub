@@ -2,7 +2,7 @@ import React from 'react';
 import { useCurrencyStore } from '@/store/slices/currencySlice';
 
 const CurrencySelector: React.FC = () => {
-  const { currentCurrency, setCurrency, currencies } = useCurrencyStore();
+  const { currentCurrency, setCurrency } = useCurrencyStore();
 
   const handleCurrencyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setCurrency(event.target.value as any);

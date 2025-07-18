@@ -100,7 +100,7 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
                   setLoading(false);
                   return;
                 }
-              } catch (geolocationError) {
+              } catch  {
                 console.log('Browser geolocation failed, falling back to IP-based detection');
                 // Continue to IP-based detection
               }
@@ -114,7 +114,7 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
               'https://api.myip.com'
             ];
 
-            let locationData: any = null;
+            let locationData: unknown = null;
 
             for (const service of ipServices) {
               try {
@@ -131,7 +131,7 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
                   locationData = await response.json();
                   break; // Use first successful response
                 }
-              } catch (serviceError) {
+              } catch  {
                 console.log(`Service ${service} failed, trying next...`);
                 continue;
               }
@@ -140,12 +140,12 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
             if (!locationData) {
               throw new Error('All location detection methods failed');
             }
-
+            const data = locationData as any;
             // Handle different response formats
-            const countryCode = locationData.country_code || locationData.country || locationData.countryCode;
-            const countryName = locationData.country_name || locationData.countryName || locationData.country;
-            const city = locationData.city || locationData.locality;
-            const region = locationData.region || locationData.regionName;
+            const countryCode = data.country_code || data.country || data.countryCode;
+            const countryName = data.country_name || data.countryName || data.country;
+            const city = data.city || data.locality;
+            const region = data.region || data.regionName;
 
             const locationInfo: LocationInfo = {
               country: countryName,

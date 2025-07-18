@@ -11,7 +11,7 @@ const CurrencyDetectionPopup: React.FC = () => {
     loading, 
     error, 
     detectLocation,
-    currencies 
+    // currencies 
   } = useCurrencyStore();
   
   const [showPopup, setShowPopup] = useState(false);
