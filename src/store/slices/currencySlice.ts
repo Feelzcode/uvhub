@@ -91,13 +91,13 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
                 );
 
                 if (reverseGeocodeResponse.ok) {
-                  const locationData = await reverseGeocodeResponse.json();
+                  const locationData = await reverseGeocodeResponse.json() as LocationApiResponse;
                   
                   const locationInfo: LocationInfo = {
-                    country: locationData.countryName,
-                    countryCode: locationData.countryCode,
-                    city: locationData.city,
-                    region: locationData.locality,
+                    country: locationData.countryName || 'Unknown',
+                    countryCode: locationData.countryCode || 'US',
+                    city: locationData.city || 'Unknown',
+                    region: locationData.locality || 'Unknown',
                   };
 
                   setLocation(locationInfo);
@@ -114,8 +114,8 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
                   setLoading(false);
                   return;
                 }
-              } catch  {
-                console.log('Browser geolocation failed, falling back to IP-based detection');
+              } catch (geoError) {
+                console.log('Browser geolocation failed, falling back to IP-based detection', geoError);
                 // Continue to IP-based detection
               }
             }
@@ -128,7 +128,7 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
               'https://api.myip.com'
             ];
 
-            let locationData: unknown = null;
+            let locationData: LocationApiResponse | null = null;
 
             for (const service of ipServices) {
               try {
@@ -142,11 +142,11 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
                 });
 
                 if (response.ok) {
-                  locationData = await response.json();
+                  locationData = await response.json() as LocationApiResponse;
                   break; // Use first successful response
                 }
-              } catch  {
-                console.log(`Service ${service} failed, trying next...`);
+              } catch (serviceError) {
+                console.log(`Service ${service} failed, trying next...`, serviceError);
                 continue;
               }
             }
@@ -154,18 +154,18 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
             if (!locationData) {
               throw new Error('All location detection methods failed');
             }
-            const data = locationData as LocationApiResponse;
+
             // Handle different response formats
-            const countryCode = data.country_code || data.country || data.countryCode || '';
-            const countryName = data.country_name || data.countryName || data.country || '';
-            const city = data.city || data.locality;
-            const region = data.region || data.regionName;
+            const countryCode = locationData.country_code || locationData.country || locationData.countryCode || '';
+            const countryName = locationData.country_name || locationData.countryName || locationData.country || '';
+            const city = locationData.city || locationData.locality;
+            const region = locationData.region || locationData.regionName;
 
             const locationInfo: LocationInfo = {
-              country: countryName,
-              countryCode: countryCode,
-              city: city,
-              region: region,
+              country: countryName || 'Unknown',
+              countryCode: countryCode || 'US',
+              city: city || 'Unknown',
+              region: region || 'Unknown',
             };
 
             setLocation(locationInfo);
@@ -247,4 +247,4 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
       name: 'currency-store',
     }
   )
-); 
+);
