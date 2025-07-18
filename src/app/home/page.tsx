@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCurrencyStore } from "@/store";
 import Testimonials from "@/components/ui/HomeComponents/Testimonial";
+import CurrencyDetectionPopup from "@/components/CurrencyDetectionPopup";
 
 // --- Static Data ---
 const heroSlides = [
@@ -393,6 +394,9 @@ const Home = () => {
         )}
         <button onClick={() => setShowWhatsApp(!showWhatsApp)} className="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-all duration-300 transform hover:scale-110"><MessageCircle className="w-6 h-6 text-white" /></button>
       </div>
+
+      {/* Currency Detection Popup */}
+      <CurrencyDetectionPopup />
     </div>
   );
 };

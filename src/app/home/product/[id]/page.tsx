@@ -93,6 +93,7 @@ import { useCart, useProducts } from '@/store/hooks';
 import { Star, ChevronLeft, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { use } from 'react';
+import CurrencyDetectionPopup from '@/components/CurrencyDetectionPopup';
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -244,6 +245,9 @@ export default function ProductDetails({ params }: PageProps) {
           </div>
         </div>
       )}
+
+      {/* Currency Detection Popup */}
+      <CurrencyDetectionPopup />
     </div>
   );
 }

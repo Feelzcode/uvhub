@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import CurrencyDetectionPopup from '@/components/CurrencyDetectionPopup';
 
 const DeliveryReadinessNotice = () => (
   <Card className="mb-6 bg-yellow-50 border-yellow-200">
@@ -344,6 +345,9 @@ export default function CheckoutPage() {
           </Card>
         </div>
       </div>
+
+      {/* Currency Detection Popup */}
+      <CurrencyDetectionPopup />
     </div>
   );
 }

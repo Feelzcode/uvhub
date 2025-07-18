@@ -8,6 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Product, Category } from '@/store/types';
 import { useProductsStore } from '@/store';
+import CurrencyDetectionPopup from '@/components/CurrencyDetectionPopup';
 
 
 
@@ -283,6 +284,9 @@ export default function AllEquipmentPage() {
           )}
         </div>
       </div>
+
+      {/* Currency Detection Popup */}
+      <CurrencyDetectionPopup />
     </div>
   );
 }

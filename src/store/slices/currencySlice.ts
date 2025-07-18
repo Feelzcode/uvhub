@@ -60,30 +60,108 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
           setError(null);
 
           try {
-            // Use IP-based geolocation service
-            const response = await fetch('https://ipapi.co/json/');
+            // Method 1: Try browser geolocation first (more accurate)
+            if (typeof navigator !== 'undefined' && navigator.geolocation) {
+              try {
+                const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                  navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    timeout: 5000,
+                    enableHighAccuracy: false,
+                    maximumAge: 300000 // 5 minutes
+                  });
+                });
 
-            if (!response.ok) {
-              throw new Error('Failed to fetch location data');
+                // Use reverse geocoding to get country
+                const reverseGeocodeResponse = await fetch(
+                  `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`
+                );
+
+                if (reverseGeocodeResponse.ok) {
+                  const locationData = await reverseGeocodeResponse.json();
+                  
+                  const locationInfo: LocationInfo = {
+                    country: locationData.countryName,
+                    countryCode: locationData.countryCode,
+                    city: locationData.city,
+                    region: locationData.locality,
+                  };
+
+                  setLocation(locationInfo);
+
+                  // Set currency based on country
+                  let currency: Currency = 'USD';
+                  if (locationData.countryCode === 'NG') {
+                    currency = 'NGN';
+                  } else if (locationData.countryCode === 'GH') {
+                    currency = 'GHS';
+                  }
+
+                  setCurrency(currency);
+                  setLoading(false);
+                  return;
+                }
+              } catch (geolocationError) {
+                console.log('Browser geolocation failed, falling back to IP-based detection');
+                // Continue to IP-based detection
+              }
             }
 
-            const locationData = await response.json();
+            // Method 2: IP-based geolocation with multiple services
+            const ipServices = [
+              'https://ipapi.co/json/',
+              'https://ipinfo.io/json',
+              'https://api.ipify.org?format=json',
+              'https://api.myip.com'
+            ];
+
+            let locationData: any = null;
+
+            for (const service of ipServices) {
+              try {
+                const response = await fetch(service, {
+                  method: 'GET',
+                  headers: {
+                    'Accept': 'application/json',
+                  },
+                  // Add timeout
+                  signal: AbortSignal.timeout(3000)
+                });
+
+                if (response.ok) {
+                  locationData = await response.json();
+                  break; // Use first successful response
+                }
+              } catch (serviceError) {
+                console.log(`Service ${service} failed, trying next...`);
+                continue;
+              }
+            }
+
+            if (!locationData) {
+              throw new Error('All location detection methods failed');
+            }
+
+            // Handle different response formats
+            const countryCode = locationData.country_code || locationData.country || locationData.countryCode;
+            const countryName = locationData.country_name || locationData.countryName || locationData.country;
+            const city = locationData.city || locationData.locality;
+            const region = locationData.region || locationData.regionName;
 
             const locationInfo: LocationInfo = {
-              country: locationData.country_name,
-              countryCode: locationData.country_code,
-              city: locationData.city,
-              region: locationData.region,
+              country: countryName,
+              countryCode: countryCode,
+              city: city,
+              region: region,
             };
 
             setLocation(locationInfo);
 
             // Set currency based on country
-            let currency: Currency = 'NGN';
+            let currency: Currency = 'USD';
 
-            if (locationData.country_code === 'NG') {
+            if (countryCode === 'NG') {
               currency = 'NGN';
-            } else if (locationData.country_code === 'GH') {
+            } else if (countryCode === 'GH') {
               currency = 'GHS';
             }
 
@@ -93,7 +171,7 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
             console.error('Location detection error:', error);
             setError(error instanceof Error ? error.message : 'Failed to detect location');
 
-            // Fallback to USD if location detection fails
+            // Fallback to NGN if location detection fails
             setCurrency('NGN');
           } finally {
             setLoading(false);
@@ -122,7 +200,7 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
                 maximumFractionDigits: 2,
               })}`;
 
-            case 'NGN':
+            case 'USD':
             default:
               return `${currencyInfo.symbol}${displayPrice.toLocaleString('en-US', {
                 minimumFractionDigits: 2,
