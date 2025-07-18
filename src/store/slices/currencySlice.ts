@@ -2,6 +2,20 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { Currency, CurrencyInfo, LocationInfo, CurrencyState, CurrencyActions } from '../types';
 
+// Add this type for API responses
+type LocationApiResponse = {
+  country_code?: string;
+  country?: string;
+  countryCode?: string;
+  country_name?: string;
+  countryName?: string;
+  city?: string;
+  locality?: string;
+  region?: string;
+  regionName?: string;
+  [key: string]: unknown;
+};
+
 const CURRENCIES: Record<Currency, CurrencyInfo> = {
   USD: {
     code: 'USD',
@@ -140,10 +154,10 @@ export const useCurrencyStore = create<CurrencyState & CurrencyActions>()(
             if (!locationData) {
               throw new Error('All location detection methods failed');
             }
-            const data = locationData as any;
+            const data = locationData as LocationApiResponse;
             // Handle different response formats
-            const countryCode = data.country_code || data.country || data.countryCode;
-            const countryName = data.country_name || data.countryName || data.country;
+            const countryCode = data.country_code || data.country || data.countryCode || '';
+            const countryName = data.country_name || data.countryName || data.country || '';
             const city = data.city || data.locality;
             const region = data.region || data.regionName;
 
