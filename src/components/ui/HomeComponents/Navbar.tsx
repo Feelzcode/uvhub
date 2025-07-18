@@ -4,8 +4,10 @@ import { useCartStore } from '@/store';
 import { Menu, ShoppingCart, X } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState } from 'react'
+import { useCurrency } from '@/store/hooks/useCurrency';
 
 const Navbar = () => {
+  useCurrency(); // Ensure location-based currency detection runs
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { items } = useCartStore();
 

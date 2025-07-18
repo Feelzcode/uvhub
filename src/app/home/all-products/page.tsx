@@ -233,7 +233,7 @@ export default function AllEquipmentPage() {
                   <div className="h-48 overflow-hidden relative bg-gray-100">
                     <Image
                       src={product.image || '/placeholder-product.jpg'}
-                      alt={product.name}
+                      alt={product.name} 
                       fill
                       className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
