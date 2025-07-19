@@ -31,7 +31,7 @@ const DeliveryReadinessNotice = () => (
         </div>
 
         <p>
-          If you&apos;re not ready yet, no problem! You can save our number (<span className="font-semibold">09026520028</span>) and contact us when you&apos;re prepared to proceed.
+          If you&apos;re not ready yet, no problem! You can save our number (<span className="font-semibold">+2347032220325</span>) and contact us when you&apos;re prepared to proceed.
         </p>
       </div>
     </CardContent>
@@ -102,7 +102,7 @@ export default function CheckoutPage() {
         if (order) {
           setLoading(false);
             clearCart();
-            router.push(`/order-confirmation/${order.id}`);
+            router.push(`/home/order-confirmation/${order.id}`);
         } else {
             toast.error('Failed to place order. Please try again or contact support.');
         }
