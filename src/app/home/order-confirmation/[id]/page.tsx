@@ -141,7 +141,7 @@ export default function OrderConfirmationPage() {
             <div>
               <h2 className="font-semibold mb-1">Shipping Status</h2>
               <p className="text-sm text-gray-600">
-                Your order is being processed and will be shipped soon. We'll contact you when it's ready for delivery.
+                Your order is being processed and will be shipped soon. We&apos;ll contact you when it&apos;s ready for delivery.
               </p>
             </div>
           </div>
@@ -152,7 +152,7 @@ export default function OrderConfirmationPage() {
           <ul className="text-sm text-gray-700 space-y-1">
             <li>• Payment will be collected upon delivery</li>
             <li>• Please have the exact amount ready</li>
-            <li>• You'll receive a call to confirm delivery time</li>
+            <li>• You&apos;ll receive a call to confirm delivery time</li>
             <li>• Contact us at <span className="font-semibold">09026520028</span> for any questions</li>
           </ul>
         </div>
