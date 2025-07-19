@@ -1,11 +1,13 @@
 import { getOrderById } from "@/app/admin/dashboard/orders/actions";
+import { NextRequest } from "next/server";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const order = await getOrderById(params.id);
+    const { id } = await params;
+    const order = await getOrderById(id);
     
     if (!order) {
       return new Response('Order not found', {
