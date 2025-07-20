@@ -266,31 +266,43 @@ export async function createCustomer(customer: Partial<Customer>) {
     // Log the customer object before any operation
     console.log('Attempting to create customer with data:', customer);
 
-    // // check if the customer already exists first
-    const { data: existingCustomer, error: existingCustomerError } = await supabase.from('customers').select('*').eq('email', customer.email).single();
-    if (existingCustomerError) {
-        console.error('Error checking for existing customer:', existingCustomerError);
-        console.error('Error details:', JSON.stringify(existingCustomerError, null, 2));
-        return null
-    }
+    try {
+        // Check if the customer already exists
+        const { data: existingCustomer, error: existingCustomerError } = await supabase
+            .from('customers')
+            .select('*')
+            .eq('email', customer.email)
+            .maybeSingle(); // Use maybeSingle instead of single to avoid error when no record found
 
-    // if the customer already exists, return the customer
-    if (existingCustomer) {
-        console.log('Customer already exists:', existingCustomer);
-        return existingCustomer;
-    }
+        if (existingCustomerError) {
+            console.error('Error checking for existing customer:', existingCustomerError);
+            return null;
+        }
 
-    // if the customer does not exist, create the customer
-    const insertResponse = await supabase.from('customers').insert(customer).select().single();
-    const { data, error } = insertResponse;
-    console.log('Insert response:', insertResponse);
-    if (error) {
-        console.error('Error inserting new customer:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
-        return null
+        // If the customer already exists, return the customer
+        if (existingCustomer) {
+            console.log('Customer already exists:', existingCustomer);
+            return existingCustomer;
+        }
+
+        // If the customer does not exist, create the customer
+        const { data, error } = await supabase
+            .from('customers')
+            .insert(customer)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error inserting new customer:', error);
+            return null;
+        }
+
+        console.log('Customer created successfully:', data);
+        return data;
+    } catch (error) {
+        console.error('Unexpected error in createCustomer:', error);
+        return null;
     }
-    console.log('Customer created successfully:', data);
-    return data;
 }
 
 export async function updateCustomer(id: string, customer: Partial<Customer>) {

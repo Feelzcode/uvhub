@@ -225,17 +225,22 @@ export async function placeOrder(orderDetails: {
     total: number,
     paymentMethod: string,
 }): Promise<Order | null> {
-    let customer: Customer;
-    // get the customer information
-    // check if the record exists and if not create it
-    customer = await getCustomerByEmail(orderDetails.customer.email);
-
+    let customer: Customer | null;
+    
     try {
+        // Check if customer exists
+        customer = await getCustomerByEmail(orderDetails.customer.email);
+
+        // If customer doesn't exist, create a new one
         if (!customer) {
             customer = await createCustomer(orderDetails.customer);
+            if (!customer) {
+                console.error('Failed to create customer');
+                return null;
+            }
         }
 
-        // create the order
+        // Create the order
         const order = await createOrder({
             customer_id: customer.id,
             total: orderDetails.total,
@@ -250,18 +255,28 @@ export async function placeOrder(orderDetails: {
             }
         });
 
-        // get the item information
-        await createOrderItems(orderDetails.items.map((item) => ({
+        if (!order) {
+            console.error('Failed to create order');
+            return null;
+        }
+
+        // Create order items
+        const orderItems = await createOrderItems(orderDetails.items.map((item) => ({
             ...item,
-            order_id: order?.id as string,
+            order_id: order.id,
         })));
+
+        if (!orderItems) {
+            console.error('Failed to create order items');
+            return null;
+        }
 
         // send an email to the customer and the admin
         // await sendOrderPlacedEmail(order!);
 
         return order;
     } catch (error) {
-        console.error(error);
+        console.error('Error in placeOrder:', error);
         return null;
     }
 }

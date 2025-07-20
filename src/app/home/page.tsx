@@ -1,8 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   MessageCircle, Star, Package, TrendingUp, Users, Award, Shield, Truck, CheckCircle,
-  ArrowRight,
+  ArrowRight, Search, X,
 } from "lucide-react";
 import { useCart } from "@/store/hooks";
 import { useProductsStore } from '@/store'
@@ -27,9 +27,6 @@ const horizontalProducts = [
   { id: "5", name: "Kettlebell", price: 150000, image: "/images/kettlebell.jpeg", badge: "Popular" },
   { id: "6", name: "Dumbbell Rack", price: 200000, image: "/images/dumbbell_rack.webp" },
 ];
-
-
-
 
 const stats = [
   { icon: Package, label: "Equipment Listed", value: 500, suffix: "+" },
@@ -74,6 +71,9 @@ const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const { addToCart, isInCart } = useCart();
   const { currentCurrency, formatPrice } = useCurrencyStore();
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const {
     loading,
@@ -103,6 +103,82 @@ const Home = () => {
     const interval = setInterval(() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length), 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Close autocomplete when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowAutocomplete(false);
+        setSelectedSuggestion(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Get autocomplete suggestions
+  const getAutocompleteSuggestions = () => {
+    if (!searchTerm || searchTerm.length < 2) return [];
+    
+    const filteredProducts = getFilteredProducts();
+    return filteredProducts
+      .filter(product => 
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .slice(0, 5); // Limit to 5 suggestions
+  };
+
+  const suggestions = getAutocompleteSuggestions();
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    setShowAutocomplete(value.length >= 2);
+    setSelectedSuggestion(-1);
+  };
+
+  const handleSuggestionClick = (product: Product) => {
+    setSearchTerm(product.name);
+    setShowAutocomplete(false);
+    setSelectedSuggestion(-1);
+    setFilters({ search: product.name });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showAutocomplete) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestion(prev => 
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestion(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestion >= 0 && suggestions[selectedSuggestion]) {
+          handleSuggestionClick(suggestions[selectedSuggestion]);
+        }
+        break;
+      case 'Escape':
+        setShowAutocomplete(false);
+        setSelectedSuggestion(-1);
+        break;
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    setShowAutocomplete(false);
+    setSelectedSuggestion(-1);
+    setFilters({ search: '' });
+  };
 
   // --- Stats Counter Component ---
   const StatsCounter = ({ stat }: { stat: typeof stats[0] }) => {
@@ -234,17 +310,60 @@ const Home = () => {
           </div>
           {/* Product Filter */}
           <div className="bg-white p-6 rounded-xl shadow-md mb-8 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 relative" ref={searchRef}>
               <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-              <input
-                type="text"
-                name="search"
-                id="search"
-                placeholder="e.g., Treadmill Pro"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  name="search"
+                  id="search"
+                  placeholder="e.g., Treadmill Pro"
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  onKeyDown={handleKeyDown}
+                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+              
+              {/* Autocomplete Dropdown */}
+              {showAutocomplete && suggestions.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {suggestions.map((product, index) => (
+                    <div
+                      key={product.id}
+                      onClick={() => handleSuggestionClick(product)}
+                      className={`px-4 py-3 cursor-pointer hover:bg-gray-50 flex items-center gap-3 ${
+                        index === selectedSuggestion ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                      }`}
+                    >
+                      <div className="w-8 h-8 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                        <Image
+                          src={product.image}
+                          alt={product.name}
+                          width={32}
+                          height={32}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 truncate">{product.name}</div>
+                        <div className="text-sm text-gray-500">{formatPrice(product.price, currentCurrency)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <label htmlFor="minPrice" className="block text-sm font-medium text-gray-700 mb-1">Min Price</label>
@@ -371,9 +490,6 @@ const Home = () => {
         </div>
       </section>
 
-
-
-     
       <Testimonials/>
 
       {/* WhatsApp Floating Button */}
@@ -388,7 +504,7 @@ const Home = () => {
               </div>
             </div>
             <div className="bg-gray-100 rounded-lg p-3 mb-3"><p className="text-sm text-gray-700">Need help choosing equipment?</p></div>
-            <a href="https://wa.me/09026520028?text=Hi%20uvHubGym%20team,%20I%20need%20help%20with..." className="block w-full bg-green-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors text-center" target="_blank" rel="noopener noreferrer">Start Chat</a>
+            <a href="https://wa.me/07032220325?text=Hi%20uvHubGym%20team,%20I%20need%20help%20with..." className="block w-full bg-green-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors text-center" target="_blank" rel="noopener noreferrer">Start Chat</a>
           </div>
         )}
         <button onClick={() => setShowWhatsApp(!showWhatsApp)} className="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-all duration-300 transform hover:scale-110"><MessageCircle className="w-6 h-6 text-white" /></button>
