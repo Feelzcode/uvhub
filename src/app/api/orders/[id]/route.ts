@@ -3,10 +3,12 @@ import { NextRequest } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const order = await getOrderById(params.id);
+    // Await the params promise
+    const { id } = await params;
+    const order = await getOrderById(id);
     
     if (!order) {
       return new Response('Order not found', {
@@ -29,4 +31,4 @@ export async function GET(
       },
     });
   }
-} 
+}
