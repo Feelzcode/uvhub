@@ -19,7 +19,7 @@ const DeliveryReadinessNotice = () => (
         <p>
           To ensure a smooth and timely delivery of your product, please carefully read the following and complete this form only if you meet all the criteria. We operate on a payment-on-delivery basis, and this helps us serve you better.
         </p>
-        
+
         <div className="bg-white p-4 rounded-lg border border-yellow-300">
           <h3 className="font-semibold mb-2">Delivery Readiness Checklist</h3>
           <p className="font-medium mb-3">Please DO NOT fill out this form if:</p>
@@ -70,25 +70,25 @@ export default function CheckoutPage() {
     setLoading(true);
 
     const orderDetails = {
-        customer: {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            address: {
-                street: formData.street,
-                city: formData.city,
-                state: formData.state,
-                zipCode: formData.zipCode,
-                country: formData.country,
-            }
-        },
-        items: items.map(item => ({
-            product_id: item.productId,
-            quantity: item.quantity,
-            price: item.product.price,
-        })),
-        total,
-        paymentMethod: formData.paymentMethod,
+      customer: {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: {
+          street: formData.street,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          country: formData.country,
+        }
+      },
+      items: items.map(item => ({
+        product_id: item.productId,
+        quantity: item.quantity,
+        price: item.product.price,
+      })),
+      total,
+      paymentMethod: formData.paymentMethod,
     };
 
     try {
@@ -98,30 +98,29 @@ export default function CheckoutPage() {
         body: JSON.stringify(orderDetails),
       });
       const order = await response.json();
-      console.log(order, 'The placed order');
-        if (order) {
-          setLoading(false);
-            clearCart();
-            router.push(`/home/order-confirmation/${order.id}`);
-        } else {
-            toast.error('Failed to place order. Please try again or contact support.');
-        }
+      if (order) {
+        clearCart();
+        toast.success('Order placed successfully, please check your email for an order confirmation message');
+        router.push(`/home/order-confirmation/${order.id}`);
+      } else {
+        toast.error('Failed to place order. Please try again or contact support.');
+      }
     } catch (error) {
-        console.error('Error placing order:', error);
-        toast.error('An error occurred while placing your order. Please try again.');
+      console.error('Error placing order:', error);
+      toast.error('An error occurred while placing your order. Please try again.');
     } finally {
       setLoading(false);
     }
-};
+  };
 
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Complete Your Order</h1>
-        
+
         <DeliveryReadinessNotice />
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Order Form */}
           <Card>
@@ -144,7 +143,7 @@ export default function CheckoutPage() {
                       onChange={handleChange}
                     />
                   </div>
-                  
+
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium mb-1">
                       Email <span className="text-red-500">*</span>
@@ -202,7 +201,7 @@ export default function CheckoutPage() {
                       onChange={handleChange}
                     />
                   </div>
-                  
+
                   <div>
                     <label htmlFor="state" className="block text-sm font-medium mb-1">
                       State/Province <span className="text-red-500">*</span>
@@ -216,7 +215,7 @@ export default function CheckoutPage() {
                       onChange={handleChange}
                     />
                   </div>
-                  
+
                   <div>
                     <label htmlFor="zipCode" className="block text-sm font-medium mb-1">
                       ZIP/Postal Code <span className="text-red-500">*</span>

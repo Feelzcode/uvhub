@@ -6,6 +6,7 @@ import { Star, ChevronLeft, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { use, useEffect, useState } from 'react';
 import { Product, useCurrencyStore, useProductsStore } from '@/store';
+import { NextSeo } from 'next-seo';
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -51,6 +52,19 @@ export default function ProductDetails({ params }: PageProps) {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4">
+      {product && (
+        <NextSeo
+          title={`${product.name} | UVHub`}
+          description={product.description || 'View product details and buy at UVHub.'}
+          openGraph={{
+            title: `${product.name} | UVHub`,
+            description: product.description || 'View product details and buy at UVHub.',
+            images: [
+              { url: product.image || '/images/about.jpg', alt: product.name },
+            ],
+          }}
+        />
+      )}
       <button
         onClick={() => router.back()}
         className="flex items-center gap-2 text-blue-600 hover:underline mb-6"

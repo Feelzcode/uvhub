@@ -3,10 +3,15 @@ import React from 'react';
 import { HeartPulse, Truck, Wrench, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { NextSeo } from 'next-seo';
 
 const AboutPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
+      <NextSeo
+        title="About Us | UVHub"
+        description="Learn about UVHub's mission to empower healthier lives across Africa with premium fitness solutions."
+      />
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-blue-600 to-purple-600 text-white py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
@@ -37,8 +42,8 @@ const AboutPage = () => {
               </p>
             </div>
             <div className="relative bg-gray-100 rounded-xl overflow-hidden h-96">
-              <Image 
-                src="/images/about.jpg" 
+              <Image
+                src="/images/about.jpg"
                 alt="Happy customers using our equipment"
                 fill
                 className="object-cover"
@@ -96,7 +101,7 @@ const AboutPage = () => {
             <p className="text-xl mb-8">
               You pick the gear, and we&apos;ll handle the rest, ensuring it&apos;s set up perfectly and ready for your first workout. No hidden fees, no hassle - just pure focus on your well-being.
             </p>
-            <Link 
+            <Link
               href="/home/all-products"
               className="inline-block bg-white text-blue-600 font-bold px-8 py-3 rounded-lg hover:bg-gray-100 transition-colors"
             >

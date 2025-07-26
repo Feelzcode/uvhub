@@ -2,6 +2,12 @@ import ProductsOverview from '@/components/ProductsOverview'
 import React from 'react'
 import { getPaginatedCategories, getPaginatedCustomers, getPaginatedProducts } from './actions'
 import { ProductsDataTable } from '@/components/ProductsDatatable';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Products Management",
+  description: "Manage UVHub products, categories, and inventory.",
+};
 
 async function ProductsPage() {
     const [products, categories, customers] = await Promise.all([

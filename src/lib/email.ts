@@ -65,14 +65,25 @@ export const sendTemplateEmail = async (
 };
 
 // Order Confirmation Email
-export const sendOrderConfirmationEmail = async (order: Order) => {
-    const html = compileOrderConfirmation(order);
+export const sendOrderConfirmationEmail = async (order: Order, email: string) => {
+    console.log('📧 Sending order confirmation email to:', email);
+    
+    try {
+        const html = compileOrderConfirmation(order);
+        console.log('📧 Email HTML length:', html.length);
 
-    return sendEmail({
-        to: order.customer?.email as string,
-        subject: 'Order Confirmation - UVHub',
-        html,
-    });
+        const result = await sendEmail({
+            to: email,
+            subject: 'Order Confirmation - UVHub',
+            html,
+        });
+        
+        console.log('✅ Email sent successfully:', result.messageId);
+        return result;
+    } catch (error) {
+        console.error('❌ Error sending order confirmation email:', error);
+        throw error;
+    }
 };
 
 // Password Reset Email
@@ -112,6 +123,6 @@ export const sendOrderShippedEmail = async (email: string, shipmentData: Record<
 };
 
 // Legacy function for backward compatibility
-export const sendOrderPlacedEmail = async (order: Order) => {
-    return sendOrderConfirmationEmail(order);
+export const sendOrderPlacedEmail = async (order: Order, email: string) => {
+    return sendOrderConfirmationEmail(order, email);
 };

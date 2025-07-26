@@ -12,6 +12,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { SignInFormData, signInSchema } from "@/utils/schema"
 import { useSearchParams } from "next/navigation"
+import { NextSeo } from 'next-seo';
 
 function SignInForm() {
     const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -132,6 +133,10 @@ function SignInForm() {
 export default function SignInPage() {
     return (
         <Suspense fallback={<div>Loading...</div>}>
+            <NextSeo
+                title="Sign In | UVHub Admin"
+                description="Sign in to your UVHub admin account to manage products, orders, and analytics."
+            />
             <SignInForm />
         </Suspense>
     )

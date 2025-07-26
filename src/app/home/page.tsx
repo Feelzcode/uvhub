@@ -1,8 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import {
-  MessageCircle, Star, Package, TrendingUp, Users, Award, Shield, Truck, CheckCircle,
-  ArrowRight, Search, X,
+  MessageCircle, Star, ArrowRight, Search, X,
 } from "lucide-react";
 import { useCart } from "@/store/hooks";
 import { useProductsStore } from '@/store'
@@ -11,59 +10,9 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCurrencyStore } from "@/store";
 import Testimonials from "@/components/ui/HomeComponents/Testimonial";
-
-// --- Static Data ---
-const heroSlides = [
-  { image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&auto=format&fit=crop", title: "Professional Strength Equipment", subtitle: "Commercial quality for home gyms", cta: "Shop Now" },
-  { image: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=1200&auto=format&fit=crop", title: "Premium Cardio Machines", subtitle: "Engineered for performance and durability", cta: "View Collection" },
-  { image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&auto=format&fit=crop", title: "Transform Your Fitness Journey", subtitle: "Professional equipment for every goal", cta: "Get Started" },
-];
-
-const horizontalProducts = [
-  { id: "1", name: "Wonder core", price: 200000, image: "/images/img_gym7.jpeg", badge: "Best Seller" },
-  { id: "2", name: "Recumbent Bike", price: 15000, image: "/images/recumbent_bike.webp", badge: "New" },
-  { id: "3", name: "Stepper", price: 100000, image: "/images/stepper.jpg" },
-  { id: "4", name: "Massage chair", price: 20000, image: "/images/img_gym11.jpeg" },
-  { id: "5", name: "Kettlebell", price: 150000, image: "/images/kettlebell.jpeg", badge: "Popular" },
-  { id: "6", name: "Dumbbell Rack", price: 200000, image: "/images/dumbbell_rack.webp" },
-];
-
-const stats = [
-  { icon: Package, label: "Equipment Listed", value: 500, suffix: "+" },
-  { icon: TrendingUp, label: "Equipment Sold", value: 12000, suffix: "+" },
-  { icon: Users, label: "Happy Clients", value: 8500, suffix: "+" },
-];
-
-const whyUsFeatures = [
-  { icon: Award, title: "Premium Quality", description: "Commercial-grade equipment built to last" },
-  { icon: Shield, title: "Warranty Protection", description: "Comprehensive warranty on all products" },
-  { icon: Truck, title: "Free Shipping", description: "Free delivery on all orders" },
-  { icon: CheckCircle, title: "Expert Support", description: "24/7 customer service and installation help" },
-];
-
-// --- Counter Hook ---
-const useCounter = (end: number, duration: number = 2000) => {
-  const [count, setCount] = useState<number>(0);
-  const [isVisible, setIsVisible] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (!isVisible) return;
-    let startTime: number | undefined;
-    const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime;
-      const progress = (currentTime - startTime) / duration;
-      if (progress < 1) {
-        setCount(Math.floor(end * progress));
-        requestAnimationFrame(animate);
-      } else {
-        setCount(end);
-      }
-    };
-    requestAnimationFrame(animate);
-  }, [isVisible, end, duration]);
-
-  return { count, setIsVisible };
-};
+import { NextSeo } from 'next-seo';
+import { heroSlides, horizontalProducts, stats, whyUsFeatures } from "@/lib/sampleData";
+import { useCounter } from "@/hooks/use-counter";
 
 // --- Main Component ---
 const Home = () => {
@@ -120,10 +69,10 @@ const Home = () => {
   // Get autocomplete suggestions
   const getAutocompleteSuggestions = () => {
     if (!searchTerm || searchTerm.length < 2) return [];
-    
+
     const filteredProducts = getFilteredProducts();
     return filteredProducts
-      .filter(product => 
+      .filter(product =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchTerm.toLowerCase())
       )
@@ -152,7 +101,7 @@ const Home = () => {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedSuggestion(prev => 
+        setSelectedSuggestion(prev =>
           prev < suggestions.length - 1 ? prev + 1 : prev
         );
         break;
@@ -222,10 +171,13 @@ const Home = () => {
   }
 
   const filteredProducts: Product[] = getFilteredProducts();
-  console.log(filteredProducts, "check if products is available");
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <NextSeo
+        title="Home | UVHub"
+        description="Shop the best fitness equipment and accessories at UVHub. Quality products, great prices, and fast shipping."
+      />
       {/* Hero Section */}
       <section className="relative h-screen overflow-hidden">
         {heroSlides.map((slide, index) => (
@@ -335,7 +287,7 @@ const Home = () => {
                   </button>
                 )}
               </div>
-              
+
               {/* Autocomplete Dropdown */}
               {showAutocomplete && suggestions.length > 0 && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -343,9 +295,8 @@ const Home = () => {
                     <div
                       key={product.id}
                       onClick={() => handleSuggestionClick(product)}
-                      className={`px-4 py-3 cursor-pointer hover:bg-gray-50 flex items-center gap-3 ${
-                        index === selectedSuggestion ? 'bg-blue-50 border-l-4 border-blue-500' : ''
-                      }`}
+                      className={`px-4 py-3 cursor-pointer hover:bg-gray-50 flex items-center gap-3 ${index === selectedSuggestion ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                        }`}
                     >
                       <div className="w-8 h-8 bg-gray-100 rounded overflow-hidden flex-shrink-0">
                         <Image
@@ -449,10 +400,10 @@ const Home = () => {
                           addToCart(product, 1);
                         }}
                         className={`px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 ${isInCart(product.id)
-                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                            : product.stock === 0
-                              ? 'bg-red-100 text-red-600 cursor-not-allowed'
-                              : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                          : product.stock === 0
+                            ? 'bg-red-100 text-red-600 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
                           }`}
                       >
                         {isInCart(product.id) ? 'Added to Cart' : product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
@@ -490,7 +441,7 @@ const Home = () => {
         </div>
       </section>
 
-      <Testimonials/>
+      <Testimonials />
 
       {/* WhatsApp Floating Button */}
       <div className="fixed bottom-6 right-6 z-50">

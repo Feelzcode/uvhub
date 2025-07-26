@@ -1,9 +1,7 @@
 import { placeOrder } from "@/app/admin/dashboard/orders/actions";
 
 export async function POST(req: Request) {
-    console.log(req.method, 'The request method')
     const body = await req.json();
-    console.log(body, 'The requst body');
     try {
 
         const order = await placeOrder(body);

@@ -5,7 +5,7 @@ import { Customer, Order, OrderItem, PaginatedResponse } from "@/store/types";
 import { createClient } from "@/utils/supabase/server";
 import { paginationSchema, searchSchema } from "@/utils/schema";
 import { createCustomer, getCustomerByEmail } from "../products/actions";
-// import { sendOrderPlacedEmail } from "@/lib/email";
+import { sendOrderPlacedEmail } from "@/lib/email";
 
 
 // Order Information
@@ -171,7 +171,18 @@ export async function getAllOrders(): Promise<Order[]> {
 
 export async function getOrderById(id: string) {
     const supabase = await createClient();
-    const { data, error } = await supabase.from('orders').select('*').eq('id', id).single();
+    const { data, error } = await supabase
+        .from('orders')
+        .select(`
+            *,
+            customer:customers(*),
+            items:order_items(
+                *,
+                product:products(*)
+            )
+        `)
+        .eq('id', id)
+        .single();
     if (error) {
         console.error(error);
         return null;
@@ -226,7 +237,7 @@ export async function placeOrder(orderDetails: {
     paymentMethod: string,
 }): Promise<Order | null> {
     let customer: Customer | null;
-    
+
     try {
         // Check if customer exists
         customer = await getCustomerByEmail(orderDetails.customer.email);
@@ -271,8 +282,16 @@ export async function placeOrder(orderDetails: {
             return null;
         }
 
-        // send an email to the customer and the admin
-        // await sendOrderPlacedEmail(order!);
+        // Fetch complete order data with customer and items for email
+        const completeOrder = await getOrderById(order.id);
+        
+        if (completeOrder) {
+            // send an email to the customer and the admin
+            console.log('📧 Sending email to:', customer.email);
+            await sendOrderPlacedEmail(completeOrder, customer.email as string);
+        } else {
+            console.error('❌ Failed to fetch complete order data for email');
+        }
 
         return order;
     } catch (error) {

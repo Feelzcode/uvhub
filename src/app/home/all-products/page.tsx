@@ -8,7 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Product, Category } from '@/store/types';
 import { useProductsStore, useCurrencyStore } from '@/store';
-
+import { NextSeo } from 'next-seo';
 
 
 export default function AllEquipmentPage() {
@@ -85,6 +85,10 @@ export default function AllEquipmentPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <NextSeo
+        title="All Products | UVHub"
+        description="Browse all fitness equipment and accessories available at UVHub. Find the perfect products for your fitness journey."
+      />
       {/* Header with back button and mobile filter toggle */}
       <div className="flex items-center justify-between mb-8">
         <Link href="/home" className="flex items-center gap-2 text-blue-600 hover:underline">

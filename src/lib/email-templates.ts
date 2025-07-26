@@ -5,23 +5,27 @@ import path from 'path';
 import { Order } from '@/store';
 
 // Register custom helpers
-Handlebars.registerHelper('formatCurrency', function(amount: number, currency: string = 'NGN', locale: string = 'en-NG') {
+Handlebars.registerHelper('formatCurrency', function (amount: number, currency: string = 'NGN', locale: string = 'en-NG') {
     return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: currency
     }).format(amount);
 });
 
-Handlebars.registerHelper('formatDate', function(date: string | Date) {
-    return new Date(date).toLocaleDateString('en-NG', {
+Handlebars.registerHelper('formatDate', function (date: string | Date) {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
     });
 });
 
-Handlebars.registerHelper('formatDateTime', function(date: string | Date) {
-    return new Date(date).toLocaleString('en-NG', {
+Handlebars.registerHelper('formatDateTime', function (date: string | Date) {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -30,30 +34,26 @@ Handlebars.registerHelper('formatDateTime', function(date: string | Date) {
     });
 });
 
-Handlebars.registerHelper('lowercase', function(str: string) {
-    return str.toLowerCase();
+Handlebars.registerHelper('lowercase', function (str: string) {
+    return str ? str.toLowerCase() : '';
 });
 
-Handlebars.registerHelper('uppercase', function(str: string) {
-    return str.toUpperCase();
+Handlebars.registerHelper('uppercase', function (str: string) {
+    return str ? str.toUpperCase() : '';
 });
 
 // Load and compile templates
 const templatesDir = path.join(process.cwd(), 'src', 'templates', 'emails');
 
-// Load base template
-const baseTemplatePath = path.join(templatesDir, 'base.hbs');
-const baseTemplateSource = fs.readFileSync(baseTemplatePath, 'utf-8');
-
-// Register base template as partial
-Handlebars.registerPartial('base', baseTemplateSource);
-
 // Load all email templates
 const loadTemplate = (templateName: string) => {
     const templatePath = path.join(templatesDir, `${templateName}.hbs`);
+
     if (!fs.existsSync(templatePath)) {
+        console.error('❌ Template file not found:', templatePath);
         throw new Error(`Template ${templateName} not found`);
     }
+
     const templateSource = fs.readFileSync(templatePath, 'utf-8');
     return Handlebars.compile(templateSource);
 };
@@ -73,23 +73,37 @@ const defaultCompanyInfo = {
 export const compileTemplate = (templateName: string, data: any) => {
     try {
         const template = loadTemplate(templateName);
-        
+
         // Merge default company info with provided data
         const templateData = {
             ...defaultCompanyInfo,
             ...data
         };
-        
-        return template(templateData);
+
+        const result = template(templateData);
+        console.log('✅ Template compilation successful, result length:', result.length);
+
+        return result;
     } catch (error) {
-        console.error(`Error compiling template ${templateName}:`, error);
+        console.error(`❌ Error compiling template ${templateName}:`, error);
         throw error;
     }
 };
 
 // Specific email template functions
 export const compileOrderConfirmation = (orderData: Order) => {
-    return compileTemplate('order-confirmation', {
+    console.log('🔍 Compiling order confirmation email for order:', orderData.id);
+
+    // Transform order items to match template expectations
+    const transformedItems = (orderData.items || []).map(item => ({
+        productName: item.product?.name || 'Unknown Product',
+        productImage: item.product?.image || '',
+        quantity: item.quantity,
+        price: item.price,
+        currency: 'NGN'
+    }));
+
+    const templateData = {
         subject: 'Order Confirmation - UVHub',
         customerName: orderData.customer?.name ?? 'Valued Customer',
         orderId: orderData.id,
@@ -98,10 +112,19 @@ export const compileOrderConfirmation = (orderData: Order) => {
         currency: 'NGN',
         paymentMethod: orderData.payment_method,
         orderStatus: orderData.status,
-        orderItems: orderData.items || [],
+        orderItems: transformedItems,
         shippingAddress: orderData.shipping_address,
         orderTrackingUrl: `${process.env.NEXT_PUBLIC_APP_URL}/orders/${orderData.id}`
-    });
+    };
+
+    try {
+        const html = compileTemplate('order-confirmation', templateData);
+        console.log('✅ Email compiled successfully, length:', html.length);
+        return html;
+    } catch (error) {
+        console.error('❌ Error compiling email template:', error);
+        throw error;
+    }
 };
 
 export const compilePasswordReset = (resetData: any) => {

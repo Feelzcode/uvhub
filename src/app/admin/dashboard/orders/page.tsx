@@ -3,6 +3,12 @@ import React from 'react'
 import { getAllOrders } from './actions';
 import { getAllCustomers } from '../products/actions';
 import { OrdersDatatable } from '@/components/OrdersDatatable';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Orders Management",
+  description: "View and manage customer orders at UVHub.",
+};
 
 async function OrdersPage() {
   const [orders, customers] = await Promise.all([

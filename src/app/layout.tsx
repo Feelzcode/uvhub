@@ -14,8 +14,32 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "UV Hub",
-  description: "UV Hub is a platform for buying and selling products",
+  title: {
+    template: '%s | UVHub',
+    default: 'UVHub - Your Fitness Marketplace',
+  },
+  description: "Discover and shop the best fitness equipment and accessories at UVHub. Quality products, great prices, and fast shipping.",
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://uvhub.com.ng',
+    siteName: 'UVHub',
+    title: 'UVHub - Your Fitness Marketplace',
+    description: 'Discover and shop the best fitness equipment and accessories at UVHub. Quality products, great prices, and fast shipping.',
+    images: [
+      {
+        url: '/images/about.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'UVHub Fitness Equipment',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@uvhub',
+    creator: '@uvhub',
+  },
 };
 
 export default function RootLayout({
@@ -28,6 +52,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+
         {children}
         <Toaster position="top-center" richColors />
       </body>

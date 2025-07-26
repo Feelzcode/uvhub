@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, ShoppingBag, Truck, ArrowLeft } from 'lucide-react';
 import { Order } from '@/store/types';
 import { useCurrencyStore } from '@/store';
+import { NextSeo } from 'next-seo';
 
 export default function OrderConfirmationPage() {
   const { id } = useParams();
@@ -18,15 +19,15 @@ export default function OrderConfirmationPage() {
   useEffect(() => {
     const fetchOrder = async () => {
       if (!id) return;
-      
+
       try {
         setLoading(true);
         const response = await fetch(`/api/orders/${id}`);
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch order');
         }
-        
+
         const orderData = await response.json();
         setOrder(orderData);
       } catch (err) {
@@ -70,11 +71,15 @@ export default function OrderConfirmationPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <NextSeo
+        title={order ? `Order #${order.id} Confirmation | UVHub` : 'Order Confirmation | UVHub'}
+        description="Thank you for your purchase! Your order has been confirmed at UVHub."
+      />
       <div className="max-w-2xl mx-auto text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
           <CheckCircle className="w-8 h-8 text-green-600" />
         </div>
-        
+
         <h1 className="text-3xl font-bold mb-4">Order Confirmed!</h1>
         <p className="text-lg text-gray-600 mb-8">
           Thank you for your purchase. Your order #{order.id} has been received and is being processed.
@@ -158,15 +163,15 @@ export default function OrderConfirmationPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full sm:w-auto"
             onClick={() => router.push('/home')}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Continue Shopping
           </Button>
-          <Button 
+          <Button
             className="w-full sm:w-auto"
             onClick={() => window.open('https://wa.me/+2347032220325?text=Hi%20uvHubGym%20team,%20I%20have%20a%20question%20about%20my%20order%20' + order.id, '_blank')}
           >

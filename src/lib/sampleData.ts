@@ -1,4 +1,5 @@
 import { Product, Category } from '@/store/types';
+import { Package, TrendingUp, Users, Award, Shield, Truck, CheckCircle } from 'lucide-react';
 
 // Sample categories
 const categories: Category[] = [
@@ -139,6 +140,34 @@ export const sampleProducts: Product[] = [
     created_at: new Date('2024-01-25'),
     updated_at: new Date('2024-01-25'),
   },
+];
+
+export const heroSlides = [
+  { image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&auto=format&fit=crop", title: "Professional Strength Equipment", subtitle: "Commercial quality for home gyms", cta: "Shop Now" },
+  { image: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=1200&auto=format&fit=crop", title: "Premium Cardio Machines", subtitle: "Engineered for performance and durability", cta: "View Collection" },
+  { image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&auto=format&fit=crop", title: "Transform Your Fitness Journey", subtitle: "Professional equipment for every goal", cta: "Get Started" },
+];
+
+export const horizontalProducts = [
+  { id: "1", name: "Wonder core", price: 200000, image: "/images/img_gym7.jpeg", badge: "Best Seller" },
+  { id: "2", name: "Recumbent Bike", price: 15000, image: "/images/recumbent_bike.webp", badge: "New" },
+  { id: "3", name: "Stepper", price: 100000, image: "/images/stepper.jpg" },
+  { id: "4", name: "Massage chair", price: 20000, image: "/images/img_gym11.jpeg" },
+  { id: "5", name: "Kettlebell", price: 150000, image: "/images/kettlebell.jpeg", badge: "Popular" },
+  { id: "6", name: "Dumbbell Rack", price: 200000, image: "/images/dumbbell_rack.webp" },
+];
+
+export const stats = [
+  { icon: Package, label: "Equipment Listed", value: 500, suffix: "+" },
+  { icon: TrendingUp, label: "Equipment Sold", value: 12000, suffix: "+" },
+  { icon: Users, label: "Happy Clients", value: 8500, suffix: "+" },
+];
+
+export const whyUsFeatures = [
+  { icon: Award, title: "Premium Quality", description: "Commercial-grade equipment built to last" },
+  { icon: Shield, title: "Warranty Protection", description: "Comprehensive warranty on all products" },
+  { icon: Truck, title: "Free Shipping", description: "Free delivery on all orders" },
+  { icon: CheckCircle, title: "Expert Support", description: "24/7 customer service and installation help" },
 ];
 
 // Sample orders commented out due to type mismatches
