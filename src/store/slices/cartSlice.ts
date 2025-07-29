@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { CartItem, CartState, Product } from '../types';
+import { trackAddToCart, trackPurchase } from '@/components/FacebookPixel';
+import { trackGAAddToCart, trackGAPurchase } from '@/components/GoogleAnalytics';
 
 interface CartActions {
     // Actions
@@ -9,6 +11,7 @@ interface CartActions {
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number) => void;
     clearCart: () => void;
+    trackPurchase: (orderId: string) => void;
 
     // Computed selectors
     getCartItem: (productId: string) => CartItem | undefined;
@@ -45,6 +48,12 @@ export const useCartStore = create<CartState & CartActions>()(
                             const newTotal = updatedItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
                             const newItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
 
+                            // Track Facebook Pixel AddToCart event
+                            trackAddToCart(product.price * quantity, 'NGN', product.name);
+
+                            // Track Google Analytics AddToCart event
+                            trackGAAddToCart(product.id, product.name, product.price, quantity, 'NGN');
+
                             return {
                                 items: updatedItems,
                                 total: newTotal,
@@ -61,6 +70,12 @@ export const useCartStore = create<CartState & CartActions>()(
                             const newItems = [...state.items, newItem];
                             const newTotal = newItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
                             const newItemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
+
+                            // Track Facebook Pixel AddToCart event
+                            trackAddToCart(product.price * quantity, 'NGN', product.name);
+
+                            // Track Google Analytics AddToCart event
+                            trackGAAddToCart(product.id, product.name, product.price, quantity, 'NGN');
 
                             return {
                                 items: newItems,
@@ -98,26 +113,47 @@ export const useCartStore = create<CartState & CartActions>()(
                                 total: newTotal,
                                 itemCount: newItemCount,
                             };
+                        } else {
+                            // Update quantity
+                            const updatedItems = state.items.map(item =>
+                                item.productId === productId
+                                    ? { ...item, quantity }
+                                    : item
+                            );
+
+                            const newTotal = updatedItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+                            const newItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+
+                            return {
+                                items: updatedItems,
+                                total: newTotal,
+                                itemCount: newItemCount,
+                            };
                         }
-
-                        const updatedItems = state.items.map(item =>
-                            item.productId === productId
-                                ? { ...item, quantity }
-                                : item
-                        );
-
-                        const newTotal = updatedItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-                        const newItemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
-
-                        return {
-                            items: updatedItems,
-                            total: newTotal,
-                            itemCount: newItemCount,
-                        };
                     });
                 },
 
-                clearCart: () => set(initialState),
+                clearCart: () => {
+                    set(initialState);
+                },
+
+                trackPurchase: (orderId: string) => {
+                    const state = get();
+                    const total = state.total;
+                    const items = state.items.map(item => ({
+                        item_id: item.productId,
+                        item_name: item.product.name,
+                        price: item.product.price,
+                        quantity: item.quantity,
+                        currency: 'NGN',
+                    }));
+
+                    // Track Facebook Pixel Purchase event
+                    trackPurchase(total, 'NGN', `Order ${orderId}`);
+
+                    // Track Google Analytics Purchase event
+                    trackGAPurchase(orderId, total, 'NGN', items);
+                },
 
                 // Computed selectors
                 getCartItem: (productId) => {

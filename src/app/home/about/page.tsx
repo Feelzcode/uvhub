@@ -3,15 +3,10 @@ import React from 'react';
 import { HeartPulse, Truck, Wrench, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { NextSeo } from 'next-seo';
 
 const AboutPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <NextSeo
-        title="About Us | UVHub"
-        description="Learn about UVHub's mission to empower healthier lives across Africa with premium fitness solutions."
-      />
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-blue-600 to-purple-600 text-white py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">

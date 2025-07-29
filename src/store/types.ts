@@ -294,3 +294,17 @@ export interface UploadResult {
   user: UserState;
   currency: CurrencyState & CurrencyActions;
 }
+
+export interface Settings {
+  id: string;
+  facebook_pixel_id?: string;
+  facebook_pixel_enabled: boolean;
+  google_analytics_id?: string;
+  google_analytics_enabled: boolean;
+  site_name: string;
+  site_description?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  created_at: string;
+  updated_at: string;
+}

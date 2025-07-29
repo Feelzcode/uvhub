@@ -5,12 +5,7 @@ import { useOrdersStore, useProductsStore } from "@/store";
 import DashboardCardsSections from "@/components/DashboardCardsSections"
 import { getOrdersByProduct } from "./actions";
 import DashboardChartSection from "@/components/DashboardChartSection";
-import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Admin dashboard for managing UVHub products, orders, and analytics.",
-};
 
 function DashboardPage() {
   const { getProducts, products, getCategories } = useProductsStore();

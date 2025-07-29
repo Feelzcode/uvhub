@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { trackInitiateCheckout } from '@/components/FacebookPixel';
+import { trackGABeginCheckout } from '@/components/GoogleAnalytics';
 
 const DeliveryReadinessNotice = () => (
   <Card className="mb-6 bg-yellow-50 border-yellow-200">
@@ -40,7 +42,7 @@ const DeliveryReadinessNotice = () => (
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, total, clearCart } = useCartStore();
+  const { items, total, clearCart, trackPurchase } = useCartStore();
   const [loading, setLoading] = useState(false);
   // const { placeOrder, loading } = useOrdersStore();
   const { formatPrice, currentCurrency } = useCurrencyStore();
@@ -55,6 +57,25 @@ export default function CheckoutPage() {
     country: '',
     paymentMethod: 'credit_card',
     notes: '',
+  });
+
+  // Track initiate checkout when component mounts
+  useState(() => {
+    if (items.length > 0) {
+      const itemsForTracking = items.map(item => ({
+        item_id: item.productId,
+        item_name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        currency: 'NGN',
+      }));
+
+      // Track Facebook Pixel InitiateCheckout event
+      trackInitiateCheckout(total, 'NGN');
+
+      // Track Google Analytics BeginCheckout event
+      trackGABeginCheckout(total, 'NGN', itemsForTracking);
+    }
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -98,16 +119,21 @@ export default function CheckoutPage() {
         body: JSON.stringify(orderDetails),
       });
       const order = await response.json();
-      if (order) {
+
+      if (response.ok) {
+        // Track purchase event
+        trackPurchase(order.id);
+
+        // Clear cart and redirect
         clearCart();
-        toast.success('Order placed successfully, please check your email for an order confirmation message');
         router.push(`/home/order-confirmation/${order.id}`);
+        toast.success('Order placed successfully!');
       } else {
-        toast.error('Failed to place order. Please try again or contact support.');
+        toast.error(order.error || 'Failed to place order');
       }
     } catch (error) {
-      console.error('Error placing order:', error);
-      toast.error('An error occurred while placing your order. Please try again.');
+      console.error('Checkout error:', error);
+      toast.error('An error occurred while placing your order');
     } finally {
       setLoading(false);
     }

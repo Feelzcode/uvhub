@@ -12,7 +12,7 @@ import { Order, User } from '@/store/types';
 // Example 1: Sending order confirmation when order is placed
 export const handleOrderPlaced = async (order: Order) => {
     try {
-        await sendOrderConfirmationEmail(order);
+        await sendOrderConfirmationEmail(order, order.customer?.email as string);
         console.log('Order confirmation email sent successfully');
     } catch (error) {
         console.error('Failed to send order confirmation email:', error);

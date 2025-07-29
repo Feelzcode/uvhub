@@ -4,6 +4,7 @@ export { useOrdersStore } from './slices/ordersSlice';
 export { useCartStore } from './slices/cartSlice';
 export { useCurrencyStore } from './slices/currencySlice';
 export { useUserStore } from './slices/userSlice';
+export { useSettingsStore } from './slices/settingsSlice';
 
 // Export hooks
 export { useCurrency } from './hooks/useCurrency';
@@ -27,6 +28,7 @@ export type {
     LocationInfo,
     CurrencyState,
     CurrencyActions,
+    Settings,
 } from './types';
 
 // Re-export Zustand utilities for convenience

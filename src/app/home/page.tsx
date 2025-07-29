@@ -10,9 +10,9 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCurrencyStore } from "@/store";
 import Testimonials from "@/components/ui/HomeComponents/Testimonial";
-import { NextSeo } from 'next-seo';
 import { heroSlides, horizontalProducts, stats, whyUsFeatures } from "@/lib/sampleData";
 import { useCounter } from "@/hooks/use-counter";
+import Link from "next/link";
 
 // --- Main Component ---
 const Home = () => {
@@ -174,10 +174,6 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <NextSeo
-        title="Home | UVHub"
-        description="Shop the best fitness equipment and accessories at UVHub. Quality products, great prices, and fast shipping."
-      />
       {/* Hero Section */}
       <section className="relative h-screen overflow-hidden">
         {heroSlides.map((slide, index) => (
@@ -194,7 +190,7 @@ const Home = () => {
               <div className="text-center px-4 max-w-4xl">
                 <h1 className="text-4xl md:text-7xl font-bold text-white mb-6 leading-tight">{slide.title}</h1>
                 <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-2xl mx-auto">{slide.subtitle}</p>
-                <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105">{slide.cta}</button>
+                <Link href={slide.link} className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105">{slide.cta}</Link>
               </div>
             </div>
           </div>

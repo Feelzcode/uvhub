@@ -1,6 +1,5 @@
 'use client'
 
-
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -11,7 +10,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { forgotPassword } from "./actions"
 import { type ForgotPasswordFormData, forgotPasswordSchema } from "@/utils/schema"
-import { NextSeo } from 'next-seo';
+import Head from 'next/head';
 
 
 export default function ForgotPasswordPage() {
@@ -52,10 +51,10 @@ export default function ForgotPasswordPage() {
     if (isSubmitted) {
         return (
             <>
-                <NextSeo
-                    title="Check Your Email | UVHub Admin"
-                    description="Password reset link has been sent to your email address."
-                />
+                <Head>
+                    <title>Check Your Email | UVHub Admin</title>
+                    <meta name="description" content="Password reset link has been sent to your email address." />
+                </Head>
                 <div className="flex flex-col items-center gap-6 text-center">
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
                         <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,10 +81,10 @@ export default function ForgotPasswordPage() {
 
     return (
         <>
-            <NextSeo
-                title="Forgot Password | UVHub Admin"
-                description="Reset your UVHub admin account password. Enter your email to receive a reset link."
-            />
+            <Head>
+                <title>Forgot Password | UVHub Admin</title>
+                <meta name="description" content="Reset your UVHub admin account password. Enter your email to receive a reset link." />
+            </Head>
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
                 <div className="flex flex-col items-center gap-2 text-center">
                     <h1 className="text-2xl font-bold">Forgot your password?</h1>

@@ -7,6 +7,7 @@ import {
     Send,
     ShoppingBag,
     ShoppingCart,
+    Settings,
 } from "lucide-react"
 
 import { NavMain } from "@/components/NavMain"
@@ -34,6 +35,11 @@ const data = {
             url: "/admin/dashboard/orders",
             icon: ShoppingBag,
         },
+        {
+            title: "Settings",
+            url: "/admin/dashboard/settings",
+            icon: Settings,
+        },
     ],
     navSecondary: [
         {
@@ -50,8 +56,8 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    
-    
+
+
     return (
         <Sidebar variant="inset" {...props}>
             <SidebarHeader>

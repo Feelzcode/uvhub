@@ -7,6 +7,8 @@ import Image from 'next/image';
 import { use, useEffect, useState } from 'react';
 import { Product, useCurrencyStore, useProductsStore } from '@/store';
 import { NextSeo } from 'next-seo';
+import { trackViewContent } from '@/components/FacebookPixel';
+import { trackGAViewItem } from '@/components/GoogleAnalytics';
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -28,6 +30,12 @@ export default function ProductDetails({ params }: PageProps) {
 
         setProduct(product);
         setsimilarProducts(products!);
+
+        // Track Facebook Pixel ViewContent event
+        trackViewContent(product.name, product.category?.name);
+
+        // Track Google Analytics ViewItem event
+        trackGAViewItem(product.id, product.name, product.price, 'NGN');
       }
     }
 
