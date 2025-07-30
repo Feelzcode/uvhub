@@ -288,7 +288,7 @@ function OrderActions({ order }: { order: Order }) {
                         </div>
                         <div className="flex flex-col gap-3">
                             <Label htmlFor="view-created-at">Created At</Label>
-                            <Input id="view-created-at" value={order.created_at.toLocaleDateString()} disabled />
+                            <Input id="view-created-at" value={new Date(order.created_at).toLocaleDateString()} disabled />
                         </div>
                     </div>
                 </DrawerContent>
