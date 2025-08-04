@@ -150,11 +150,11 @@ export const heroSlides = [
 
 export const horizontalProducts = [
   { id: "1", name: "Wonder core", price: 200000, image: "/images/img_gym7.jpeg", badge: "Best Seller" },
-  { id: "2", name: "Recumbent Bike", price: 15000, image: "/images/recumbent_bike.webp", badge: "New" },
+  { id: "2", name: "Recumbent Bike", price: 510000, image: "/images/recumbent_bike.webp", badge: "New" },
   { id: "3", name: "Stepper", price: 100000, image: "/images/stepper.jpg" },
-  { id: "4", name: "Massage chair", price: 20000, image: "/images/img_gym11.jpeg" },
-  { id: "5", name: "Kettlebell", price: 150000, image: "/images/kettlebell.jpeg", badge: "Popular" },
-  { id: "6", name: "Dumbbell Rack", price: 200000, image: "/images/dumbbell_rack.webp" },
+  { id: "4", name: "Massage chair", price: 1800000, image: "/images/img_gym11.jpeg" },
+  { id: "5", name: "Kettlebell", price: 60000, image: "/images/kettlebell.jpeg", badge: "Popular" },
+  { id: "6", name: "Dumbbell Rack", price: 120000, image: "/images/dumbbell_rack.webp" },
 ];
 
 export const stats = [
