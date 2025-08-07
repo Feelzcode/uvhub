@@ -93,11 +93,11 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { FileInput } from "@/components/ui/file-input"
-import { Product, Category, Customer } from "@/store/types"
+import { Product, Category, Customer, Subcategory } from "@/store/types"
 import Image from "next/image"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "./ui/chart"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
-import { createCategory } from "@/app/admin/dashboard/products/actions"
+import { createCategory, createSubcategory, getPaginatedSubcategories } from "@/app/admin/dashboard/products/actions"
 import { toast } from "sonner"
 import { useUppyWithSupabase } from "@/hooks/use-uppy-with-supabase"
 import { getPublicUrlOfUploadedFile } from "@/lib/utils"
@@ -387,6 +387,21 @@ const productColumns: ColumnDef<Product>[] = [
         ),
     },
     {
+        accessorKey: "subcategory",
+        header: "Subcategory",
+        cell: ({ row }) => (
+            <div className="w-32">
+                {row.original.subcategory ? (
+                    <Badge variant="outline" className="text-muted-foreground px-1.5">
+                        {row.original.subcategory.name}
+                    </Badge>
+                ) : (
+                    <span className="text-muted-foreground text-sm">-</span>
+                )}
+            </div>
+        ),
+    },
+    {
         accessorKey: "price",
         header: () => <div className="w-full text-right">Price</div>,
         cell: ({ row }) => (
@@ -539,6 +554,98 @@ const customerColumns: ColumnDef<Customer>[] = [
         ),
     },
 ]
+
+// Subcategory columns
+const subcategoryColumns: ColumnDef<Subcategory>[] = [
+    {
+        id: "select",
+        header: ({ table }) => (
+            <div className="flex items-center justify-center">
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            </div>
+        ),
+        cell: ({ row }) => (
+            <div className="flex items-center justify-center">
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+    },
+    {
+        accessorKey: "name",
+        header: "Subcategory Name",
+        cell: ({ row }) => (
+            <div className="flex items-center gap-2">
+                <IconCategory className="size-4" />
+                <span className="font-medium">{row.original.name}</span>
+            </div>
+        ),
+    },
+    {
+        accessorKey: "description",
+        header: "Description",
+        cell: ({ row }) => (
+            <div className="text-sm text-muted-foreground max-w-xs truncate">
+                {row.original.description}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "category",
+        header: "Parent Category",
+        cell: ({ row }) => (
+            <div className="text-sm text-muted-foreground">
+                {row.original.category?.name || '-'}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "created_at",
+        header: "Created",
+        cell: ({ row }) => (
+            <div className="text-sm text-muted-foreground">
+                {new Date(row.original.created_at).toDateString()}
+            </div>
+        ),
+    },
+    {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <IconDotsVertical className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem>
+                        <IconEdit className="mr-2 h-4 w-4" />
+                        Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-red-600">
+                        <IconTrash className="mr-2 h-4 w-4" />
+                        Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        ),
+    },
+];
 
 // Category columns
 const categoryColumns: ColumnDef<Category>[] = [
@@ -732,11 +839,13 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
         price: '',
         stock: '',
         category: '',
+        subcategory_id: '',
         image: '',
     })
     const [isSubmitting, setIsSubmitting] = React.useState(false)
+    const [subcategories, setSubcategories] = React.useState<any[]>([])
     const uppy = useUppyWithSupabase({ bucketName: 'file-bucket', folderName: 'products' });
-    const { categories, addProduct } = useProductsStore();
+    const { categories, addProduct, getSubcategoriesByCategory } = useProductsStore();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -750,6 +859,7 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                 price: Number(formData.price),
                 stock: Number(formData.stock),
                 category: formData.category as unknown as Category,
+                subcategory_id: formData.subcategory_id || undefined,
                 image: formData.image,
                 rating: 0,
             });
@@ -771,6 +881,21 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
         }
     }
 
+    const handleCategoryChange = async (categoryId: string) => {
+        setFormData(prev => ({ ...prev, category: categoryId, subcategory_id: '' }));
+        if (categoryId) {
+            try {
+                const subcats = await getSubcategoriesByCategory(categoryId);
+                setSubcategories(subcats);
+            } catch (error) {
+                console.error('Error fetching subcategories:', error);
+                setSubcategories([]);
+            }
+        } else {
+            setSubcategories([]);
+        }
+    }
+
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -785,7 +910,7 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="category">Category</Label>
-                    <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                    <Select value={formData.category} onValueChange={handleCategoryChange}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select category" />
                         </SelectTrigger>
@@ -800,27 +925,25 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    required
-                />
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="price">Price</Label>
-                    <Input
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        value={formData.price}
-                        onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                        required
-                    />
+                    <Label htmlFor="subcategory">Subcategory (Optional)</Label>
+                    <Select 
+                        value={formData.subcategory_id} 
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, subcategory_id: value }))}
+                        disabled={!formData.category || subcategories.length === 0}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder={!formData.category ? "Select category first" : subcategories.length === 0 ? "No subcategories" : "Select subcategory"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {subcategories.map((subcategory) => (
+                                <SelectItem key={subcategory.id} value={subcategory.id}>
+                                    {subcategory.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="stock">Stock</Label>
@@ -832,6 +955,28 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                         required
                     />
                 </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    required
+                />
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="price">Price</Label>
+                <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                    required
+                />
             </div>
 
             <div className="space-y-2">
@@ -859,14 +1004,121 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                 />
             </div>
 
-            <DialogFooter>
+            <div className="flex justify-end space-x-2 pt-4">
                 <Button type="button" variant="outline" onClick={onClose}>
                     Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? 'Creating...' : 'Create Product'}
                 </Button>
-            </DialogFooter>
+            </div>
+        </form>
+    )
+}
+
+// Subcategory creation form
+function CreateSubcategoryForm({ onClose }: { onClose: () => void }) {
+    const [formData, setFormData] = React.useState({
+        name: '',
+        description: '',
+        category_id: '',
+    })
+    const [isSubmitting, setIsSubmitting] = React.useState(false)
+    const [categories, setCategories] = React.useState<Category[]>([])
+
+    React.useEffect(() => {
+        // Fetch categories for the dropdown
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch('/api/categories');
+                const data = await response.json();
+                setCategories(data);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+
+        try {
+            const subcategory = await createSubcategory({
+                name: formData.name,
+                description: formData.description,
+                category_id: formData.category_id,
+            });
+
+            if (subcategory) {
+                toast.success('Subcategory created successfully')
+                onClose()
+            }
+        } catch (error) {
+            console.error('Error creating subcategory:', error)
+            toast.error('Failed to create subcategory')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="name">Subcategory Name</Label>
+                <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter subcategory name"
+                    required
+                />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Enter subcategory description"
+                    required
+                />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="category">Parent Category</Label>
+                <Select
+                    value={formData.category_id}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value }))}
+                    required
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                    Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                        <>
+                            <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Creating...
+                        </>
+                    ) : (
+                        'Create Subcategory'
+                    )}
+                </Button>
+            </div>
         </form>
     )
 }
@@ -923,7 +1175,7 @@ function CreateCategoryForm({ onClose }: { onClose: () => void }) {
                 />
             </div>
 
-            <DialogFooter>
+            <div className="flex justify-end space-x-2 pt-4">
                 <Button type="button" variant="outline" onClick={onClose}>
                     Cancel
                 </Button>
@@ -935,7 +1187,7 @@ function CreateCategoryForm({ onClose }: { onClose: () => void }) {
                         </div>
                     ) : 'Create Category'}
                 </Button>
-            </DialogFooter>
+            </div>
         </form>
     )
 }
@@ -952,9 +1204,21 @@ export function ProductsDataTable({
     const [activeTab, setActiveTab] = React.useState("products")
     const [isCreateProductDialogOpen, setIsCreateProductDialogOpen] = React.useState(false)
     const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = React.useState(false)
+    const [isCreateSubcategoryDialogOpen, setIsCreateSubcategoryDialogOpen] = React.useState(false)
     const [currentProductsData, setCurrentProductsData] = React.useState(productsData)
     const [currentCustomersData, setCurrentCustomersData] = React.useState(customersData)
     const [currentCategoriesData, setCurrentCategoriesData] = React.useState(categoriesData)
+    const [subcategoriesData, setSubcategoriesData] = React.useState<PaginatedResponse<Subcategory>>({
+        documents: [],
+        total: 0,
+        meta: {
+            page: 1,
+            limit: 10,
+            totalPages: 0,
+            previousPage: null,
+            nextPage: null,
+        }
+    })
 
     // Update state when prop changes
     React.useEffect(() => {
@@ -1003,6 +1267,19 @@ export function ProductsDataTable({
         }
     }, [])
 
+    const handleSubcategoriesPageChange = React.useCallback(async (updaterOrValue: Updater<PaginationState> | PaginationState) => {
+        const pagination = typeof updaterOrValue === 'function' ? updaterOrValue({ pageIndex: 0, pageSize: 10 }) : updaterOrValue
+        console.log('Subcategories page change:', pagination)
+        // Call the server action directly
+        const nextPage = await getPaginatedSubcategories({
+            page: pagination.pageIndex + 1,
+            limit: pagination.pageSize
+        })
+        if (nextPage) {
+            setSubcategoriesData(nextPage)
+        }
+    }, [])
+
     return (
         <Tabs
             value={activeTab}
@@ -1025,6 +1302,7 @@ export function ProductsDataTable({
                         <SelectItem value="products">Products</SelectItem>
                         <SelectItem value="customers">Customers</SelectItem>
                         <SelectItem value="categories">Categories</SelectItem>
+                        <SelectItem value="subcategories">Subcategories</SelectItem>
                     </SelectContent>
                 </Select>
                 <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
@@ -1034,6 +1312,9 @@ export function ProductsDataTable({
                     </TabsTrigger>
                     <TabsTrigger value="categories">
                         Categories <Badge variant="secondary">{categoriesData.total}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="subcategories">
+                        Subcategories <Badge variant="secondary">{subcategoriesData.total}</Badge>
                     </TabsTrigger>
                 </TabsList>
                 <div className="flex items-center gap-2">
@@ -1059,14 +1340,16 @@ export function ProductsDataTable({
                                     <span className="hidden lg:inline">Add Product</span>
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px]">
+                            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
                                 <DialogHeader>
                                     <DialogTitle>Create New Product</DialogTitle>
                                     <DialogDescription>
                                         Add a new product to your inventory. Fill in all the required fields.
                                     </DialogDescription>
                                 </DialogHeader>
-                                <CreateProductForm onClose={() => setIsCreateProductDialogOpen(false)} />
+                                <div className="flex-1 overflow-y-auto pr-2">
+                                    <CreateProductForm onClose={() => setIsCreateProductDialogOpen(false)} />
+                                </div>
                             </DialogContent>
                         </Dialog>
                     )}
@@ -1079,14 +1362,38 @@ export function ProductsDataTable({
                                     <span className="hidden lg:inline">Add Category</span>
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-[500px]">
+                            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col">
                                 <DialogHeader>
                                     <DialogTitle>Create New Category</DialogTitle>
                                     <DialogDescription>
                                         Add a new category to organize your products.
                                     </DialogDescription>
                                 </DialogHeader>
-                                <CreateCategoryForm onClose={() => setIsCreateCategoryDialogOpen(false)} />
+                                <div className="flex-1 overflow-y-auto pr-2">
+                                    <CreateCategoryForm onClose={() => setIsCreateCategoryDialogOpen(false)} />
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    )}
+
+                    {activeTab === "subcategories" && (
+                        <Dialog open={isCreateSubcategoryDialogOpen} onOpenChange={setIsCreateSubcategoryDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                    <IconPlus />
+                                    <span className="hidden lg:inline">Add Subcategory</span>
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col">
+                                <DialogHeader>
+                                    <DialogTitle>Create New Subcategory</DialogTitle>
+                                    <DialogDescription>
+                                        Add a new subcategory to further organize your products.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="flex-1 overflow-y-auto pr-2">
+                                    <CreateSubcategoryForm onClose={() => setIsCreateSubcategoryDialogOpen(false)} />
+                                </div>
                             </DialogContent>
                         </Dialog>
                     )}
@@ -1309,6 +1616,81 @@ export function ProductsDataTable({
                                     pageSize: currentCategoriesData.meta.limit
                                 })}
                                 disabled={!currentCategoriesData.meta.nextPage}
+                            >
+                                <span className="sr-only">Go to last page</span>
+                                <IconChevronsRight />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </TabsContent>
+
+            <TabsContent
+                value="subcategories"
+                className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
+            >
+                <DataTable
+                    data={subcategoriesData.documents}
+                    columns={subcategoryColumns}
+                    pagination={{
+                        pageIndex: subcategoriesData.meta.page - 1,
+                        pageSize: subcategoriesData.meta.limit,
+                    }}
+                    onPaginationChange={handleSubcategoriesPageChange}
+                />
+                <div className="flex items-center justify-between px-4">
+                    <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
+                        Showing {subcategoriesData.documents.length} of {subcategoriesData.total} subcategories
+                    </div>
+                    <div className="flex w-full items-center gap-8 lg:w-fit">
+                        <div className="flex w-fit items-center justify-center text-sm font-medium">
+                            Page {subcategoriesData.meta.page} of {subcategoriesData.meta.totalPages}
+                        </div>
+                        <div className="ml-auto flex items-center gap-2 lg:ml-0">
+                            <Button
+                                variant="outline"
+                                className="hidden h-8 w-8 p-0 lg:flex"
+                                onClick={() => handleSubcategoriesPageChange({ pageIndex: 0, pageSize: subcategoriesData.meta.limit })}
+                                disabled={!subcategoriesData.meta.previousPage}
+                            >
+                                <span className="sr-only">Go to first page</span>
+                                <IconChevronsLeft />
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="size-8"
+                                size="icon"
+                                onClick={() => handleSubcategoriesPageChange({
+                                    pageIndex: (subcategoriesData.meta.previousPage || 1) - 1,
+                                    pageSize: subcategoriesData.meta.limit
+                                })}
+                                disabled={!subcategoriesData.meta.previousPage}
+                            >
+                                <span className="sr-only">Go to previous page</span>
+                                <IconChevronLeft />
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="size-8"
+                                size="icon"
+                                onClick={() => handleSubcategoriesPageChange({
+                                    pageIndex: (subcategoriesData.meta.nextPage || 1) - 1,
+                                    pageSize: subcategoriesData.meta.limit
+                                })}
+                                disabled={!subcategoriesData.meta.nextPage}
+                            >
+                                <span className="sr-only">Go to next page</span>
+                                <IconChevronRight />
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="hidden size-8 lg:flex"
+                                size="icon"
+                                onClick={() => handleSubcategoriesPageChange({
+                                    pageIndex: subcategoriesData.meta.totalPages - 1,
+                                    pageSize: subcategoriesData.meta.limit
+                                })}
+                                disabled={!subcategoriesData.meta.nextPage}
                             >
                                 <span className="sr-only">Go to last page</span>
                                 <IconChevronsRight />

@@ -6,13 +6,37 @@ export interface Category {
   updated_at: Date;
 }
 
+export interface Subcategory {
+  id: string;
+  name: string;
+  description: string;
+  category_id: string;
+  category?: Category;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ProductImage {
+  id: string;
+  product_id: string;
+  image_url: string;
+  alt_text?: string;
+  is_primary: boolean;
+  sort_order: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
-  image: string;
+  image: string; // Keep for backward compatibility
   category: Category;
+  subcategory?: Subcategory;
+  subcategory_id?: string;
+  images?: ProductImage[];
   stock: number;
   rating: number;
   reviews: number;
@@ -208,11 +232,13 @@ export interface ProductsState {
   selectedProduct: Product | null;
   filters: {
     category: string;
+    subcategory: string;
     minPrice: number;
     maxPrice: number;
     search: string;
   };
   categories: Category[];
+  subcategories: Subcategory[];
 }
 
 export interface OrdersState {

@@ -9,6 +9,7 @@ import { Product, useCurrencyStore, useProductsStore } from '@/store';
 import { NextSeo } from 'next-seo';
 import { trackViewContent } from '@/components/FacebookPixel';
 import { trackGAViewItem } from '@/components/GoogleAnalytics';
+import ProductImageGallery from '@/components/ProductImageGallery';
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -18,7 +19,9 @@ export default function ProductDetails({ params }: PageProps) {
   const { addToCart, isInCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setsimilarProducts] = useState<Product[] | []>([]);
+  const [productImages, setProductImages] = useState<any[]>([]);
   const { formatPrice, currentCurrency } = useCurrencyStore();
+  const { getProductImages } = useProductsStore();
   const id = use(params).id;
 
   // Find the current product
@@ -31,6 +34,14 @@ export default function ProductDetails({ params }: PageProps) {
         setProduct(product);
         setsimilarProducts(products!);
 
+        // Get product images
+        try {
+          const images = await getProductImages(id);
+          setProductImages(images);
+        } catch (error) {
+          console.error('Error fetching product images:', error);
+        }
+
         // Track Facebook Pixel ViewContent event
         trackViewContent(product.name, product.category?.name);
 
@@ -40,7 +51,7 @@ export default function ProductDetails({ params }: PageProps) {
     }
 
     getDetails();
-  }, [id, getProductById, getProductsByCategory]);
+  }, [id, getProductById, getProductsByCategory, getProductImages]);
 
 
   if (!product) {
@@ -84,16 +95,24 @@ export default function ProductDetails({ params }: PageProps) {
       {/* Main Product Section */}
       <div className="bg-white rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden mb-16">
         <div className="md:w-1/2 bg-gray-100 flex items-center justify-center p-8">
-          <div className="relative w-full h-80">
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              className="object-contain rounded-xl shadow-md"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              priority
+          {productImages.length > 0 ? (
+            <ProductImageGallery 
+              images={productImages} 
+              productName={product.name}
+              className="w-full"
             />
-          </div>
+          ) : (
+            <div className="relative w-full h-80">
+              <Image
+                src={product.image}
+                alt={product.name}
+                fill
+                className="object-contain rounded-xl shadow-md"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
+            </div>
+          )}
         </div>
         <div className="md:w-1/2 p-8 flex flex-col">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
@@ -109,7 +128,16 @@ export default function ProductDetails({ params }: PageProps) {
           </div>
           <p className="text-gray-700 mb-6">{product.description}</p>
           <div className="flex items-center gap-4 mb-8">
-            <span className="text-sm text-gray-500">Category: <span className="font-medium text-gray-700">{product.category.name}</span></span>
+            <div className="flex flex-col gap-1">
+              <span className="text-sm text-gray-500">
+                Category: <span className="font-medium text-gray-700">{product.category.name}</span>
+              </span>
+              {product.subcategory && (
+                <span className="text-sm text-gray-500">
+                  Subcategory: <span className="font-medium text-gray-700">{product.subcategory.name}</span>
+                </span>
+              )}
+            </div>
             <span className={`text-sm font-medium ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
               {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
             </span>

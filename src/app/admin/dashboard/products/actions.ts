@@ -1,6 +1,6 @@
 'use server'
 
-import { Category, Customer, PaginatedResponse, Product } from "@/store/types";
+import { Category, Customer, PaginatedResponse, Product, Subcategory, ProductImage } from "@/store/types";
 import { paginationSchema, searchSchema } from "@/utils/schema";
 import { createClient } from "@/utils/supabase/server";
 
@@ -15,7 +15,8 @@ export async function getPaginatedProducts(params: { page: number, limit: number
         .from('products')
         .select(`
             *,
-            category:categories(*)
+            category:categories(*),
+            subcategory:subcategories(*)
         `, { count: 'exact' })
         .order('created_at', { ascending: false })
         .range((page - 1) * limit, page * limit - 1);
@@ -92,7 +93,8 @@ export async function getAllProducts() {
         .from('products')
         .select(`
             *,
-            category:categories(*)`,
+            category:categories(*),
+            subcategory:subcategories(*)`,
             { count: 'exact' }
         )
         .order('created_at', { ascending: false });
@@ -110,7 +112,8 @@ export async function getProductById(id: string) {
         .from('products')
         .select(`
             *,
-            category:categories(*)
+            category:categories(*),
+            subcategory:subcategories(*)
         `)
         .eq('id', id)
         .single();
@@ -128,7 +131,8 @@ export async function createProduct(product: Partial<Product>) {
         .insert(product)
         .select(`
             *,
-            category:categories(*)
+            category:categories(*),
+            subcategory:subcategories(*)
         `)
         .single();
     if (error) {
@@ -146,7 +150,8 @@ export async function updateProduct(id: string, product: Product) {
         .eq('id', id)
         .select(`
             *,
-            category:categories(*)
+            category:categories(*),
+            subcategory:subcategories(*)
         `)
         .single();
     if (error) {
@@ -454,4 +459,282 @@ export async function deleteCategory(id: string) {
         return null
     }
     return true;
+}
+
+// Subcategory Information
+export async function getPaginatedSubcategories(params: { page: number, limit: number, search?: string }): Promise<PaginatedResponse<Subcategory>> {
+    const { page, limit } = paginationSchema.parse({ page: params.page, limit: params.limit });
+    const { search } = searchSchema.parse({ search: params.search });
+
+    const supabase = await createClient()
+    const { data, error, count } = await supabase
+        .from('subcategories')
+        .select(`
+            *,
+            category:categories(*)
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
+
+    if (search && search.length > 0) {
+        const { data: searchData, error: searchError, count: searchCount } = await supabase
+            .from('subcategories')
+            .select(`
+                *,
+                category:categories(*)
+            `, { count: 'exact' })
+            .textSearch('name', search)
+            .order('created_at', { ascending: false })
+            .range((page - 1) * limit, page * limit - 1);
+        if (searchError) {
+            console.error(searchError)
+            return {
+                documents: [],
+                total: 0,
+                meta: {
+                    page,
+                    limit,
+                    totalPages: 0,
+                    previousPage: null,
+                    nextPage: null,
+                }
+            }
+        }
+        return {
+            documents: searchData,
+            total: searchCount ? searchCount : 0,
+            meta: {
+                page,
+                limit,
+                totalPages: Math.ceil(searchCount ?? 0 / limit),
+                previousPage: page > 1 ? page - 1 : null,
+                nextPage: page < Math.ceil(searchCount ?? 0 / limit) ? page + 1 : null,
+            }
+        }
+    }
+
+    if (error) {
+        console.error(error)
+        return {
+            documents: [],
+            total: 0,
+            meta: {
+                page,
+                limit,
+                totalPages: 0,
+                previousPage: null,
+                nextPage: null,
+            }
+        }
+    }
+
+    return {
+        documents: data,
+        total: count ? count : 0,
+        meta: {
+            page,
+            limit,
+            totalPages: Math.ceil(count ?? 0 / limit),
+            previousPage: page > 1 ? page - 1 : null,
+            nextPage: page < Math.ceil(count ?? 0 / limit) ? page + 1 : null,
+        }
+    }
+}
+
+export async function getAllSubcategories() {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('subcategories')
+        .select(`
+            *,
+            category:categories(*)
+        `)
+        .order('created_at', { ascending: false });
+    if (error) {
+        console.error(error)
+        return []
+    }
+    return data;
+}
+
+export async function getSubcategoriesByCategory(categoryId: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('subcategories')
+        .select(`
+            *,
+            category:categories(*)
+        `)
+        .eq('category_id', categoryId)
+        .order('name', { ascending: true });
+    if (error) {
+        console.error(error)
+        return []
+    }
+    return data;
+}
+
+export async function getSubcategoryById(id: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('subcategories')
+        .select(`
+            *,
+            category:categories(*)
+        `)
+        .eq('id', id)
+        .single();
+    if (error) {
+        console.error(error)
+        return null
+    }
+    return data;
+}
+
+export async function createSubcategory(subcategory: Partial<Subcategory>) {
+    const supabase = await createClient()
+
+    // Transform the data to match database column names
+    const subcategoryData = {
+        name: subcategory.name,
+        description: subcategory.description,
+        category_id: subcategory.category_id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    }
+
+    const { data, error } = await supabase
+        .from('subcategories')
+        .insert(subcategoryData)
+        .select(`
+            *,
+            category:categories(*)
+        `)
+        .single();
+
+    if (error) {
+        console.error('Error creating subcategory:', error)
+        console.error('Error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+        })
+        return null
+    }
+    return data;
+}
+
+export async function updateSubcategory(id: string, subcategory: Partial<Subcategory>) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('subcategories')
+        .update(subcategory)
+        .eq('id', id)
+        .select(`
+            *,
+            category:categories(*)
+        `)
+        .single();
+    if (error) {
+        console.error(error)
+        return null
+    }
+    return data;
+}
+
+export async function deleteSubcategory(id: string) {
+    const supabase = await createClient()
+    const { error } = await supabase.from('subcategories').delete().eq('id', id);
+    if (error) {
+        console.error(error)
+        return null
+    }
+    return true;
+}
+
+// Product Images Information
+export async function getProductImages(productId: string): Promise<ProductImage[]> {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('product_images')
+        .select('*')
+        .eq('product_id', productId)
+        .order('sort_order', { ascending: true });
+    
+    if (error) {
+        console.error(error)
+        return []
+    }
+    return data;
+}
+
+export async function createProductImage(productImage: Partial<ProductImage>) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('product_images')
+        .insert(productImage)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error('Error creating product image:', error)
+        return null
+    }
+    return data;
+}
+
+export async function updateProductImage(id: string, productImage: Partial<ProductImage>) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('product_images')
+        .update(productImage)
+        .eq('id', id)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error(error)
+        return null
+    }
+    return data;
+}
+
+export async function deleteProductImage(id: string) {
+    const supabase = await createClient()
+    const { error } = await supabase.from('product_images').delete().eq('id', id);
+    if (error) {
+        console.error(error)
+        return null
+    }
+    return true;
+}
+
+export async function setPrimaryProductImage(productId: string, imageId: string) {
+    const supabase = await createClient()
+    
+    // First, set all images for this product to not primary
+    const { error: updateError } = await supabase
+        .from('product_images')
+        .update({ is_primary: false })
+        .eq('product_id', productId);
+    
+    if (updateError) {
+        console.error('Error updating existing primary images:', updateError)
+        return null
+    }
+    
+    // Then set the specified image as primary
+    const { data, error } = await supabase
+        .from('product_images')
+        .update({ is_primary: true })
+        .eq('id', imageId)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error('Error setting primary image:', error)
+        return null
+    }
+    return data;
 }

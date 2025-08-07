@@ -7,6 +7,7 @@ export const productInputSchema = z.object({
     price: z.string().min(1),
     stock: z.string().min(1),
     image: z.string().min(1),
+    subcategory_id: z.string().optional(),
 });
 
 // Output schema for processed data (numbers)
@@ -16,6 +17,7 @@ export const productSchema = z.object({
     price: z.number().min(0).max(1000000),
     stock: z.number().min(0).max(1000000),
     image: z.string().min(1),
+    subcategory_id: z.string().optional(),
 });
 
 // Transform function to convert input to output
