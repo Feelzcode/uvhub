@@ -8,6 +8,7 @@ import {
     ShoppingBag,
     ShoppingCart,
     Settings,
+    Facebook,
 } from "lucide-react"
 
 import { NavMain } from "@/components/NavMain"
@@ -39,6 +40,11 @@ const data = {
             title: "Settings",
             url: "/admin/dashboard/settings",
             icon: Settings,
+        },
+        {
+            title: "Facebook Pixel",
+            url: "/admin/dashboard/setup-facebook-pixel",
+            icon: Facebook,
         },
     ],
     navSecondary: [

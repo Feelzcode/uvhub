@@ -101,6 +101,7 @@ import { createCategory, createSubcategory, getPaginatedSubcategories } from "@/
 import { toast } from "sonner"
 import { useUppyWithSupabase } from "@/hooks/use-uppy-with-supabase"
 import { getPublicUrlOfUploadedFile } from "@/lib/utils"
+import ProductImageManager from "@/components/ProductImageManager"
 import { PaginatedResponse } from "@/store/types"
 import { useProductsStore } from "@/store"
 import { getPaginatedProducts, getPaginatedCustomers, getPaginatedCategories } from "@/app/admin/dashboard/products/actions"
@@ -141,10 +142,12 @@ function DragHandle({ id }: { id: string }) {
 
 // Create a separate component for product actions
 function ProductActions({ product }: { product: Product }) {
-    const { deleteProduct, updateProduct, loading } = useProductsStore();
+    const { deleteProduct, updateProduct, loading, getProductImages, createProductImage, updateProductImage, deleteProductImage } = useProductsStore();
     const [isEditDrawerOpen, setIsEditDrawerOpen] = React.useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
     const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
+    const [productImages, setProductImages] = React.useState<any[]>([]);
+    const [isLoadingImages, setIsLoadingImages] = React.useState(false);
 
     const formData = useForm<ProductInputType>({
         defaultValues: {
@@ -162,14 +165,73 @@ function ProductActions({ product }: { product: Product }) {
         setIsDeleteDialogOpen(false);
     };
 
-    const handleEdit = () => {
+    const handleEdit = async () => {
         setIsEditDrawerOpen(true);
+        // Load existing product images
+        setIsLoadingImages(true);
+        try {
+            const images = await getProductImages(product.id);
+            setProductImages(images);
+        } catch (error) {
+            console.error('Error loading product images:', error);
+        } finally {
+            setIsLoadingImages(false);
+        }
     };
 
     const handleSave = async (data: ProductInputType) => {
         try {
             const transformedData = transformProductInput(data);
             await updateProduct(product.id, transformedData);
+            
+            // Handle product images
+            if (productImages.length > 0) {
+                // Get existing images to compare
+                const existingImages = await getProductImages(product.id);
+                
+                // Find new images (those with temp IDs)
+                const newImages = productImages.filter(img => img.id.startsWith('temp-'));
+                
+                // Find deleted images
+                const deletedImages = existingImages.filter(existing => 
+                    !productImages.some(current => current.id === existing.id)
+                );
+                
+                // Delete removed images
+                for (const deletedImage of deletedImages) {
+                    await deleteProductImage(deletedImage.id);
+                }
+                
+                // Add new images
+                for (const newImage of newImages) {
+                    await createProductImage({
+                        product_id: product.id,
+                        image_url: newImage.image_url,
+                        alt_text: newImage.alt_text,
+                        is_primary: newImage.is_primary,
+                        sort_order: newImage.sort_order,
+                    });
+                }
+                
+                // Update existing images (for primary status and order changes)
+                const existingImagesToUpdate = productImages.filter(img => 
+                    !img.id.startsWith('temp-') && existingImages.some(existing => existing.id === img.id)
+                );
+                
+                for (const imageToUpdate of existingImagesToUpdate) {
+                    const existingImage = existingImages.find(existing => existing.id === imageToUpdate.id);
+                    if (existingImage && (
+                        existingImage.is_primary !== imageToUpdate.is_primary ||
+                        existingImage.sort_order !== imageToUpdate.sort_order
+                    )) {
+                        await updateProductImage(imageToUpdate.id, {
+                            is_primary: imageToUpdate.is_primary,
+                            sort_order: imageToUpdate.sort_order,
+                        });
+                    }
+                }
+            }
+            
             setIsEditDrawerOpen(false);
             toast.success("Product updated successfully");
         }
@@ -182,6 +244,15 @@ function ProductActions({ product }: { product: Product }) {
     const handleView = () => {
         setIsViewDrawerOpen(true);
     }
+
+    const handleImagesChange = (images: any[]) => {
+        setProductImages(images);
+        // Update the main image field with the primary image
+        const primaryImage = images.find(img => img.is_primary);
+        if (primaryImage) {
+            formData.setValue('image', primaryImage.image_url);
+        }
+    };
     return (
         <>
             <DropdownMenu>
@@ -270,10 +341,27 @@ function ProductActions({ product }: { product: Product }) {
                                     {formData.formState.errors.stock && <p className="text-red-500">{formData.formState.errors.stock.message}</p>}
                                 </div>
                             </div>
+                            {isLoadingImages ? (
+                                <div className="flex items-center justify-center py-4">
+                                    <IconLoader2 className="animate-spin mr-2" />
+                                    Loading images...
+                                </div>
+                            ) : (
+                                <ProductImageManager
+                                    images={productImages}
+                                    onImagesChange={handleImagesChange}
+                                    productId={product.id}
+                                    maxImages={6}
+                                />
+                            )}
+                            
                             <div className="flex flex-col gap-3">
-                                <Label htmlFor="edit-image">Image URL</Label>
+                                <Label htmlFor="edit-image">Main Image URL (Fallback)</Label>
                                 <Input id="edit-image" {...formData.register('image')} />
                                 {formData.formState.errors.image && <p className="text-red-500">{formData.formState.errors.image.message}</p>}
+                                <p className="text-xs text-muted-foreground">
+                                    This will be used as a fallback if no images are uploaded above
+                                </p>
                             </div>
                         </form>
                     </div>
@@ -312,9 +400,35 @@ function ProductActions({ product }: { product: Product }) {
                             <Input id="view-stock" value={product.stock.toString()} disabled />
                         </div>
                         <div className="flex flex-col gap-3">
-                            <Label htmlFor="view-image">Image</Label>
+                            <Label htmlFor="view-image">Main Image</Label>
                             <Image src={product.image} alt={product.name} width={100} height={100} />
                         </div>
+                        {product.images && product.images.length > 0 && (
+                            <div className="flex flex-col gap-3">
+                                <Label>All Images ({product.images.length})</Label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {product.images.map((image, index) => (
+                                        <div key={image.id} className="relative">
+                                            <Image 
+                                                src={image.image_url} 
+                                                alt={image.alt_text || `Product image ${index + 1}`} 
+                                                width={80} 
+                                                height={80}
+                                                className="object-cover rounded"
+                                            />
+                                            {image.is_primary && (
+                                                <div className="absolute top-1 right-1">
+                                                    <Badge variant="default" className="bg-blue-500 text-xs px-1 py-0">
+                                                        <Star className="h-2 w-2 mr-1" />
+                                                        Primary
+                                                    </Badge>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <div className="flex flex-col gap-3">
                             <Label htmlFor="view-category">Category</Label>
                             <Input id="view-category" value={product.category.name} disabled />
@@ -397,6 +511,21 @@ const productColumns: ColumnDef<Product>[] = [
                     </Badge>
                 ) : (
                     <span className="text-muted-foreground text-sm">-</span>
+                )}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "images",
+        header: "Images",
+        cell: ({ row }) => (
+            <div className="w-20">
+                {row.original.images && row.original.images.length > 0 ? (
+                    <Badge variant="secondary" className="text-xs">
+                        {row.original.images.length} image{row.original.images.length !== 1 ? 's' : ''}
+                    </Badge>
+                ) : (
+                    <span className="text-muted-foreground text-xs">1 image</span>
                 )}
             </div>
         ),
@@ -842,18 +971,18 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
         subcategory_id: '',
         image: '',
     })
+    const [productImages, setProductImages] = React.useState<any[]>([])
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [subcategories, setSubcategories] = React.useState<any[]>([])
-    const uppy = useUppyWithSupabase({ bucketName: 'file-bucket', folderName: 'products' });
-    const { categories, addProduct, getSubcategoriesByCategory } = useProductsStore();
+    const { categories, addProduct, getSubcategoriesByCategory, createProductImage } = useProductsStore();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSubmitting(true)
 
         try {
-            // Here you would call your API to create the product
-            await addProduct({
+            // Create the product first
+            const product = await addProduct({
                 name: formData.name,
                 description: formData.description,
                 price: Number(formData.price),
@@ -864,6 +993,19 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                 rating: 0,
             });
 
+            // If product was created successfully and we have images, save them
+            if (product && productImages.length > 0) {
+                for (const image of productImages) {
+                    await createProductImage({
+                        product_id: product.id,
+                        image_url: image.image_url,
+                        alt_text: image.alt_text,
+                        is_primary: image.is_primary,
+                        sort_order: image.sort_order,
+                    });
+                }
+            }
+
             onClose()
         } catch (error) {
             console.error('Error creating product:', error)
@@ -872,14 +1014,14 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
         }
     }
 
-    const handleFileChange = async (files: FileList | null) => {
-        if (files) {
-            uppy.addFile(files[0])
-            const response = await uppy.upload();
-            const uploadedFile = response?.successful?.map((file) => getPublicUrlOfUploadedFile(file.meta.objectName as string))[0];
-            setFormData(prev => ({ ...prev, image: uploadedFile ?? '' }))
+    const handleImagesChange = (images: any[]) => {
+        setProductImages(images);
+        // Set the primary image as the main product image
+        const primaryImage = images.find(img => img.is_primary);
+        if (primaryImage) {
+            setFormData(prev => ({ ...prev, image: primaryImage.image_url }));
         }
-    }
+    };
 
     const handleCategoryChange = async (categoryId: string) => {
         setFormData(prev => ({ ...prev, category: categoryId, subcategory_id: '' }));
@@ -979,22 +1121,14 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                 />
             </div>
 
-            <div className="space-y-2">
-                <Label>Product Image</Label>
-                <FileInput
-                    onFileChange={handleFileChange}
-                    accept="image/*"
-                    maxFiles={1}
-                    maxSize={5 * 1024 * 1024} // 5MB
-                >
-                    <p className="text-xs text-muted-foreground">
-                        Upload product image (PNG, JPG, GIF up to 5MB)
-                    </p>
-                </FileInput>
-            </div>
+            <ProductImageManager
+                images={productImages}
+                onImagesChange={handleImagesChange}
+                maxImages={6}
+            />
 
             <div className="space-y-2">
-                <Label htmlFor="image">Image URL (Alternative)</Label>
+                <Label htmlFor="image">Main Image URL (Fallback)</Label>
                 <Input
                     id="image"
                     type="url"
@@ -1002,6 +1136,9 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                     onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
                     placeholder="https://example.com/image.jpg"
                 />
+                <p className="text-xs text-muted-foreground">
+                    This will be used as a fallback if no images are uploaded above
+                </p>
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">
