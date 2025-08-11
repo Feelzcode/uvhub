@@ -41,6 +41,8 @@ export const sampleProducts: Product[] = [
     name: 'Wireless Bluetooth Headphones',
     description: 'High-quality wireless headphones with noise cancellation and 30-hour battery life.',
     price: 129.99,
+    price_ngn: 129.99,
+    price_ghs: 129.99,
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop',
     category: categories[0], // Electronics
     stock: 25,
@@ -54,6 +56,8 @@ export const sampleProducts: Product[] = [
     name: 'Smart Fitness Watch',
     description: 'Advanced fitness tracker with heart rate monitoring and GPS tracking.',
     price: 199.99,
+    price_ngn: 199.99,
+    price_ghs: 199.99,
     image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop',
     category: sampleCategories[0], // Electronics
     stock: 15,
@@ -67,6 +71,8 @@ export const sampleProducts: Product[] = [
     name: 'Organic Cotton T-Shirt',
     description: 'Comfortable and sustainable cotton t-shirt available in multiple colors.',
     price: 29.99,
+      price_ngn: 29.99,
+      price_ghs: 29.99,
     image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop',
     category: sampleCategories[1], // Clothing
     stock: 50,
@@ -80,6 +86,8 @@ export const sampleProducts: Product[] = [
     name: 'Stainless Steel Water Bottle',
     description: 'Insulated water bottle that keeps drinks cold for 24 hours or hot for 12 hours.',
     price: 24.99,
+    price_ngn: 24.99,
+    price_ghs: 24.99,
     image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=400&fit=crop',
     category: sampleCategories[2], // Home & Garden
     stock: 75,
@@ -93,6 +101,8 @@ export const sampleProducts: Product[] = [
     name: 'Professional Camera Lens',
     description: 'High-quality 50mm f/1.8 prime lens perfect for portrait photography.',
     price: 399.99,
+    price_ngn: 399.99,
+    price_ghs: 399.99,
     image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&h=400&fit=crop',
     category: sampleCategories[0], // Electronics
     stock: 8,
@@ -106,6 +116,8 @@ export const sampleProducts: Product[] = [
     name: 'Yoga Mat',
     description: 'Non-slip yoga mat made from eco-friendly materials, perfect for home workouts.',
     price: 34.99,
+    price_ngn: 34.99,
+    price_ghs: 34.99,
     image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=400&fit=crop',
     category: sampleCategories[3], // Sports
     stock: 30,
@@ -119,6 +131,8 @@ export const sampleProducts: Product[] = [
     name: 'Wireless Charging Pad',
     description: 'Fast wireless charging pad compatible with all Qi-enabled devices.',
     price: 49.99,
+    price_ngn: 49.99,
+    price_ghs: 49.99,
     image: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=400&fit=crop',
     category: sampleCategories[0], // Electronics
     stock: 20,
@@ -132,6 +146,8 @@ export const sampleProducts: Product[] = [
     name: 'Ceramic Coffee Mug Set',
     description: 'Set of 4 beautiful ceramic coffee mugs, perfect for your morning brew.',
     price: 19.99,
+    price_ngn: 19.99,
+    price_ghs: 19.99,
     image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&h=400&fit=crop',
     category: sampleCategories[2], // Home & Garden
     stock: 40,

@@ -3,10 +3,13 @@
 import { useCartStore } from '@/store';
 import { useCurrencyStore } from '@/store';
 import Link from 'next/link';
+import Image from 'next/image';
+import { getProductImage } from '@/utils/productImage';
+import { getProductPrice } from '@/utils/productPrice';
 
 export default function CartSummary() {
     const { items, total, itemCount, removeFromCart, updateQuantity, clearCart } = useCartStore();
-    const { formatPrice, currentCurrency } = useCurrencyStore();
+    const { formatPrice, currentCurrency, location } = useCurrencyStore();
 
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -34,17 +37,19 @@ export default function CartSummary() {
             <div className="space-y-4 mb-6">
                 {items.map((item) => (
                     <div key={item.productId} className="flex items-center gap-4 p-3 border rounded-lg">
-                        <div className='w-16 h-16'>
-                            <img
-                                src={item.product.image}
+                        <div className='w-16 h-16 relative'>
+                            <Image
+                                src={getProductImage(item.product)}
                                 alt={item.product.name}
-                                className="w-16 h-16 object-cover rounded-md"
+                                fill
+                                className="object-cover rounded-md"
+                                sizes="64px"
                             />
                         </div>
 
                         <div className="flex-1">
                             <h3 className="font-medium text-gray-800">{item.product.name}</h3>
-                            <p className="text-sm text-gray-500">{formatPrice(item.product.price, currentCurrency)}</p>
+                            <p className="text-sm text-gray-500">{formatPrice(getProductPrice(item.product, location), currentCurrency)}</p>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -64,7 +69,7 @@ export default function CartSummary() {
                         </div>
 
                         <div className="text-right">
-                            <p className="font-medium">{formatPrice(item.product.price * item.quantity, currentCurrency)}</p>
+                            <p className="font-medium">{formatPrice(getProductPrice(item.product, location) * item.quantity, currentCurrency)}</p>
                             <button
                                 onClick={() => removeFromCart(item.productId)}
                                 className="text-red-500 hover:text-red-700 text-sm"

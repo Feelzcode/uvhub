@@ -8,13 +8,10 @@ import { FileInput } from '@/components/ui/file-input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
-    Upload, 
-    X, 
+    Upload,
     Star, 
     GripVertical, 
     Trash2,
-    Image as ImageIcon,
-    AlertCircle
 } from 'lucide-react';
 import { useUppyWithSupabase } from '@/hooks/use-uppy-with-supabase';
 import { getPublicUrlOfUploadedFile } from '@/lib/utils';

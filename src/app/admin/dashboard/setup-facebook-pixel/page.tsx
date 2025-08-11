@@ -6,14 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, Facebook, Loader2, AlertCircle } from 'lucide-react';
+import { CheckCircle, Facebook, Loader2 } from 'lucide-react';
 import { useSettingsStore } from '@/store';
 import { toast } from 'sonner';
 
 export default function SetupFacebookPixelPage() {
     const [pixelId, setPixelId] = useState('775139811605510');
     const [isLoading, setIsLoading] = useState(false);
-    const [isSuccess, setIsSuccess] = useState(false);
     const { settings, updateSettings } = useSettingsStore();
 
     const handleSetup = async () => {
@@ -30,7 +29,6 @@ export default function SetupFacebookPixelPage() {
                 facebook_pixel_enabled: true,
             });
             
-            setIsSuccess(true);
             toast.success('Facebook Pixel has been successfully configured!');
         } catch (error) {
             console.error('Error setting up Facebook Pixel:', error);
@@ -48,7 +46,6 @@ export default function SetupFacebookPixelPage() {
                 facebook_pixel_enabled: false,
             });
             
-            setIsSuccess(false);
             toast.success('Facebook Pixel has been disabled.');
         } catch (error) {
             console.error('Error disabling Facebook Pixel:', error);

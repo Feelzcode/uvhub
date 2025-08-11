@@ -13,13 +13,15 @@ import Testimonials from "@/components/ui/HomeComponents/Testimonial";
 import { heroSlides, horizontalProducts, stats, whyUsFeatures } from "@/lib/sampleData";
 import { useCounter } from "@/hooks/use-counter";
 import Link from "next/link";
+import { getProductImage } from '@/utils/productImage';
+import { getProductPrice } from '@/utils/productPrice';
 
 // --- Main Component ---
 const Home = () => {
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const { addToCart, isInCart } = useCart();
-  const { currentCurrency, formatPrice } = useCurrencyStore();
+  const { currentCurrency, formatPrice, location } = useCurrencyStore();
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -296,7 +298,7 @@ const Home = () => {
                     >
                       <div className="w-8 h-8 bg-gray-100 rounded overflow-hidden flex-shrink-0">
                         <Image
-                          src={product.image}
+                          src={getProductImage(product)}
                           alt={product.name}
                           width={32}
                           height={32}
@@ -305,7 +307,7 @@ const Home = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-gray-900 truncate">{product.name}</div>
-                        <div className="text-sm text-gray-500">{formatPrice(product.price, currentCurrency)}</div>
+                        <div className="text-sm text-gray-500">{formatPrice(getProductPrice(product, location), currentCurrency)}</div>
                       </div>
                     </div>
                   ))}
@@ -351,7 +353,7 @@ const Home = () => {
                   {/* Product Image with View Details Overlay */}
                   <div className="h-80 overflow-hidden relative">
                     <Image
-                      src={product.image}
+                      src={getProductImage(product)}
                       alt={product.name}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -385,9 +387,9 @@ const Home = () => {
                     </div>
                     <div className="flex justify-between items-center mt-4">
                       <div>
-                        <span className="text-2xl font-bold text-gray-900">{formatPrice(product.price, currentCurrency)}</span>
+                        <span className="text-2xl font-bold text-gray-900">{formatPrice(getProductPrice(product, location), currentCurrency)}</span>
                         {product.price && (
-                          <span className="text-gray-500 line-through ml-2">{formatPrice(product.price, currentCurrency)}</span>
+                          <span className="text-gray-500 line-through ml-2">{formatPrice(getProductPrice(product, location), currentCurrency)}</span>
                         )}
                       </div>
                       <button

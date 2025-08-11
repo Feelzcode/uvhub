@@ -3,6 +3,9 @@
 import { useCart, useProducts } from '@/store/hooks';
 import { useCurrency } from '@/store/hooks/useCurrency';
 import { Currency, Product } from '@/store/types';
+import Image from 'next/image';
+import { getProductImage } from '@/utils/productImage';
+import { getProductPrice } from '@/utils/productPrice';
 
 interface ProductCardProps {
     product: Product;
@@ -12,7 +15,7 @@ interface ProductCardProps {
 export default function ProductCard({ product, currency }: ProductCardProps) {
     const { addToCart, isInCart } = useCart();
     const { setSelectedProduct } = useProducts();
-    const { formatCurrentPrice } = useCurrency();
+    const { formatCurrentPrice, location } = useCurrency();
 
     const handleAddToCart = () => {
         addToCart(product, 1);
@@ -24,14 +27,16 @@ export default function ProductCard({ product, currency }: ProductCardProps) {
 
     return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-            <div className="relative">
-                <img
-                    src={product.image}
+            <div className="relative h-48">
+                <Image
+                    src={getProductImage(product)}
                     alt={product.name}
-                    className="w-full h-48 object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
                 <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-full text-sm font-semibold">
-                    {formatCurrentPrice(product.price, currency)}
+                    {formatCurrentPrice(getProductPrice(product, location), currency)}
                 </div>
             </div>
 

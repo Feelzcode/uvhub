@@ -10,6 +10,11 @@ import { NextSeo } from 'next-seo';
 import { trackViewContent } from '@/components/FacebookPixel';
 import { trackGAViewItem } from '@/components/GoogleAnalytics';
 import ProductImageGallery from '@/components/ProductImageGallery';
+import { getProductImage } from '@/utils/productImage';
+import { getProductPrice } from '@/utils/productPrice';
+import { getVariantPrice, getDefaultVariant } from '@/utils/variantPrice';
+import ProductVariantSelector from '@/components/ProductVariantSelector';
+import { ProductImage, ProductVariant } from '@/store/types';
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -19,8 +24,9 @@ export default function ProductDetails({ params }: PageProps) {
   const { addToCart, isInCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setsimilarProducts] = useState<Product[] | []>([]);
-  const [productImages, setProductImages] = useState<any[]>([]);
-  const { formatPrice, currentCurrency } = useCurrencyStore();
+  const [productImages, setProductImages] = useState<ProductImage[]>([]);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const { formatPrice, currentCurrency, location } = useCurrencyStore();
   const { getProductImages } = useProductsStore();
   const id = use(params).id;
 
@@ -40,6 +46,14 @@ export default function ProductDetails({ params }: PageProps) {
           setProductImages(images);
         } catch (error) {
           console.error('Error fetching product images:', error);
+        }
+
+        // Set default variant if product has variants
+        if (product.variants && product.variants.length > 0) {
+          const defaultVariant = getDefaultVariant(product.variants);
+          if (defaultVariant) {
+            setSelectedVariant(defaultVariant);
+          }
         }
 
         // Track Facebook Pixel ViewContent event
@@ -79,7 +93,7 @@ export default function ProductDetails({ params }: PageProps) {
             title: `${product.name} | UVHub`,
             description: product.description || 'View product details and buy at UVHub.',
             images: [
-              { url: product.image || '/images/about.jpg', alt: product.name },
+              { url: getProductImage(product), alt: product.name },
             ],
           }}
         />
@@ -117,9 +131,19 @@ export default function ProductDetails({ params }: PageProps) {
         <div className="md:w-1/2 p-8 flex flex-col">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl font-semibold text-blue-600">{formatPrice(product.price, currentCurrency)}</span>
+            <span className="text-xl font-semibold text-blue-600">
+              {selectedVariant 
+                ? formatPrice(getVariantPrice(selectedVariant, location), currentCurrency)
+                : formatPrice(getProductPrice(product, location), currentCurrency)
+              }
+            </span>
             {product.price && (
-              <span className="text-gray-400 line-through text-lg">{formatPrice(product.price, currentCurrency)}</span>
+              <span className="text-gray-400 line-through text-lg">
+                {selectedVariant 
+                  ? formatPrice(getVariantPrice(selectedVariant, location), currentCurrency)
+                  : formatPrice(getProductPrice(product, location), currentCurrency)
+                }
+              </span>
             )}
             <span className="flex items-center ml-4 text-yellow-500 font-medium">
               <Star className="w-5 h-5 mr-1 fill-current" />
@@ -127,6 +151,20 @@ export default function ProductDetails({ params }: PageProps) {
             </span>
           </div>
           <p className="text-gray-700 mb-6">{product.description}</p>
+          
+          {/* Variant Selector */}
+          {product.variants && product.variants.length > 0 && (
+            <div className="mb-6">
+              <ProductVariantSelector
+                variants={product.variants}
+                location={location}
+                selectedVariantId={selectedVariant?.id}
+                onVariantChange={setSelectedVariant}
+                showLocationIndicator={true}
+              />
+            </div>
+          )}
+          
           <div className="flex items-center gap-4 mb-8">
             <div className="flex flex-col gap-1">
               <span className="text-sm text-gray-500">
@@ -143,17 +181,30 @@ export default function ProductDetails({ params }: PageProps) {
             </span>
           </div>
           <button
-            onClick={() => addToCart(product, 1)}
-            disabled={isInCart(product.id) || product.stock === 0}
+            onClick={() => {
+              if (selectedVariant) {
+                // Add variant to cart (you'll need to update the cart system to handle variants)
+                addToCart(product, 1);
+              } else {
+                addToCart(product, 1);
+              }
+            }}
+            disabled={
+              Boolean(
+                isInCart(product.id) ||
+                product.stock === 0 ||
+                (selectedVariant ? selectedVariant.stock === 0 : false)
+              )
+            }
             className={`w-full py-4 rounded-lg font-semibold text-lg shadow-md transition-all duration-300
-              ${isInCart(product.id) || product.stock === 0
+              ${isInCart(product.id) || product.stock === 0 || (selectedVariant && selectedVariant.stock === 0)
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 hover:scale-105'
               }`}
           >
             {isInCart(product.id)
               ? 'Already in Cart'
-              : product.stock === 0
+              : product.stock === 0 || (selectedVariant && selectedVariant.stock === 0)
                 ? 'Out of Stock'
                 : 'Add to Cart'}
           </button>
@@ -181,7 +232,7 @@ export default function ProductDetails({ params }: PageProps) {
               >
                 <div className="relative h-48 overflow-hidden">
                   <Image
-                    src={similarProduct.image}
+                    src={getProductImage(similarProduct)}
                     alt={similarProduct.name}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-110"

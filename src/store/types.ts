@@ -27,17 +27,36 @@ export interface ProductImage {
   updated_at: Date;
 }
 
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  name: string;
+  description?: string;
+  sku?: string;
+  price: number;
+  price_ngn?: number;
+  price_ghs?: number;
+  stock: number;
+  is_active: boolean;
+  sort_order: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number;
+  price: number; // Keep for backward compatibility
+  price_ngn: number; // Nigerian Naira price
+  price_ghs: number; // Ghanaian Cedi price
   image: string; // Keep for backward compatibility
   category: Category;
-  subcategory?: Subcategory;
-  subcategory_id?: string;
+  subcategory?: Subcategory; // Keep for backward compatibility
+  subcategory_id?: string; // Keep for backward compatibility
+  variants?: ProductVariant[]; // New variants system
   images?: ProductImage[];
-  stock: number;
+  stock: number; // Total stock across all variants
   rating: number;
   reviews: number;
   created_at: Date;
@@ -91,8 +110,10 @@ export interface Order {
 
 export interface CartItem {
   productId: string;
+  variantId?: string; // Optional variant ID
   quantity: number;
   product: Product;
+  variant?: ProductVariant; // Selected variant
 }
 
 // Currency Types

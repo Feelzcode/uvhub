@@ -2,8 +2,11 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Image from 'next/image';
 import { useCartStore, useCurrencyStore } from '@/store';
 import { Button } from '@/components/ui/button';
+import { getProductImage } from '@/utils/productImage';
+import { getProductPrice } from '@/utils/productPrice';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -45,7 +48,7 @@ export default function CheckoutPage() {
   const { items, total, clearCart, trackPurchase } = useCartStore();
   const [loading, setLoading] = useState(false);
   // const { placeOrder, loading } = useOrdersStore();
-  const { formatPrice, currentCurrency } = useCurrencyStore();
+  const { formatPrice, currentCurrency, location } = useCurrencyStore();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -333,11 +336,13 @@ export default function CheckoutPage() {
               <div className="space-y-4">
                 {items.map(item => (
                   <div key={item.productId} className="flex items-center gap-4 py-2 border-b">
-                    <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
-                      <img
-                        src={item.product.image}
+                    <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden relative">
+                      <Image
+                        src={getProductImage(item.product)}
                         alt={item.product.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="64px"
                       />
                     </div>
                     <div className="flex-1">
@@ -345,7 +350,7 @@ export default function CheckoutPage() {
                       <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                     </div>
                     <div className="font-medium">
-                      {formatPrice(Number((item.product.price * item.quantity).toFixed(2)), currentCurrency)}
+                      {formatPrice(Number((getProductPrice(item.product, location) * item.quantity).toFixed(2)), currentCurrency)}
                     </div>
                   </div>
                 ))}

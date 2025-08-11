@@ -25,7 +25,7 @@ export default function ProductImageGallery({ images, productName, className = '
         );
     }
 
-    const primaryImage = images.find(img => img.is_primary) || images[0];
+    // const primaryImage = images.find(img => img.is_primary) || images[0];
     const sortedImages = images.sort((a, b) => a.sort_order - b.sort_order);
 
     const nextImage = () => {

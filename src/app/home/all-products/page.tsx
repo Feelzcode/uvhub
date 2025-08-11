@@ -8,6 +8,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Product, Category } from '@/store/types';
 import { useProductsStore, useCurrencyStore } from '@/store';
+import { getProductImage } from '@/utils/productImage';
+import { getProductPrice } from '@/utils/productPrice';
 
 
 export default function AllEquipmentPage() {
@@ -22,7 +24,7 @@ export default function AllEquipmentPage() {
   const {
     products,
   } = useProducts();
-  const { formatPrice, currentCurrency } = useCurrencyStore();
+  const { formatPrice, currentCurrency, location } = useCurrencyStore();
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const router = useRouter();
@@ -231,7 +233,7 @@ export default function AllEquipmentPage() {
                 >
                   <div className="h-48 overflow-hidden relative bg-gray-100">
                     <Image
-                      src={product.image || '/placeholder-product.jpg'}
+                      src={getProductImage(product)}
                       alt={product.name} 
                       fill
                       className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
@@ -244,10 +246,10 @@ export default function AllEquipmentPage() {
                     </h3>
                     <div className="flex justify-between items-center mt-2">
                       <div>
-                        <span className="text-lg font-bold text-gray-900">{formatPrice(product.price, currentCurrency)}</span>
+                        <span className="text-lg font-bold text-gray-900">{formatPrice(getProductPrice(product, location), currentCurrency)}</span>
                         {product.price && (
                           <span className="text-gray-500 line-through text-sm ml-2">
-                            {formatPrice(product.price, currentCurrency)}
+                            {formatPrice(getProductPrice(product, location), currentCurrency)}
                           </span>
                         )}
                       </div>
