@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/store/hooks";
 import { useProductsStore } from '@/store'
-import { Product } from "@/store/types";
+import { Product, ProductType } from "@/store/types";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCurrencyStore } from "@/store";
@@ -32,16 +32,16 @@ const Home = () => {
     filters,
     setFilters,
     clearFilters,
-    getFilteredProducts,
-    getProducts,
+    getFilteredCategories,
+    getCategories,
   } = useProductsStore();
   const [searchTerm, setSearchTerm] = useState(filters.search);
   const router = useRouter();
 
   useEffect(() => {
-    getProducts();
+    getCategories();
     clearFilters();
-  }, [getProducts, clearFilters]);
+  }, [getCategories, clearFilters]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -72,11 +72,12 @@ const Home = () => {
   const getAutocompleteSuggestions = () => {
     if (!searchTerm || searchTerm.length < 2) return [];
 
-    const filteredProducts = getFilteredProducts();
-    return filteredProducts
-      .filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredCategories = getFilteredCategories();
+    const allTypes = filteredCategories.flatMap(category => category.types || []);
+    return allTypes
+      .filter((type) =>
+        type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        type.description?.toLowerCase().includes(searchTerm.toLowerCase())
       )
       .slice(0, 5); // Limit to 5 suggestions
   };
@@ -90,7 +91,7 @@ const Home = () => {
     setSelectedSuggestion(-1);
   };
 
-  const handleSuggestionClick = (product: Product) => {
+  const handleSuggestionClick = (product: ProductType) => {
     setSearchTerm(product.name);
     setShowAutocomplete(false);
     setSelectedSuggestion(-1);
@@ -163,7 +164,7 @@ const Home = () => {
       <div className="text-center py-12">
         <p className="text-red-500">Error: {error}</p>
         <button
-          onClick={getProducts}
+          onClick={getCategories}
           className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
         >
           Retry
@@ -172,7 +173,8 @@ const Home = () => {
     );
   }
 
-  const filteredProducts: Product[] = getFilteredProducts();
+  const filteredCategories = getFilteredCategories();
+  const allTypes = filteredCategories.flatMap(category => category.types || []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -289,7 +291,7 @@ const Home = () => {
               {/* Autocomplete Dropdown */}
               {showAutocomplete && suggestions.length > 0 && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {suggestions.map((product, index) => (
+                  {suggestions.map((product: ProductType, index: number) => (
                     <div
                       key={product.id}
                       onClick={() => handleSuggestionClick(product)}
@@ -343,9 +345,9 @@ const Home = () => {
             </div>
           </div>
 
-          {filteredProducts.length > 0 ? (
+          {allTypes.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {filteredProducts.map((product: Product) => (
+              {allTypes.map((product: ProductType) => (
                 <div
                   key={product.id}
                   className="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 relative"

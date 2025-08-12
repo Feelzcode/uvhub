@@ -1,6 +1,6 @@
 'use server'
 
-import { Category, Customer, PaginatedResponse, Product, Subcategory, ProductImage } from "@/store/types";
+import { Category, Customer, PaginatedResponse, ProductType, Subcategory, ProductImage } from "@/store/types";
 import { paginationSchema, searchSchema } from "@/utils/schema";
 import { createClient } from "@/utils/supabase/server";
 
@@ -330,16 +330,31 @@ export async function deleteCustomer(id: string) {
     return true;
 }
 
-// Category Information
+// Categories with Types Information
 export async function getPaginatedCategories(params: { page: number, limit: number, search?: string }): Promise<PaginatedResponse<Category>> {
     const { page, limit } = paginationSchema.parse({ page: params.page, limit: params.limit });
     const { search } = searchSchema.parse({ search: params.search });
 
     const supabase = await createClient()
-    const { data, error, count } = await supabase.from('categories').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range((page - 1) * limit, page * limit - 1);
+    const { data, error, count } = await supabase
+        .from('categories')
+        .select(`
+            *,
+            types:product_types(*)
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
 
     if (search && search.length > 0) {
-        const { data: searchData, error: searchError, count: searchCount } = await supabase.from('categories').select('*', { count: 'exact' }).textSearch('name', search).order('created_at', { ascending: false }).range((page - 1) * limit, page * limit - 1);
+        const { data: searchData, error: searchError, count: searchCount } = await supabase
+            .from('categories')
+            .select(`
+                *,
+                types:product_types(*)
+            `, { count: 'exact' })
+            .textSearch('name', search)
+            .order('created_at', { ascending: false })
+            .range((page - 1) * limit, page * limit - 1);
         if (searchError) {
             console.error(searchError)
             return {
@@ -391,73 +406,128 @@ export async function getPaginatedCategories(params: { page: number, limit: numb
             previousPage: page > 1 ? page - 1 : null,
             nextPage: page < Math.ceil(count ?? 0 / limit) ? page + 1 : null,
         }
-    }
+    };
 }
 
 export async function getAllCategories() {
     const supabase = await createClient()
-    const { data, error } = await supabase.from('categories').select('*').order('created_at', { ascending: false });
+
+    const { data, error } = await supabase
+        .from('categories')
+        .select(`
+            *,
+            types:product_types(*)
+        `)
+        .order('created_at', { ascending: false });
+
     if (error) {
-        console.error(error)
-        return []
+        console.error('Error fetching categories:', error);
+        return null;
     }
 
-    return data;
-}
-
-export async function getCategoryById(id: string) {
-    const supabase = await createClient()
-    const { data, error } = await supabase.from('categories').select('*').eq('id', id).single();
-    if (error) {
-        console.error(error)
-        return null
-    }
     return data;
 }
 
 export async function createCategory(category: Partial<Category>) {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
-    // Transform the data to match database column names
-    const categoryData = {
-        name: category.name,
-        description: category.description,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-    }
-
-    const { data, error } = await supabase.from('categories').insert(categoryData).select().single();
+    const { data, error } = await supabase
+        .from('categories')
+        .insert([category])
+        .select()
+        .single();
 
     if (error) {
-        console.error('Error creating category:', error)
-        console.error('Error details:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-        })
-        return null
+        console.error('Error creating category:', error);
+        return { data: null, error };
     }
-    return data;
+
+    return { data, error: null };
 }
 
-export async function updateCategory(id: string, category: Partial<Category>) {
-    const supabase = await createClient()
-    const { data, error } = await supabase.from('categories').update(category).eq('id', id).select().single();
+export async function updateCategory(id: string, updates: Partial<Category>) {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from('categories')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
     if (error) {
-        console.error(error)
-        return null
+        console.error('Error updating category:', error);
+        return { data: null, error };
     }
-    return data;
+
+    return { data, error: null };
 }
 
-export async function deleteCategory(id: string) {
-    const supabase = await createClient()
-    const { error } = await supabase.from('categories').delete().eq('id', id);
+export async function deleteCategory(id: string): Promise<boolean> {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+
     if (error) {
-        console.error(error)
-        return null
+        console.error('Error deleting category:', error);
+        return false;
     }
+
+    return true;
+}
+
+// Product Types functions
+export async function createProductType(type: Partial<ProductType>) {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from('product_types')
+        .insert([type])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating product type:', error);
+        return { data: null, error };
+    }
+
+    return { data, error: null };
+}
+
+export async function updateProductType(id: string, updates: Partial<ProductType>) {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from('product_types')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating product type:', error);
+        return { data: null, error };
+    }
+
+    return { data, error: null };
+}
+
+export async function deleteProductType(id: string): Promise<boolean> {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+        .from('product_types')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error deleting product type:', error);
+        return false;
+    }
+
     return true;
 }
 

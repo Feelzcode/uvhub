@@ -96,6 +96,7 @@ import Image from "next/image"
 import { getProductImage } from '@/utils/productImage';
 import { toast } from "sonner"
 import ProductImageManager from "@/components/ProductImageManager"
+import { CategoryTypeForm } from "@/components/CategoryTypeForm"
 import { useProductsStore, useCategories, useSubcategories } from "@/store"
 import {
     AlertDialog,
@@ -136,6 +137,143 @@ function DragHandle({ id }: { id: string }) {
             <span className="sr-only">Drag to reorder</span>
         </Button>
     )
+}
+
+// Create a separate component for category actions
+function CategoryActions({ category }: { category: Category }) {
+    const { deleteCategory, loading } = useProductsStore();
+    const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+    const [isViewDialogOpen, setIsViewDialogOpen] = React.useState(false);
+
+    const handleDelete = async () => {
+        await deleteCategory(category.id);
+        setIsDeleteDialogOpen(false);
+    };
+
+    const handleView = () => {
+        setIsViewDialogOpen(true);
+    };
+
+    const handleEdit = () => {
+        setIsEditDialogOpen(true);
+    };
+
+    return (
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+                        size="icon"
+                    >
+                        <IconDotsVertical />
+                        <span className="sr-only">Open menu</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-32">
+                    <DropdownMenuItem className="cursor-pointer" onClick={handleView}>
+                        <IconEye className="mr-2 size-4" />
+                        View
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={handleEdit}>
+                        <IconEdit className="mr-2 size-4" />
+                        Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                        className="cursor-pointer" 
+                        variant="destructive"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                        <IconTrash className="mr-2 size-4" />
+                        Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* View Dialog */}
+            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>View Category: {category.name}</DialogTitle>
+                        <DialogDescription>
+                            Category details and product types
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+                        <div className="space-y-2">
+                            <Label>Description</Label>
+                            <p className="text-sm text-muted-foreground">{category.description}</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Product Types ({category.types?.length || 0})</Label>
+                            {category.types && category.types.length > 0 ? (
+                                <div className="space-y-2">
+                                    {category.types.map((type) => (
+                                        <div key={type.id} className="border rounded-lg p-3">
+                                            <div className="flex items-center justify-between">
+                                                <h4 className="font-medium">{type.name}</h4>
+                                                <Badge variant="secondary">${type.price}</Badge>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
+                                            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                                                <span>Stock: {type.stock}</span>
+                                                <span>Rating: {type.rating}/5 ({type.reviews} reviews)</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">No product types added yet.</p>
+                            )}
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>Edit Category: {category.name}</DialogTitle>
+                        <DialogDescription>
+                            Update category details and product types
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-y-auto pr-2">
+                        <CategoryTypeForm 
+                            onClose={() => setIsEditDialogOpen(false)} 
+                            category={category}
+                        />
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete "{category.name}"? This action cannot be undone and will also delete all associated product types.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={handleDelete}
+                            disabled={loading}
+                        >
+                            {loading ? <IconLoader2 className="animate-spin" /> : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    );
 }
 
 // Create a separate component for product actions
@@ -855,34 +993,8 @@ const categoryColumns: ColumnDef<Category>[] = [
     },
     {
         id: "actions",
-        cell: () => (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-                        size="icon"
-                    >
-                        <IconDotsVertical />
-                        <span className="sr-only">Open menu</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-32">
-                    <DropdownMenuItem>
-                        <IconEye className="mr-2 size-4" />
-                        View
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        <IconEdit className="mr-2 size-4" />
-                        Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem variant="destructive">
-                        <IconTrash className="mr-2 size-4" />
-                        Delete
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+        cell: ({ row }) => (
+            <CategoryActions category={row.original} />
         ),
     },
 ]
@@ -1378,19 +1490,16 @@ function CreateCategoryForm({ onClose }: { onClose: () => void }) {
 }
 
 export function ProductsDataTable({
-    productsData,
-    customersData,
     categoriesData,
+    customersData,
 }: {
-    productsData: PaginatedResponse<Product>;
-    customersData: PaginatedResponse<Customer>;
     categoriesData: PaginatedResponse<Category>;
+    customersData: PaginatedResponse<Customer>;
 }) {
-    const [activeTab, setActiveTab] = React.useState("products")
-    const [isCreateProductDialogOpen, setIsCreateProductDialogOpen] = React.useState(false)
+    const [activeTab, setActiveTab] = React.useState("categories")
     const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = React.useState(false)
     const [isCreateSubcategoryDialogOpen, setIsCreateSubcategoryDialogOpen] = React.useState(false)
-    const [currentProductsData, setCurrentProductsData] = React.useState(productsData)
+    const [isCreateProductDialogOpen, setIsCreateProductDialogOpen] = React.useState(false)
     const [currentCustomersData, setCurrentCustomersData] = React.useState(customersData)
     const [currentCategoriesData, setCurrentCategoriesData] = React.useState(categoriesData)
     const [subcategoriesData, setSubcategoriesData] = React.useState<PaginatedResponse<Subcategory>>({
@@ -1407,25 +1516,11 @@ export function ProductsDataTable({
 
     // Update state when prop changes
     React.useEffect(() => {
-        setCurrentProductsData(productsData)
         setCurrentCustomersData(customersData)
         setCurrentCategoriesData(categoriesData)
-    }, [productsData, customersData, categoriesData])
+    }, [customersData, categoriesData])
 
     // Internal pagination handlers
-    const handleProductsPageChange = React.useCallback(async (updaterOrValue: Updater<PaginationState> | PaginationState) => {
-        const pagination = typeof updaterOrValue === 'function' ? updaterOrValue({ pageIndex: 0, pageSize: 10 }) : updaterOrValue
-        console.log('Products page change:', pagination)
-        // Call the server action directly
-        const nextPage = await getPaginatedProducts({
-            page: pagination.pageIndex + 1,
-            limit: pagination.pageSize
-        })
-        if (nextPage) {
-            setCurrentProductsData(nextPage)
-        }
-    }, [])
-
     const handleCustomersPageChange = React.useCallback(async (updaterOrValue: Updater<PaginationState> | PaginationState) => {
         const pagination = typeof updaterOrValue === 'function' ? updaterOrValue({ pageIndex: 0, pageSize: 10 }) : updaterOrValue
         console.log('Customers page change:', pagination)
@@ -1484,186 +1579,107 @@ export function ProductsDataTable({
                         <SelectValue placeholder="Select a view" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="products">Products</SelectItem>
-                        <SelectItem value="customers">Customers</SelectItem>
-                        <SelectItem value="categories">Categories</SelectItem>
+                        <SelectItem value="categories">Categories & Types</SelectItem>
                         <SelectItem value="subcategories">Subcategories</SelectItem>
+                        <SelectItem value="customers">Customers</SelectItem>
                     </SelectContent>
                 </Select>
                 <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-                    <TabsTrigger value="products">Products</TabsTrigger>
-                    <TabsTrigger value="customers">
-                        Customers <Badge variant="secondary">{customersData.total}</Badge>
-                    </TabsTrigger>
                     <TabsTrigger value="categories">
-                        Categories <Badge variant="secondary">{categoriesData.total}</Badge>
+                        Categories & Types <Badge variant="secondary">{categoriesData.total}</Badge>
                     </TabsTrigger>
                     <TabsTrigger value="subcategories">
                         Subcategories <Badge variant="secondary">{subcategoriesData.total}</Badge>
                     </TabsTrigger>
+                    <TabsTrigger value="customers">
+                        Customers <Badge variant="secondary">{customersData.total}</Badge>
+                    </TabsTrigger>
                 </TabsList>
-                <div className="flex items-center gap-2">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-2">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                            <IconLayoutColumns />
+                            <span className="hidden lg:inline">Customize Columns</span>
+                            <span className="lg:hidden">Columns</span>
+                            <IconChevronDown />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                        {/* Column visibility options would go here */}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                {activeTab === "products" && (
+                    <Dialog open={isCreateProductDialogOpen} onOpenChange={setIsCreateProductDialogOpen}>
+                        <DialogTrigger asChild>
                             <Button variant="outline" size="sm">
-                                <IconLayoutColumns />
-                                <span className="hidden lg:inline">Customize Columns</span>
-                                <span className="lg:hidden">Columns</span>
-                                <IconChevronDown />
+                                <IconPlus />
+                                <span className="hidden lg:inline">Add Product</span>
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                            {/* Column visibility options would go here */}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
+                            <DialogHeader>
+                                <DialogTitle>Create New Product</DialogTitle>
+                                <DialogDescription>
+                                    Add a new product to your inventory. Fill in all the required fields.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex-1 overflow-y-auto pr-2">
+                                <CreateProductForm onClose={() => setIsCreateProductDialogOpen(false)} />
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
 
-                    {activeTab === "products" && (
-                        <Dialog open={isCreateProductDialogOpen} onOpenChange={setIsCreateProductDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                    <IconPlus />
-                                    <span className="hidden lg:inline">Add Product</span>
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
-                                <DialogHeader>
-                                    <DialogTitle>Create New Product</DialogTitle>
-                                    <DialogDescription>
-                                        Add a new product to your inventory. Fill in all the required fields.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="flex-1 overflow-y-auto pr-2">
-                                    <CreateProductForm onClose={() => setIsCreateProductDialogOpen(false)} />
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-                    )}
+                {activeTab === "categories" && (
+                    <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                <IconPlus />
+                                <span className="hidden lg:inline">Add Category & Types</span>
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col">
+                            <DialogHeader>
+                                <DialogTitle>Create New Category with Product Types</DialogTitle>
+                                <DialogDescription>
+                                    Add a new category and its associated product types.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex-1 overflow-y-auto pr-2">
+                                <CategoryTypeForm onClose={() => setIsCreateCategoryDialogOpen(false)} />
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
 
-                    {activeTab === "categories" && (
-                        <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                    <IconPlus />
-                                    <span className="hidden lg:inline">Add Category</span>
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col">
-                                <DialogHeader>
-                                    <DialogTitle>Create New Category</DialogTitle>
-                                    <DialogDescription>
-                                        Add a new category to organize your products.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="flex-1 overflow-y-auto pr-2">
-                                    <CreateCategoryForm onClose={() => setIsCreateCategoryDialogOpen(false)} />
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-                    )}
-
-                    {activeTab === "subcategories" && (
-                        <Dialog open={isCreateSubcategoryDialogOpen} onOpenChange={setIsCreateSubcategoryDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                    <IconPlus />
-                                    <span className="hidden lg:inline">Add Subcategory</span>
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col">
-                                <DialogHeader>
-                                    <DialogTitle>Create New Subcategory</DialogTitle>
-                                    <DialogDescription>
-                                        Add a new subcategory to further organize your products.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="flex-1 overflow-y-auto pr-2">
-                                    <CreateSubcategoryForm onClose={() => setIsCreateSubcategoryDialogOpen(false)} />
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-                    )}
-                </div>
+                {activeTab === "subcategories" && (
+                    <Dialog open={isCreateSubcategoryDialogOpen} onOpenChange={setIsCreateSubcategoryDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                <IconPlus />
+                                <span className="hidden lg:inline">Add Subcategory</span>
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col">
+                            <DialogHeader>
+                                <DialogTitle>Create New Subcategory</DialogTitle>
+                                <DialogDescription>
+                                    Add a new subcategory to further organize your products.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex-1 overflow-y-auto pr-2">
+                                <CreateSubcategoryForm onClose={() => setIsCreateSubcategoryDialogOpen(false)} />
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
             </div>
-
-            <TabsContent
-                value="products"
-                className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
-            >
-                <DataTable
-                    data={currentProductsData.documents}
-                    columns={productColumns}
-                    pagination={{
-                        pageIndex: currentProductsData.meta.page - 1,
-                        pageSize: currentProductsData.meta.limit,
-                    }}
-                    onPaginationChange={handleProductsPageChange}
-                />
-                <div className="flex items-center justify-between px-4">
-                    <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-                        Showing {currentProductsData.documents.length} of {currentProductsData.total} products
-                    </div>
-                    <div className="flex w-full items-center gap-8 lg:w-fit">
-                        <div className="flex w-fit items-center justify-center text-sm font-medium">
-                            Page {currentProductsData.meta.page} of {currentProductsData.meta.totalPages}
-                        </div>
-                        <div className="ml-auto flex items-center gap-2 lg:ml-0">
-                            <Button
-                                variant="outline"
-                                className="hidden h-8 w-8 p-0 lg:flex"
-                                onClick={() => handleProductsPageChange({ pageIndex: 0, pageSize: currentProductsData.meta.limit })}
-                                disabled={!currentProductsData.meta.previousPage}
-                            >
-                                <span className="sr-only">Go to first page</span>
-                                <IconChevronsLeft />
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="size-8"
-                                size="icon"
-                                onClick={() => handleProductsPageChange({
-                                    pageIndex: (currentProductsData.meta.previousPage || 1) - 1,
-                                    pageSize: currentProductsData.meta.limit
-                                })}
-                                disabled={!currentProductsData.meta.previousPage}
-                            >
-                                <span className="sr-only">Go to previous page</span>
-                                <IconChevronLeft />
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="size-8"
-                                size="icon"
-                                onClick={() => handleProductsPageChange({
-                                    pageIndex: (currentProductsData.meta.nextPage || 1) + 1,
-                                    pageSize: currentProductsData.meta.limit
-                                })}
-                                disabled={!currentProductsData.meta.nextPage}
-                            >
-                                <span className="sr-only">Go to next page</span>
-                                <IconChevronRight />
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="hidden size-8 lg:flex"
-                                size="icon"
-                                onClick={() => handleProductsPageChange({
-                                    pageIndex: currentProductsData.meta.totalPages - 1,
-                                    pageSize: currentProductsData.meta.limit
-                                })}
-                                disabled={!currentProductsData.meta.nextPage}
-                            >
-                                <span className="sr-only">Go to last page</span>
-                                <IconChevronsRight />
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </TabsContent>
-
-            <TabsContent
-                value="customers"
-                className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
-            >
+        </div><TabsContent
+            value="customers"
+            className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
+        >
                 <DataTable
                     data={currentCustomersData.documents}
                     columns={customerColumns}
@@ -1671,8 +1687,7 @@ export function ProductsDataTable({
                         pageIndex: currentCustomersData.meta.page - 1,
                         pageSize: currentCustomersData.meta.limit,
                     }}
-                    onPaginationChange={handleCustomersPageChange}
-                />
+                    onPaginationChange={handleCustomersPageChange} />
                 <div className="flex items-center justify-between px-4">
                     <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
                         Showing {currentCustomersData.documents.length} of {currentCustomersData.total} customers
@@ -1733,9 +1748,7 @@ export function ProductsDataTable({
                         </div>
                     </div>
                 </div>
-            </TabsContent>
-
-            <TabsContent
+            </TabsContent><TabsContent
                 value="categories"
                 className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
             >
@@ -1746,8 +1759,7 @@ export function ProductsDataTable({
                         pageIndex: currentCategoriesData.meta.page - 1,
                         pageSize: currentCategoriesData.meta.limit,
                     }}
-                    onPaginationChange={handleCategoriesPageChange}
-                />
+                    onPaginationChange={handleCategoriesPageChange} />
                 <div className="flex items-center justify-between px-4">
                     <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
                         Showing {currentCategoriesData.documents.length} of {currentCategoriesData.total} categories
@@ -1808,9 +1820,7 @@ export function ProductsDataTable({
                         </div>
                     </div>
                 </div>
-            </TabsContent>
-
-            <TabsContent
+            </TabsContent><TabsContent
                 value="subcategories"
                 className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
             >
@@ -1821,8 +1831,7 @@ export function ProductsDataTable({
                         pageIndex: subcategoriesData.meta.page - 1,
                         pageSize: subcategoriesData.meta.limit,
                     }}
-                    onPaginationChange={handleSubcategoriesPageChange}
-                />
+                    onPaginationChange={handleSubcategoriesPageChange} />
                 <div className="flex items-center justify-between px-4">
                     <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
                         Showing {subcategoriesData.documents.length} of {subcategoriesData.total} subcategories

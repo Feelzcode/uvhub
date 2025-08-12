@@ -1,7 +1,27 @@
 export interface Category {
+  subcategories: any;
   id: string;
   name: string;
   description: string;
+  types: ProductType[];
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ProductType {
+  id: string;
+  name: string;
+  image: string;
+  price: number;
+  price_ngn: number;
+  price_ghs: number;
+  description: string;
+  categoryId: string;
+  category: Category;
+  subcategory: Subcategory;
+  stock: number;
+  rating: number;
+  reviews: number;
   created_at: Date;
   updated_at: Date;
 }
@@ -47,16 +67,16 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number; // Keep for backward compatibility
-  price_ngn: number; // Nigerian Naira price
-  price_ghs: number; // Ghanaian Cedi price
-  image: string; // Keep for backward compatibility
+  price: number;
+  price_ngn: number;
+  price_ghs: number;
+  image: string;
   category: Category;
-  subcategory?: Subcategory; // Keep for backward compatibility
-  subcategory_id?: string; // Keep for backward compatibility
-  variants?: ProductVariant[]; // New variants system
+  subcategory?: Subcategory;
+  subcategory_id?: string;
+  types?: ProductType[];
   images?: ProductImage[];
-  stock: number; // Total stock across all variants
+  stock: number; // Total stock across all types
   rating: number;
   reviews: number;
   created_at: Date;
@@ -110,10 +130,10 @@ export interface Order {
 
 export interface CartItem {
   productId: string;
-  variantId?: string; // Optional variant ID
+  typeId?: string; // Optional type ID
   quantity: number;
   product: Product;
-  variant?: ProductVariant; // Selected variant
+  type?: ProductType; // Selected type
 }
 
 // Currency Types
@@ -247,10 +267,12 @@ export interface CurrencyActions {
 }
 
 export interface ProductsState {
-  products: Product[];
+  categories: Category[];
+  products: ProductType[];
   loading: boolean;
   error: string | null;
-  selectedProduct: Product | null;
+  selectedCategory: Category | null;
+  selectedType: ProductType | null;
   filters: {
     category: string;
     subcategory: string;
@@ -258,7 +280,6 @@ export interface ProductsState {
     maxPrice: number;
     search: string;
   };
-  categories: Category[];
   subcategories: Subcategory[];
 }
 

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Product, Category } from '@/store/types';
+import { Category, ProductType } from '@/store/types';
 import { useProductsStore, useCurrencyStore } from '@/store';
 import { getProductImage } from '@/utils/productImage';
 import { getProductPrice } from '@/utils/productPrice';
@@ -39,14 +39,14 @@ export default function AllEquipmentPage() {
     ? Array.from(
       new Map(
         products
-          .filter((p): p is Product & { category: Category } => !!p && !!p.category && !!p.category.id)
+          .filter((p): p is ProductType & { category: Category } => !!p && !!p.category && !!p.category.id)
           .map((p) => [p.category.id, p.category])
       ).values()
     )
     : [];
 
   // Filter products based on active filters
-  const filteredProducts = products?.filter((product): product is Product => {
+  const filteredProducts = products?.filter((product): product is ProductType => {
     if (!product) return false;
     if (filters.category && product.category?.id !== filters.category) return false;
     return true;

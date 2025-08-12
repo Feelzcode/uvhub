@@ -1,39 +1,128 @@
-import { Product, Category } from '@/store/types';
+import { Category, ProductType, Product } from '@/store/types';
 import { Package, TrendingUp, Users, Award, Shield, Truck, CheckCircle } from 'lucide-react';
 
-// Sample categories
-const categories: Category[] = [
-  {
-    id: 'electronics',
-    name: 'Electronics',
-    description: 'Electronic devices and gadgets',
-    created_at: new Date('2024-01-01'),
-    updated_at: new Date('2024-01-01'),
-  },
-  {
-    id: 'clothing',
-    name: 'Clothing',
-    description: 'Apparel and fashion items',
-    created_at: new Date('2024-01-01'),
-    updated_at: new Date('2024-01-01'),
-  },
-  {
-    id: 'home-garden',
-    name: 'Home & Garden',
-    description: 'Home improvement and garden items',
-    created_at: new Date('2024-01-01'),
-    updated_at: new Date('2024-01-01'),
-  },
-  {
-    id: 'sports',
-    name: 'Sports',
-    description: 'Sports and fitness equipment',
-    created_at: new Date('2024-01-01'),
-    updated_at: new Date('2024-01-01'),
-  },
+export const sampleCategories: Category[] = [
+    {
+        id: '1',
+        name: 'Treadmill',
+        description: 'Running and walking machines',
+        types: [
+            {
+                id: '1',
+                name: 'Commercial Treadmill Pro',
+                image: '/api/placeholder/300/200',
+                price: 2999.99,
+                description: 'Heavy-duty commercial grade treadmill with advanced features',
+                categoryId: '1',
+                created_at: new Date(),
+                updated_at: new Date(),
+            },
+            {
+                id: '2',
+                name: 'Home Treadmill Basic',
+                image: '/api/placeholder/300/200',
+                price: 899.99,
+                description: 'Compact home treadmill perfect for daily cardio',
+                categoryId: '1',
+                created_at: new Date(),
+                updated_at: new Date(),
+            }
+        ],
+        created_at: new Date(),
+        updated_at: new Date(),
+    },
+    {
+        id: '2',
+        name: 'Exercise Bike',
+        description: 'Stationary cycling equipment',
+        types: [
+            {
+                id: '3',
+                name: 'Spin Bike Pro',
+                image: '/api/placeholder/300/200',
+                price: 1299.99,
+                description: 'Professional spin bike with magnetic resistance',
+                categoryId: '2',
+                created_at: new Date(),
+                updated_at: new Date(),
+            },
+            {
+                id: '4',
+                name: 'Recumbent Bike Comfort',
+                image: '/api/placeholder/300/200',
+                price: 799.99,
+                description: 'Comfortable recumbent bike for low-impact cardio',
+                categoryId: '2',
+                created_at: new Date(),
+                updated_at: new Date(),
+            }
+        ],
+        created_at: new Date(),
+        updated_at: new Date(),
+    },
+    {
+        id: '3',
+        name: 'Strength Equipment',
+        description: 'Weight training and strength building equipment',
+        types: [
+            {
+                id: '5',
+                name: 'Power Rack System',
+                image: '/api/placeholder/300/200',
+                price: 2499.99,
+                description: 'Complete power rack with safety bars and pull-up bar',
+                categoryId: '3',
+                created_at: new Date(),
+                updated_at: new Date(),
+            },
+            {
+                id: '6',
+                name: 'Dumbbell Set',
+                image: '/api/placeholder/300/200',
+                price: 399.99,
+                description: 'Adjustable dumbbell set from 5-50 lbs',
+                categoryId: '3',
+                created_at: new Date(),
+                updated_at: new Date(),
+            }
+        ],
+        created_at: new Date(),
+        updated_at: new Date(),
+    }
 ];
 
-export const sampleCategories = categories;
+export const sampleProductTypes: ProductType[] = [
+    {
+        id: '1',
+        name: 'Commercial Treadmill Pro',
+        image: '/api/placeholder/300/200',
+        price: 2999.99,
+        description: 'Heavy-duty commercial grade treadmill with advanced features',
+        categoryId: '1',
+        created_at: new Date(),
+        updated_at: new Date(),
+    },
+    {
+        id: '2',
+        name: 'Home Treadmill Basic',
+        image: '/api/placeholder/300/200',
+        price: 899.99,
+        description: 'Compact home treadmill perfect for daily cardio',
+        categoryId: '1',
+        created_at: new Date(),
+        updated_at: new Date(),
+    },
+    {
+        id: '3',
+        name: 'Spin Bike Pro',
+        image: '/api/placeholder/300/200',
+        price: 1299.99,
+        description: 'Professional spin bike with magnetic resistance',
+        categoryId: '2',
+        created_at: new Date(),
+        updated_at: new Date(),
+    }
+];
 
 export const sampleProducts: Product[] = [
   {
@@ -44,7 +133,7 @@ export const sampleProducts: Product[] = [
     price_ngn: 129.99,
     price_ghs: 129.99,
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop',
-    category: categories[0], // Electronics
+    category: sampleCategories[0], // Electronics
     stock: 25,
     rating: 4.5,
     reviews: 128,

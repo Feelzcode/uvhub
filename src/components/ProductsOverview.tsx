@@ -11,9 +11,14 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import { TrendingUp } from 'lucide-react'
-import { Category, Customer, Product } from '@/store/types'
+import { Category, Customer } from '@/store/types'
 
-function ProductsOverview({ products, categories, customers }: { products: Product[], categories: Category[], customers: Customer[] }) {
+function ProductsOverview({ categories, customers }: { categories: Category[], customers: Customer[] }) {
+
+    // Calculate total product types across all categories
+    const totalProductTypes = categories.reduce((total, category) => {
+        return total + (category.types?.length || 0);
+    }, 0);
 
     // calculate the growth rate for the last 30 days
     const last30Days = new Date(new Date().setDate(new Date().getDate() - 30));
@@ -31,23 +36,23 @@ function ProductsOverview({ products, categories, customers }: { products: Produ
         <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
             <Card className="@container/card">
                 <CardHeader>
-                    <CardDescription>Total Products</CardDescription>
+                    <CardDescription>Total Product Types</CardDescription>
                     <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                        {products.length}
+                        {totalProductTypes}
                     </CardTitle>
                     <CardAction>
                         <Badge variant="outline">
                             <TrendingUp />
-                            +{products.length}
+                            +{totalProductTypes}
                         </Badge>
                     </CardAction>
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1.5 text-sm">
                     <div className="line-clamp-1 flex gap-2 font-medium">
-                        Total Products <TrendingUp className="size-4" />
+                        Total Product Types <TrendingUp className="size-4" />
                     </div>
                     <div className="text-muted-foreground">
-                        Total Products
+                        Across all categories
                     </div>
                 </CardFooter>
             </Card>
@@ -68,9 +73,7 @@ function ProductsOverview({ products, categories, customers }: { products: Produ
                     <div className="line-clamp-1 flex gap-2 font-medium">
                         Total Categories <TrendingUp className="size-4" />
                     </div>
-                    <div className="text-muted-foreground">
-                        Total Categories
-                    </div>
+                    <div className="text-muted-foreground">Product categories</div>
                 </CardFooter>
             </Card>
             <Card className="@container/card">
@@ -90,19 +93,19 @@ function ProductsOverview({ products, categories, customers }: { products: Produ
                     <div className="line-clamp-1 flex gap-2 font-medium">
                         Total Customers <TrendingUp className="size-4" />
                     </div>
-                    <div className="text-muted-foreground">Total Customers</div>
+                    <div className="text-muted-foreground">Registered users</div>
                 </CardFooter>
             </Card>
             <Card className="@container/card">
                 <CardHeader>
                     <CardDescription>Growth Rate</CardDescription>
                     <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                        {growthRatePercentage}%
+                        {growthRatePercentage.toFixed(1)}%
                     </CardTitle>
                     <CardAction>
                         <Badge variant="outline">
                             <TrendingUp />
-                            +{growthRatePercentage}%
+                            +{growthRatePercentage.toFixed(1)}%
                         </Badge>
                     </CardAction>
                 </CardHeader>
@@ -110,7 +113,7 @@ function ProductsOverview({ products, categories, customers }: { products: Produ
                     <div className="line-clamp-1 flex gap-2 font-medium">
                         Growth Rate <TrendingUp className="size-4" />
                     </div>
-                    <div className="text-muted-foreground">Growth Rate</div>
+                    <div className="text-muted-foreground">Last 30 days</div>
                 </CardFooter>
             </Card>
         </div>

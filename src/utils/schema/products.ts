@@ -1,6 +1,36 @@
 import { z } from "zod";
 
-// Input schema for form data (strings from HTML inputs)
+// Input schema for category form data
+export const categoryInputSchema = z.object({
+    name: z.string().min(1),
+    description: z.string().min(1),
+});
+
+// Output schema for processed category data
+export const categorySchema = z.object({
+    name: z.string().min(1),
+    description: z.string().min(1),
+});
+
+// Input schema for product type form data
+export const productTypeInputSchema = z.object({
+    name: z.string().min(1),
+    description: z.string().min(1),
+    image: z.string().min(1),
+    price: z.string().min(1),
+    categoryId: z.string().min(1),
+});
+
+// Output schema for processed product type data
+export const productTypeSchema = z.object({
+    name: z.string().min(1),
+    description: z.string().min(1),
+    image: z.string().min(1),
+    price: z.number().min(0).max(1000000),
+    categoryId: z.string().min(1),
+});
+
+// Legacy schemas for backward compatibility
 export const productInputSchema = z.object({
     name: z.string().min(1),
     description: z.string().min(1),
@@ -12,7 +42,6 @@ export const productInputSchema = z.object({
     subcategory_id: z.string().optional(),
 });
 
-// Output schema for processed data (numbers)
 export const productSchema = z.object({
     name: z.string().min(1),
     description: z.string().min(1),
@@ -33,5 +62,9 @@ export const transformProductInput = (input: z.infer<typeof productInputSchema>)
     stock: parseInt(input.stock, 10),
 });
 
+export type CategoryInputType = z.infer<typeof categoryInputSchema>;
+export type CategorySchemaType = z.infer<typeof categorySchema>;
+export type ProductTypeInputType = z.infer<typeof productTypeInputSchema>;
+export type ProductTypeSchemaType = z.infer<typeof productTypeSchema>;
 export type ProductInputType = z.infer<typeof productInputSchema>;
 export type ProductSchemaType = z.infer<typeof productSchema>;

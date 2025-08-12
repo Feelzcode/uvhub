@@ -17,6 +17,7 @@ export { useCategoryManagement } from './hooks/useCategoryManagement';
 // Export types
 export type {
     Product,
+    ProductType,
     Order,
     OrderItem,
     CartItem,
