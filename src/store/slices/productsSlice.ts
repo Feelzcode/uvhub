@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
-import { Category, ProductType, Subcategory, ProductImage, ProductsState, Product } from '../types';
+import { Category, ProductType, Subcategory, ProductImage, ProductsState, Product, ProductVariant } from '../types';
 import { 
     createCategory, 
     deleteCategory, 
@@ -25,6 +25,12 @@ import {
     createProductType,
     updateProductType,
     deleteProductType,
+    getProductVariants,
+    createProductVariant,
+    updateProductVariant,
+    deleteProductVariant,
+    getVariantImages,
+    createVariantImage,
 } from '@/app/admin/dashboard/products/actions';
 import { toast } from 'sonner';
 import { deleteFileFromStorage } from '@/lib/utils';
@@ -75,6 +81,16 @@ interface ProductsActions {
     createProductType: (productType: Partial<ProductType>) => Promise<void>;
     updateProductType: (id: string, updates: Partial<ProductType>) => Promise<void>;
     deleteProductType: (id: string) => Promise<void>;
+
+    // Product variant actions
+    getProductVariants: (productId: string) => Promise<ProductVariant[]>;
+    createProductVariant: (variant: Partial<ProductVariant>) => Promise<ProductVariant | null>;
+    updateProductVariant: (id: string, updates: Partial<ProductVariant>) => Promise<ProductVariant | null>;
+    deleteProductVariant: (id: string) => Promise<boolean>;
+
+    // Variant image actions
+    getVariantImages: (variantId: string) => Promise<ProductImage[]>;
+    createVariantImage: (variantImage: Partial<ProductImage>) => Promise<ProductImage | null>;
 }
 
 const initialState: ProductsState = {
@@ -529,11 +545,73 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                         });
                     }
                 },
+
+                // Product variant actions
+                getProductVariants: async (productId: string) => {
+                    try {
+                        const variants = await getProductVariants(productId);
+                        return variants;
+                    } catch (e) {
+                        console.error('Failed to get product variants:', e);
+                        return [];
+                    }
+                },
+
+                createProductVariant: async (variant: Partial<ProductVariant>) => {
+                    try {
+                        const createdVariant = await createProductVariant(variant);
+                        return createdVariant;
+                    } catch (e) {
+                        console.error('Failed to create product variant:', e);
+                        return null;
+                    }
+                },
+
+                updateProductVariant: async (id: string, updates: Partial<ProductVariant>) => {
+                    try {
+                        const updatedVariant = await updateProductVariant(id, updates);
+                        return updatedVariant;
+                    } catch (e) {
+                        console.error('Failed to update product variant:', e);
+                        return null;
+                    }
+                },
+
+                deleteProductVariant: async (id: string) => {
+                    try {
+                        const success = await deleteProductVariant(id);
+                        return success;
+                    } catch (e) {
+                        console.error('Failed to delete product variant:', e);
+                        return false;
+                    }
+                },
+
+                // Variant image actions
+                getVariantImages: async (variantId: string) => {
+                    try {
+                        const images = await getVariantImages(variantId);
+                        return images;
+                    } catch (e) {
+                        console.error('Failed to get variant images:', e);
+                        return [];
+                    }
+                },
+
+                createVariantImage: async (variantImage: Partial<ProductImage>) => {
+                    try {
+                        const createdImage = await createVariantImage(variantImage);
+                        return createdImage;
+                    } catch (e) {
+                        console.error('Failed to create variant image:', e);
+                        return null;
+                    }
+                },
             }),
         ),
-        {
-            name: 'products-store',
-            storage: createJSONStorage(() => localStorage)
+            {
+                name: 'products-store',
+                storage: createJSONStorage(() => localStorage)
         }
     )
 ); 

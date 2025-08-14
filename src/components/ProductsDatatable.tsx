@@ -91,11 +91,12 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { Product, Category, Customer, Subcategory, PaginatedResponse, ProductImage } from "@/store/types"
+import { Product, Category, Customer, Subcategory, PaginatedResponse, ProductImage, ProductVariant } from "@/store/types"
 import Image from "next/image"
 import { getProductImage } from '@/utils/productImage';
 import { toast } from "sonner"
 import ProductImageManager from "@/components/ProductImageManager"
+import ProductVariantManager from "@/components/ProductVariantManager"
 import { CategoryTypeForm } from "@/components/CategoryTypeForm"
 import { useProductsStore, useCategories, useSubcategories } from "@/store"
 import {
@@ -1097,19 +1098,14 @@ function DataTable<T extends { id: string }>({
 function CreateProductForm({ onClose }: { onClose: () => void }) {
     const [formData, setFormData] = React.useState({
         name: '',
-        description: '',
-        price: '',
-        price_ngn: '',
-        price_ghs: '',
-        stock: '',
         category: '',
-        subcategory_id: '',
-        image: '',
+        subcategory_id: 'none',
+        stock: 0
     })
-    const [productImages, setProductImages] = React.useState<ProductImage[]>([])
+    const [variants, setVariants] = React.useState<Partial<ProductVariant>[]>([])
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [subcategories, setSubcategories] = React.useState<Subcategory[]>([])
-    const { addProduct, getSubcategoriesByCategory, createProductImage } = useProductsStore();
+    const { addProduct, getSubcategoriesByCategory, createProductImage, createProductVariant, createVariantImage } = useProductsStore();
     const { categories } = useCategories();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -1117,52 +1113,98 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
         setIsSubmitting(true)
 
         try {
-            // Create the product first
-            const product = await addProduct({
-                name: formData.name,
-                description: formData.description,
-                price: Number(formData.price),
-                price_ngn: formData.price_ngn ? Number(formData.price_ngn) : undefined,
-                price_ghs: formData.price_ghs ? Number(formData.price_ghs) : undefined,
-                stock: Number(formData.stock),
-                category: formData.category as unknown as Category,
-                subcategory_id: formData.subcategory_id || undefined,
-                image: formData.image,
-                rating: 0,
-            });
+            // Debug: Log current form state
+            console.log('Form submission - Current form data:', formData);
+            console.log('Form submission - Current variants:', variants);
 
-            // If product was created successfully and we have images, save them
-            if (productImages.length > 0 && product && typeof product === 'object' && 'id' in product) {
-                for (const image of productImages) {
-                    await createProductImage({
-                        product_id: (product as { id: string }).id, 
-                        image_url: image.image_url,
-                        alt_text: image.alt_text,
-                        is_primary: image.is_primary,
-                        sort_order: image.sort_order,
+            // Validate that we have at least one variant
+            if (variants.length === 0) {
+                alert('Please add at least one product variant');
+                setIsSubmitting(false);
+                return;
+            }
+
+            // Create the main product (minimal info only)
+            const productData = {
+                name: formData.name,
+                category: formData.category, // Database expects 'category' column
+                subcategory_id: formData.subcategory_id && formData.subcategory_id !== '' && formData.subcategory_id !== 'none' ? formData.subcategory_id : undefined,
+                // Set default values for required fields
+                description: '', // No description at main product level
+                price: 0, // No price at main product level
+                stock: 0, // No stock at main product level
+                image: '', // No image at main product level
+                rating: 0,
+            };
+            
+            console.log('Creating product with data:', productData);
+            
+            const product = await addProduct(productData);
+
+            if (!product || typeof product !== 'object' || !('id' in product)) {
+                throw new Error('Failed to create product');
+            }
+
+            // Create all variants for this product
+            for (const variant of variants) {
+                try {
+                    const createdVariant = await createProductVariant({
+                        product_id: (product as { id: string }).id,
+                        name: variant.name,
+                        description: variant.description,
+                        price: variant.price,
+                        price_ngn: variant.price_ngn,
+                        price_ghs: variant.price_ghs,
+                        stock: variant.stock,
+                        currency: variant.currency,
+                        sku: variant.sku,
+                        is_active: variant.is_active,
+                        sort_order: variant.sort_order
                     });
+
+                    if (createdVariant && variant.images && variant.images.length > 0) {
+                        // Create images for this variant
+                        for (const image of variant.images) {
+                            await createVariantImage({
+                                variant_id: createdVariant.id,
+                                product_id: (product as { id: string }).id,
+                                image_url: image.image_url,
+                                alt_text: image.alt_text,
+                                is_primary: image.is_primary,
+                                sort_order: image.sort_order,
+                            });
+                        }
+                    }
+                } catch (variantError) {
+                    console.error('Error creating variant:', variantError);
+                    // Continue with other variants even if one fails
                 }
             }
 
+            toast.success('Product created successfully with variants!');
+            // Reset form data
+            setFormData({
+                name: '',
+                category: '',
+                subcategory_id: 'none',
+                stock: 0
+            });
+            setVariants([]);
             onClose()
         } catch (error) {
             console.error('Error creating product:', error)
+            toast.error('Failed to create product');
         } finally {
             setIsSubmitting(false)
         }
     }
 
-    const handleImagesChange = (images: ProductImage[]) => {
-        setProductImages(images);
-        // Set the primary image as the main product image
-        const primaryImage = images.find(img => img.is_primary);
-        if (primaryImage) {
-            setFormData(prev => ({ ...prev, image: primaryImage.image_url }));
-        }
+    const handleVariantsChange = (newVariants: Partial<ProductVariant>[]) => {
+        setVariants(newVariants);
     };
 
     const handleCategoryChange = async (categoryId: string) => {
-        setFormData(prev => ({ ...prev, category: categoryId, subcategory_id: '' }));
+        setFormData(prev => ({ ...prev, category: categoryId, subcategory_id: 'none' }));
         if (categoryId) {
             try {
                 const subcats = await getSubcategoriesByCategory(categoryId);
@@ -1217,6 +1259,7 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                             <SelectValue placeholder={!formData.category ? "Select category first" : subcategories.length === 0 ? "No subcategories" : "Select subcategory"} />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
                             {subcategories.map((subcategory) => (
                                 <SelectItem key={subcategory.id} value={subcategory.id}>
                                     {subcategory.name}
@@ -1231,82 +1274,37 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                         id="stock"
                         type="number"
                         value={formData.stock}
-                        onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
+                        onChange={(e) => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
                         required
                     />
                 </div>
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    required
-                />
-            </div>
-
-            <div className="space-y-2">
-                <Label htmlFor="price">Fallback Price</Label>
-                <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                    required
-                />
-                <p className="text-xs text-muted-foreground">Used as fallback for other countries</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="price-ngn">Nigerian Price (₦)</Label>
-                    <Input
-                        id="price-ngn"
-                        type="number"
-                        step="0.01"
-                        value={formData.price_ngn}
-                        onChange={(e) => setFormData(prev => ({ ...prev, price_ngn: e.target.value }))}
-                        placeholder="Optional"
-                    />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="price-ghs">Ghanaian Price (₵)</Label>
-                    <Input
-                        id="price-ghs"
-                        type="number"
-                        step="0.01"
-                        value={formData.price_ghs}
-                        onChange={(e) => setFormData(prev => ({ ...prev, price_ghs: e.target.value }))}
-                        placeholder="Optional"
-                    />
-                </div>
-            </div>
-
-            <ProductImageManager
-                images={productImages}
-                onImagesChange={handleImagesChange}
-                maxImages={6}
-            />
-
-            <div className="space-y-2">
-                <Label htmlFor="image">Main Image URL (Fallback)</Label>
-                <Input
-                    id="image"
-                    type="url"
-                    value={formData.image}
-                    onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
-                    placeholder="https://example.com/image.jpg"
-                />
+                <Label>Product Variants</Label>
                 <p className="text-xs text-muted-foreground">
-                    This will be used as a fallback if no images are uploaded above
+                    Add variants of this product. Each variant will have its own pricing, stock, and images.
                 </p>
             </div>
 
+            <ProductVariantManager
+                variants={variants}
+                onVariantsChange={handleVariantsChange}
+                maxVariants={10}
+            />
+
             <div className="flex justify-end space-x-2 pt-4">
-                <Button type="button" variant="outline" onClick={onClose}>
+                <Button type="button" variant="outline" onClick={() => {
+                    // Reset form data
+                    setFormData({
+                        name: '',
+                        category: '',
+                        subcategory_id: 'none',
+                        stock: 0
+                    });
+                    setVariants([]);
+                    onClose();
+                }}>
                     Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
@@ -1579,14 +1577,14 @@ export function ProductsDataTable({
                         <SelectValue placeholder="Select a view" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="categories">Categories & Types</SelectItem>
+                        <SelectItem value="categories">Products & Categories</SelectItem>
                         <SelectItem value="subcategories">Subcategories</SelectItem>
                         <SelectItem value="customers">Customers</SelectItem>
                     </SelectContent>
                 </Select>
                 <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
                     <TabsTrigger value="categories">
-                        Categories & Types <Badge variant="secondary">{categoriesData.total}</Badge>
+                        Products & Categories <Badge variant="secondary">{categoriesData.total}</Badge>
                     </TabsTrigger>
                     <TabsTrigger value="subcategories">
                         Subcategories <Badge variant="secondary">{subcategoriesData.total}</Badge>
@@ -1610,7 +1608,9 @@ export function ProductsDataTable({
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                {activeTab === "products" && (
+
+
+                {activeTab === "categories" && (
                     <Dialog open={isCreateProductDialogOpen} onOpenChange={setIsCreateProductDialogOpen}>
                         <DialogTrigger asChild>
                             <Button variant="outline" size="sm">
@@ -1627,28 +1627,6 @@ export function ProductsDataTable({
                             </DialogHeader>
                             <div className="flex-1 overflow-y-auto pr-2">
                                 <CreateProductForm onClose={() => setIsCreateProductDialogOpen(false)} />
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                )}
-
-                {activeTab === "categories" && (
-                    <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                                <IconPlus />
-                                <span className="hidden lg:inline">Add Category & Types</span>
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col">
-                            <DialogHeader>
-                                <DialogTitle>Create New Category with Product Types</DialogTitle>
-                                <DialogDescription>
-                                    Add a new category and its associated product types.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="flex-1 overflow-y-auto pr-2">
-                                <CategoryTypeForm onClose={() => setIsCreateCategoryDialogOpen(false)} />
                             </div>
                         </DialogContent>
                     </Dialog>
