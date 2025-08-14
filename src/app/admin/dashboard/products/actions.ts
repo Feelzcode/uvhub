@@ -1,6 +1,6 @@
 'use server'
 
-import { Category, Customer, PaginatedResponse, ProductType, Subcategory, ProductImage } from "@/store/types";
+import { Category, Customer, PaginatedResponse, ProductType, Subcategory, ProductImage, Product, ProductVariant } from "@/store/types";
 import { paginationSchema, searchSchema } from "@/utils/schema";
 import { createClient } from "@/utils/supabase/server";
 
@@ -804,6 +804,94 @@ export async function setPrimaryProductImage(productId: string, imageId: string)
     
     if (error) {
         console.error('Error setting primary image:', error)
+        return null
+    }
+    return data;
+}
+
+// Product Variants Information
+export async function getProductVariants(productId: string): Promise<ProductVariant[]> {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('product_variants')
+        .select('*')
+        .eq('product_id', productId)
+        .order('sort_order', { ascending: true });
+    
+    if (error) {
+        console.error(error)
+        return []
+    }
+    return data;
+}
+
+export async function createProductVariant(variant: Partial<ProductVariant>) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('product_variants')
+        .insert(variant)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error('Error creating product variant:', error)
+        return null
+    }
+    return data;
+}
+
+export async function updateProductVariant(id: string, variant: Partial<ProductVariant>) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('product_variants')
+        .update(variant)
+        .eq('id', id)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error(error)
+        return null
+    }
+    return data;
+}
+
+export async function deleteProductVariant(id: string) {
+    const supabase = await createClient()
+    const { error } = await supabase.from('product_variants').delete().eq('id', id);
+    if (error) {
+        console.error(error)
+        return null
+    }
+    return true;
+}
+
+// Variant Images Information
+export async function getVariantImages(variantId: string): Promise<ProductImage[]> {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('variant_images')
+        .select('*')
+        .eq('variant_id', variantId)
+        .order('sort_order', { ascending: true });
+    
+    if (error) {
+        console.error(error)
+        return []
+    }
+    return data;
+}
+
+export async function createVariantImage(variantImage: Partial<ProductImage>) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('variant_images')
+        .insert(variantImage)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error('Error creating variant image:', error)
         return null
     }
     return data;

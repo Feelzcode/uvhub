@@ -51,14 +51,18 @@ export interface ProductVariant {
   id: string;
   product_id: string;
   name: string;
+  type?: string;
   description?: string;
   sku?: string;
   price: number;
   price_ngn?: number;
   price_ghs?: number;
+  currency?: string;
   stock: number;
   is_active: boolean;
   sort_order: number;
+  image_url?: string;
+  images?: ProductImage[];
   created_at: Date;
   updated_at: Date;
 }
@@ -71,7 +75,8 @@ export interface Product {
   price_ngn: number;
   price_ghs: number;
   image: string;
-  category: Category;
+  category: string; // Database expects category column (UUID string)
+  category_data?: Category; // Optional for when we join with categories
   subcategory?: Subcategory;
   subcategory_id?: string;
   types?: ProductType[];
@@ -376,3 +381,958 @@ export interface Settings {
   created_at: string;
   updated_at: string;
 }
+
+
+  user: User | null;
+
+  loading: boolean;
+
+  error: string | null;
+
+}
+
+
+
+
+
+export interface PaginatedResponse<T> {
+
+  documents: T[];
+
+  total: number;
+
+  meta: {
+
+    page: number;
+
+    limit: number;
+
+    totalPages: number;
+
+    previousPage: number | null;
+
+    nextPage: number | null;
+
+  };
+
+}
+
+
+
+// Currency State
+
+export interface CurrencyState {
+
+  currentCurrency: Currency;
+
+  location: LocationInfo | null;
+
+  loading: boolean;
+
+  error: string | null;
+
+  currencies: Record<Currency, CurrencyInfo>;
+
+}
+
+
+
+export interface CurrencyActions {
+
+  setCurrency: (currency: Currency) => void;
+
+  setLocation: (location: LocationInfo) => void;
+
+  setLoading: (loading: boolean) => void;
+
+  setError: (error: string | null) => void;
+
+  detectLocation: () => Promise<void>;
+
+  formatPrice: (price: number, currency?: Currency) => string;
+
+  convertPrice: (price: number, fromCurrency: Currency, toCurrency: Currency) => number;
+
+}
+
+
+
+export interface ProductsState {
+
+  categories: Category[];
+  products: ProductType[];
+  loading: boolean;
+
+  error: string | null;
+
+  selectedCategory: Category | null;
+  selectedType: ProductType | null;
+  filters: {
+
+    category: string;
+
+    subcategory: string;
+
+    minPrice: number;
+
+    maxPrice: number;
+
+    search: string;
+
+  };
+
+  subcategories: Subcategory[];
+
+}
+
+
+
+export interface OrdersState {
+
+  orders: Order[];
+
+  loading: boolean;
+
+  error: string | null;
+
+  selectedOrder: Order | null;
+
+}
+
+
+
+export interface CartState {
+
+  items: CartItem[];
+
+  total: number;
+
+  itemCount: number;
+
+}
+
+
+
+export interface RootState {
+
+  products: ProductsState;
+
+  orders: OrdersState;
+
+  cart: CartState;
+
+  file: FileState;
+
+  user: UserState;
+
+  fileActions: FileActions;
+
+  userActions: UserActions;
+
+}
+
+
+
+// Upload Response Interfaces
+
+export interface UploadFileMeta {
+
+  name: string;
+
+  type: string;
+
+  bucketName: string;
+
+  objectName: string;
+
+  contentType: string;
+
+}
+
+
+
+export interface UploadProgress {
+
+  uploadStarted: number;
+
+  uploadComplete: boolean;
+
+  bytesUploaded: number;
+
+  bytesTotal: number;
+
+  percentage: number;
+
+}
+
+
+
+export interface UploadTus {
+
+  uploadUrl: string;
+
+}
+
+
+
+export interface UploadResponseBody {
+
+  xhr: Record<string, unknown>;
+
+}
+
+
+
+export interface UploadResponse {
+
+  uploadURL: string;
+
+  status: number;
+
+  body: UploadResponseBody;
+
+}
+
+
+
+export interface UploadedFile {
+
+  source: string;
+
+  id: string;
+
+  name: string;
+
+  extension: string;
+
+  meta: UploadFileMeta;
+
+  type: string;
+
+  data: Record<string, unknown>;
+
+  progress: UploadProgress;
+
+  size: number;
+
+  isGhost: boolean;
+
+  isRemote: boolean;
+
+  tus: UploadTus;
+
+  response: UploadResponse;
+
+  uploadURL: string;
+
+  isPaused: boolean;
+
+}
+
+
+
+export interface UploadResult {
+
+  successful: UploadedFile[];
+
+  failed: unknown[];
+
+  uploadID: string;
+
+  user: UserState;
+
+  currency: CurrencyState & CurrencyActions;
+
+}
+
+
+
+export interface Settings {
+
+  id: string;
+
+  facebook_pixel_id?: string;
+
+  facebook_pixel_enabled: boolean;
+
+  google_analytics_id?: string;
+
+  google_analytics_enabled: boolean;
+
+  site_name: string;
+
+  site_description?: string;
+
+  contact_email?: string;
+
+  contact_phone?: string;
+
+  created_at: string;
+
+  updated_at: string;
+
+}
+
+
+
+
+  file: File | null;
+
+  isUploading: boolean;
+
+  error: string;
+
+}
+
+
+
+export interface FileActions {
+
+  uploadFile: (file: File) => Promise<void>;
+
+  setFile: (file: File | null) => void;
+
+  setIsUploading: (isUploading: boolean) => void;
+
+  setError: (error: string) => void;
+
+}
+
+
+
+export interface UserActions {
+
+  setUser: (user: User | null) => void;
+
+  setLoading: (loading: boolean) => void;
+
+  setError: (error: string | null) => void;
+
+}
+
+
+
+export interface UserState {
+
+  user: User | null;
+
+  loading: boolean;
+
+  error: string | null;
+
+}
+
+
+
+
+
+export interface PaginatedResponse<T> {
+
+  documents: T[];
+
+  total: number;
+
+  meta: {
+
+    page: number;
+
+    limit: number;
+
+    totalPages: number;
+
+    previousPage: number | null;
+
+    nextPage: number | null;
+
+  };
+
+}
+
+
+
+// Currency State
+
+export interface CurrencyState {
+
+  currentCurrency: Currency;
+
+  location: LocationInfo | null;
+
+  loading: boolean;
+
+  error: string | null;
+
+  currencies: Record<Currency, CurrencyInfo>;
+
+}
+
+
+
+export interface CurrencyActions {
+
+  setCurrency: (currency: Currency) => void;
+
+  setLocation: (location: LocationInfo) => void;
+
+  setLoading: (loading: boolean) => void;
+
+  setError: (error: string | null) => void;
+
+  detectLocation: () => Promise<void>;
+
+  formatPrice: (price: number, currency?: Currency) => string;
+
+  convertPrice: (price: number, fromCurrency: Currency, toCurrency: Currency) => number;
+
+}
+
+
+
+export interface ProductsState {
+
+  categories: Category[];
+  products: ProductType[];
+  loading: boolean;
+
+  error: string | null;
+
+  selectedCategory: Category | null;
+  selectedType: ProductType | null;
+  filters: {
+
+    category: string;
+
+    subcategory: string;
+
+    minPrice: number;
+
+    maxPrice: number;
+
+    search: string;
+
+  };
+
+  subcategories: Subcategory[];
+
+}
+
+
+
+export interface OrdersState {
+
+  orders: Order[];
+
+  loading: boolean;
+
+  error: string | null;
+
+  selectedOrder: Order | null;
+
+}
+
+
+
+export interface CartState {
+
+  items: CartItem[];
+
+  total: number;
+
+  itemCount: number;
+
+}
+
+
+
+export interface RootState {
+
+  products: ProductsState;
+
+  orders: OrdersState;
+
+  cart: CartState;
+
+  file: FileState;
+
+  user: UserState;
+
+  fileActions: FileActions;
+
+  userActions: UserActions;
+
+}
+
+
+
+// Upload Response Interfaces
+
+export interface UploadFileMeta {
+
+  name: string;
+
+  type: string;
+
+  bucketName: string;
+
+  objectName: string;
+
+  contentType: string;
+
+}
+
+
+
+export interface UploadProgress {
+
+  uploadStarted: number;
+
+  uploadComplete: boolean;
+
+  bytesUploaded: number;
+
+  bytesTotal: number;
+
+  percentage: number;
+
+}
+
+
+
+export interface UploadTus {
+
+  uploadUrl: string;
+
+}
+
+
+
+export interface UploadResponseBody {
+
+  xhr: Record<string, unknown>;
+
+}
+
+
+
+export interface UploadResponse {
+
+  uploadURL: string;
+
+  status: number;
+
+  body: UploadResponseBody;
+
+}
+
+
+
+export interface UploadedFile {
+
+  source: string;
+
+  id: string;
+
+  name: string;
+
+  extension: string;
+
+  meta: UploadFileMeta;
+
+  type: string;
+
+  data: Record<string, unknown>;
+
+  progress: UploadProgress;
+
+  size: number;
+
+  isGhost: boolean;
+
+  isRemote: boolean;
+
+  tus: UploadTus;
+
+  response: UploadResponse;
+
+  uploadURL: string;
+
+  isPaused: boolean;
+
+}
+
+
+
+export interface UploadResult {
+
+  successful: UploadedFile[];
+
+  failed: unknown[];
+
+  uploadID: string;
+
+  user: UserState;
+
+  currency: CurrencyState & CurrencyActions;
+
+}
+
+
+
+export interface Settings {
+
+  id: string;
+
+  facebook_pixel_id?: string;
+
+  facebook_pixel_enabled: boolean;
+
+  google_analytics_id?: string;
+
+  google_analytics_enabled: boolean;
+
+  site_name: string;
+
+  site_description?: string;
+
+  contact_email?: string;
+
+  contact_phone?: string;
+
+  created_at: string;
+
+  updated_at: string;
+
+}
+
+
+
+export interface FileState {
+
+  file: File | null;
+
+  isUploading: boolean;
+
+  error: string;
+
+}
+
+
+
+export interface FileActions {
+
+  uploadFile: (file: File) => Promise<void>;
+
+  setFile: (file: File | null) => void;
+
+  setIsUploading: (isUploading: boolean) => void;
+
+  setError: (error: string) => void;
+
+}
+
+
+
+export interface UserActions {
+
+  setUser: (user: User | null) => void;
+
+  setLoading: (loading: boolean) => void;
+
+  setError: (error: string | null) => void;
+
+}
+
+
+
+export interface UserState {
+
+  user: User | null;
+
+  loading: boolean;
+
+  error: string | null;
+
+}
+
+
+
+
+
+export interface PaginatedResponse<T> {
+
+  documents: T[];
+
+  total: number;
+
+  meta: {
+
+    page: number;
+
+    limit: number;
+
+    totalPages: number;
+
+    previousPage: number | null;
+
+    nextPage: number | null;
+
+  };
+
+}
+
+
+
+// Currency State
+
+export interface CurrencyState {
+
+  currentCurrency: Currency;
+
+  location: LocationInfo | null;
+
+  loading: boolean;
+
+  error: string | null;
+
+  currencies: Record<Currency, CurrencyInfo>;
+
+}
+
+
+
+export interface CurrencyActions {
+
+  setCurrency: (currency: Currency) => void;
+
+  setLocation: (location: LocationInfo) => void;
+
+  setLoading: (loading: boolean) => void;
+
+  setError: (error: string | null) => void;
+
+  detectLocation: () => Promise<void>;
+
+  formatPrice: (price: number, currency?: Currency) => string;
+
+  convertPrice: (price: number, fromCurrency: Currency, toCurrency: Currency) => number;
+
+}
+
+
+
+export interface ProductsState {
+
+  categories: Category[];
+  products: ProductType[];
+  loading: boolean;
+
+  error: string | null;
+
+  selectedCategory: Category | null;
+  selectedType: ProductType | null;
+  filters: {
+
+    category: string;
+
+    subcategory: string;
+
+    minPrice: number;
+
+    maxPrice: number;
+
+    search: string;
+
+  };
+
+  subcategories: Subcategory[];
+
+}
+
+
+
+export interface OrdersState {
+
+  orders: Order[];
+
+  loading: boolean;
+
+  error: string | null;
+
+  selectedOrder: Order | null;
+
+}
+
+
+
+export interface CartState {
+
+  items: CartItem[];
+
+  total: number;
+
+  itemCount: number;
+
+}
+
+
+
+export interface RootState {
+
+  products: ProductsState;
+
+  orders: OrdersState;
+
+  cart: CartState;
+
+  file: FileState;
+
+  user: UserState;
+
+  fileActions: FileActions;
+
+  userActions: UserActions;
+
+}
+
+
+
+// Upload Response Interfaces
+
+export interface UploadFileMeta {
+
+  name: string;
+
+  type: string;
+
+  bucketName: string;
+
+  objectName: string;
+
+  contentType: string;
+
+}
+
+
+
+export interface UploadProgress {
+
+  uploadStarted: number;
+
+  uploadComplete: boolean;
+
+  bytesUploaded: number;
+
+  bytesTotal: number;
+
+  percentage: number;
+
+}
+
+
+
+export interface UploadTus {
+
+  uploadUrl: string;
+
+}
+
+
+
+export interface UploadResponseBody {
+
+  xhr: Record<string, unknown>;
+
+}
+
+
+
+export interface UploadResponse {
+
+  uploadURL: string;
+
+  status: number;
+
+  body: UploadResponseBody;
+
+}
+
+
+
+export interface UploadedFile {
+
+  source: string;
+
+  id: string;
+
+  name: string;
+
+  extension: string;
+
+  meta: UploadFileMeta;
+
+  type: string;
+
+  data: Record<string, unknown>;
+
+  progress: UploadProgress;
+
+  size: number;
+
+  isGhost: boolean;
+
+  isRemote: boolean;
+
+  tus: UploadTus;
+
+  response: UploadResponse;
+
+  uploadURL: string;
+
+  isPaused: boolean;
+
+}
+
+
+
+export interface UploadResult {
+
+  successful: UploadedFile[];
+
+  failed: unknown[];
+
+  uploadID: string;
+
+  user: UserState;
+
+  currency: CurrencyState & CurrencyActions;
+
+}
+
+
+
+export interface Settings {
+
+  id: string;
+
+  facebook_pixel_id?: string;
+
+  facebook_pixel_enabled: boolean;
+
+  google_analytics_id?: string;
+
+  google_analytics_enabled: boolean;
+
+  site_name: string;
+
+  site_description?: string;
+
+  contact_email?: string;
+
+  contact_phone?: string;
+
+  created_at: string;
+
+  updated_at: string;
+
+}
+
