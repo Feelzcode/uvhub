@@ -16,9 +16,9 @@ export interface ProductType {
   price_ngn: number;
   price_ghs: number;
   description: string;
-  categoryId: string;
-  category: Category;
-  subcategory: Subcategory;
+  category_id: string;
+  category?: Category;
+  subcategory?: Subcategory;
   stock: number;
   rating: number;
   reviews: number;
@@ -50,6 +50,7 @@ export interface ProductImage {
 export interface ProductVariant {
   id: string;
   product_id: string;
+  category_id: string; // Add category_id to match database schema
   name: string;
   type?: string;
   description?: string;
@@ -57,7 +58,6 @@ export interface ProductVariant {
   price: number;
   price_ngn?: number;
   price_ghs?: number;
-  currency?: string;
   stock: number;
   is_active: boolean;
   sort_order: number;
@@ -273,7 +273,7 @@ export interface CurrencyActions {
 
 export interface ProductsState {
   categories: Category[];
-  products: ProductType[];
+  products: Product[];
   loading: boolean;
   error: string | null;
   selectedCategory: Category | null;
@@ -380,15 +380,6 @@ export interface Settings {
   contact_phone?: string;
   created_at: string;
   updated_at: string;
-}
-
-
-  user: User | null;
-
-  loading: boolean;
-
-  error: string | null;
-
 }
 
 
@@ -460,7 +451,7 @@ export interface CurrencyActions {
 export interface ProductsState {
 
   categories: Category[];
-  products: ProductType[];
+  products: Product[];
   loading: boolean;
 
   error: string | null;
@@ -670,17 +661,6 @@ export interface Settings {
   created_at: string;
 
   updated_at: string;
-
-}
-
-
-
-
-  file: File | null;
-
-  isUploading: boolean;
-
-  error: string;
 
 }
 
@@ -791,7 +771,7 @@ export interface CurrencyActions {
 export interface ProductsState {
 
   categories: Category[];
-  products: ProductType[];
+  products: Product[];
   loading: boolean;
 
   error: string | null;
@@ -1123,7 +1103,7 @@ export interface CurrencyActions {
 export interface ProductsState {
 
   categories: Category[];
-  products: ProductType[];
+  products: Product[];
   loading: boolean;
 
   error: string | null;

@@ -3,6 +3,7 @@
 import { Category, Customer, PaginatedResponse, ProductType, Subcategory, ProductImage, Product, ProductVariant } from "@/store/types";
 import { paginationSchema, searchSchema } from "@/utils/schema";
 import { createClient } from "@/utils/supabase/server";
+import { v4 as uuidv4 } from 'uuid';
 
 
 // Products Information
@@ -121,14 +122,14 @@ export async function getProductById(id: string) {
         console.error(error)
         return null
     }
-    return data;
+    return data as Product;
 }
 
-export async function createProduct(product: Partial<Product>) {
+export async function createProduct(product: Partial<Product>): Promise<Product | null> {
     const supabase = await createClient()
     const { data, error } = await supabase
         .from('products')
-        .insert(product)
+        .insert({ ...product, id: uuidv4() })
         .select(`
             *,
             category:categories(*),
@@ -139,10 +140,10 @@ export async function createProduct(product: Partial<Product>) {
         console.error(error)
         return null
     }
-    return data;
+    return data as Product;
 }
 
-export async function updateProduct(id: string, product: Product) {
+export async function updateProduct(id: string, product: Partial<Product>): Promise<Product | null> {
     const supabase = await createClient()
     const { data, error } = await supabase
         .from('products')
@@ -158,7 +159,7 @@ export async function updateProduct(id: string, product: Product) {
         console.error(error)
         return null
     }
-    return data;
+    return data as Product;
 }
 
 export async function deleteProduct(id: string) {
@@ -409,7 +410,7 @@ export async function getPaginatedCategories(params: { page: number, limit: numb
     };
 }
 
-export async function getAllCategories() {
+export async function getAllCategories(): Promise<Category[] | null> {
     const supabase = await createClient()
 
     const { data, error } = await supabase
@@ -425,10 +426,10 @@ export async function getAllCategories() {
         return null;
     }
 
-    return data;
+    return data as Category[];
 }
 
-export async function createCategory(category: Partial<Category>) {
+export async function createCategory(category: Partial<Category>): Promise<Category | null> {
     const supabase = await createClient();
 
     const { data, error } = await supabase
@@ -439,10 +440,10 @@ export async function createCategory(category: Partial<Category>) {
 
     if (error) {
         console.error('Error creating category:', error);
-        return { data: null, error };
+        return null;
     }
 
-    return { data, error: null };
+    return data as Category;
 }
 
 export async function updateCategory(id: string, updates: Partial<Category>) {

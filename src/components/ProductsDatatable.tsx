@@ -591,7 +591,7 @@ function ProductActions({ product }: { product: Product }) {
                         )}
                         <div className="flex flex-col gap-3">
                             <Label htmlFor="view-category">Category</Label>
-                            <Input id="view-category" value={product.category.name} disabled />
+                            <Input id="view-category" value={product.category_data?.name || product.category} disabled />
                         </div>
                         <div className="flex flex-col gap-3">
                             <Label htmlFor="view-created-at">Created At</Label>
@@ -655,7 +655,7 @@ const productColumns: ColumnDef<Product>[] = [
         cell: ({ row }) => (
             <div className="w-32">
                 <Badge variant="outline" className="text-muted-foreground px-1.5">
-                    {row.original.category.name}
+                    {row.original.category_data?.name || row.original.category}
                 </Badge>
             </div>
         ),
@@ -1106,39 +1106,81 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [subcategories, setSubcategories] = React.useState<Subcategory[]>([])
     const { addProduct, getSubcategoriesByCategory, createProductImage, createProductVariant, createVariantImage } = useProductsStore();
-    const { categories } = useCategories();
+    const { categories, getCategories } = useCategories();
+
+    // Debug: Log categories when they change
+    React.useEffect(() => {
+        const fetchCategories = async () => {
+            await getCategories();
+        }
+        fetchCategories();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSubmitting(true)
 
         try {
-            // Debug: Log current form state
-            console.log('Form submission - Current form data:', formData);
-            console.log('Form submission - Current variants:', variants);
-
-            // Validate that we have at least one variant
-            if (variants.length === 0) {
-                alert('Please add at least one product variant');
+            // Validate required fields
+            if (!formData.name.trim()) {
+                toast.error('Product name is required');
                 setIsSubmitting(false);
                 return;
+            }
+
+            if (!formData.category) {
+                toast.error('Please select a category');
+                setIsSubmitting(false);
+                return;
+            }
+
+            // Validate variants
+            if (variants.length === 0) {
+                toast.error('Please add at least one product variant');
+                setIsSubmitting(false);
+                return;
+            }
+
+            // Validate each variant has required fields
+            const invalidVariants = variants.filter(variant => !variant.name?.trim() || !variant.price || variant.price <= 0);
+            if (invalidVariants.length > 0) {
+                toast.error('All variants must have a name and valid price');
+                setIsSubmitting(false);
+                return;
+            }
+
+            // Debug: Log the category data being sent
+            console.log('Category data being sent:', {
+                category: formData.category,
+                categoryType: typeof formData.category,
+                categories: categories.map(c => ({ id: c.id, name: c.name, idType: typeof c.id }))
+            });
+
+            // Validate that category is a valid UUID
+            if (!formData.category || formData.category === '') {
+                throw new Error('Category is required');
+            }
+
+            // Check if the category ID is a valid UUID format
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(formData.category)) {
+                throw new Error(`Invalid category ID format: ${formData.category}. Expected UUID format.`);
             }
 
             // Create the main product (minimal info only)
             const productData = {
                 name: formData.name,
-                category: formData.category, // Database expects 'category' column
+                category: formData.category, // Database expects 'category' column (UUID)
                 subcategory_id: formData.subcategory_id && formData.subcategory_id !== '' && formData.subcategory_id !== 'none' ? formData.subcategory_id : undefined,
                 // Set default values for required fields
-                description: '', // No description at main product level
-                price: 0, // No price at main product level
-                stock: 0, // No stock at main product level
-                image: '', // No image at main product level
+                description: formData.name, // Use product name as description
+                price: variants[0]?.price || 0, // Use first variant's price as fallback
+                stock: variants.reduce((total, variant) => total + (variant.stock || 0), 0), // Sum of all variant stocks
+                image: variants[0]?.images?.[0]?.image_url || '', // Use first variant's first image
                 rating: 0,
             };
             
-            console.log('Creating product with data:', productData);
-            
+            console.log('Product data being sent to database:', productData);
             const product = await addProduct(productData);
 
             if (!product || typeof product !== 'object' || !('id' in product)) {
@@ -1146,42 +1188,61 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
             }
 
             // Create all variants for this product
+            const createdVariants = [];
             for (const variant of variants) {
                 try {
+                    if (!variant.name || !variant.price) {
+                        console.warn('Skipping variant with missing name or price:', variant);
+                        continue;
+                    }
+
                     const createdVariant = await createProductVariant({
                         product_id: (product as { id: string }).id,
+                        category_id: formData.category, // Add category_id to satisfy foreign key constraint
                         name: variant.name,
-                        description: variant.description,
-                        price: variant.price,
-                        price_ngn: variant.price_ngn,
-                        price_ghs: variant.price_ghs,
-                        stock: variant.stock,
-                        currency: variant.currency,
-                        sku: variant.sku,
-                        is_active: variant.is_active,
-                        sort_order: variant.sort_order
+                        description: variant.description || variant.name,
+                        price: variant.price || 0,
+                        price_ngn: variant.price_ngn || 0,
+                        price_ghs: variant.price_ghs || 0,
+                        stock: variant.stock || 0,
+                        sku: variant.sku || `${formData.name}-${variant.name}`.toLowerCase().replace(/\s+/g, '-'),
+                        is_active: variant.is_active !== false, // Default to true
+                        sort_order: variant.sort_order || createdVariants.length
                     });
 
-                    if (createdVariant && variant.images && variant.images.length > 0) {
-                        // Create images for this variant
-                        for (const image of variant.images) {
-                            await createVariantImage({
-                                variant_id: createdVariant.id,
-                                product_id: (product as { id: string }).id,
-                                image_url: image.image_url,
-                                alt_text: image.alt_text,
-                                is_primary: image.is_primary,
-                                sort_order: image.sort_order,
-                            });
+                    if (createdVariant) {
+                        createdVariants.push(createdVariant);
+                        
+                        // Create images for this variant if they exist
+                        if (variant.images && variant.images.length > 0) {
+                            for (const image of variant.images) {
+                                try {
+                                    await createVariantImage({
+                                        product_id: (product as { id: string }).id,
+                                        image_url: image.image_url,
+                                        alt_text: image.alt_text || `${variant.name} image`,
+                                        is_primary: image.is_primary || false,
+                                        sort_order: image.sort_order || 0,
+                                    });
+                                } catch (imageError) {
+                                    console.error('Error creating variant image:', imageError);
+                                    // Continue with other images even if one fails
+                                }
+                            }
                         }
                     }
                 } catch (variantError) {
                     console.error('Error creating variant:', variantError);
+                    toast.error(`Failed to create variant: ${variant.name}`);
                     // Continue with other variants even if one fails
                 }
             }
 
-            toast.success('Product created successfully with variants!');
+            if (createdVariants.length === 0) {
+                throw new Error('No variants were created successfully');
+            }
+
+            toast.success(`Product "${formData.name}" created successfully with ${createdVariants.length} variant${createdVariants.length !== 1 ? 's' : ''}!`);
             // Reset form data
             setFormData({
                 name: '',
@@ -1193,7 +1254,19 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
             onClose()
         } catch (error) {
             console.error('Error creating product:', error)
-            toast.error('Failed to create product');
+            
+            // Show more specific error messages
+            if (error instanceof Error) {
+                if (error.message.includes('Invalid category ID format')) {
+                    toast.error(error.message);
+                } else if (error.message.includes('Failed to create product')) {
+                    toast.error('Database error occurred. Please check the console for details.');
+                } else {
+                    toast.error(`Error: ${error.message}`);
+                }
+            } else {
+                toast.error('An unexpected error occurred while creating the product');
+            }
         } finally {
             setIsSubmitting(false)
         }
@@ -1204,6 +1277,16 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
     };
 
     const handleCategoryChange = async (categoryId: string) => {
+        console.log('Category selected:', { categoryId, type: typeof categoryId });
+        
+        // Validate UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (categoryId && !uuidRegex.test(categoryId)) {
+            console.warn('Selected category ID is not a valid UUID:', categoryId);
+            toast.error('Invalid category selected. Please try again.');
+            return;
+        }
+        
         setFormData(prev => ({ ...prev, category: categoryId, subcategory_id: 'none' }));
         if (categoryId) {
             try {
@@ -1291,6 +1374,7 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                 variants={variants}
                 onVariantsChange={handleVariantsChange}
                 maxVariants={10}
+                categoryId={formData.category}
             />
 
             <div className="flex justify-end space-x-2 pt-4">
@@ -1958,7 +2042,7 @@ function ProductCellViewer({ product }: { product: Product }) {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-3">
                                 <Label htmlFor="category">Category</Label>
-                                <Select defaultValue={product.category.name}>
+                                <Select defaultValue={product.category_data?.name || product.category}>
                                     <SelectTrigger id="category" className="w-full">
                                         <SelectValue placeholder="Select a category" />
                                     </SelectTrigger>

@@ -19,17 +19,20 @@ import {
   GripVertical,
   Star 
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ProductVariantManagerProps {
   variants: Partial<ProductVariant>[];
   onVariantsChange: (variants: Partial<ProductVariant>[]) => void;
   maxVariants?: number;
+  categoryId?: string; // Make categoryId optional to maintain backward compatibility
 }
 
 export default function ProductVariantManager({
   variants = [],
   onVariantsChange,
-  maxVariants = 6
+  maxVariants = 6,
+  categoryId
 }: ProductVariantManagerProps) {
   const [editingVariant, setEditingVariant] = useState<number | null>(null);
   const [newVariant, setNewVariant] = useState<Partial<ProductVariant>>({
@@ -39,7 +42,6 @@ export default function ProductVariantManager({
     price: 0,
     price_ngn: 0,
     price_ghs: 0,
-    currency: 'USD',
     stock: 0,
     is_active: true,
     sort_order: variants.length,
@@ -48,12 +50,12 @@ export default function ProductVariantManager({
 
   const handleAddVariant = () => {
     if (variants.length >= maxVariants) {
-      alert(`Maximum ${maxVariants} variants allowed`);
+      toast.error(`Maximum ${maxVariants} variants allowed`);
       return;
     }
 
     if (!newVariant.name || newVariant.price === 0) {
-      alert('Variant name and price are required');
+      toast.error('Variant name and price are required');
       return;
     }
 
@@ -65,12 +67,12 @@ export default function ProductVariantManager({
       price: newVariant.price || 0,
       price_ngn: newVariant.price_ngn || undefined,
       price_ghs: newVariant.price_ghs || undefined,
-      currency: newVariant.currency || 'USD',
       stock: newVariant.stock || 0,
       is_active: newVariant.is_active || true,
       sort_order: newVariant.sort_order || variants.length,
       image_url: newVariant.image_url || '',
-      images: newVariant.images || []
+      images: newVariant.images || [],
+      ...(categoryId && { category_id: categoryId }) // Include category_id if available
     };
 
     onVariantsChange([...variants, variant]);
@@ -81,7 +83,6 @@ export default function ProductVariantManager({
       price: 0,
       price_ngn: 0,
       price_ghs: 0,
-      currency: 'USD',
       stock: 0,
       is_active: true,
       sort_order: variants.length + 1,
@@ -160,7 +161,7 @@ export default function ProductVariantManager({
 
     } catch (error) {
       console.error('Error handling image upload:', error);
-      alert('Failed to upload images. Please try again.');
+      toast.error('Failed to upload images. Please try again.');
     }
   };
 
@@ -200,7 +201,7 @@ export default function ProductVariantManager({
 
     } catch (error) {
       console.error('Error handling image upload:', error);
-      alert('Failed to upload images. Please try again.');
+      toast.error('Failed to upload images. Please try again.');
     }
   };
 
@@ -214,7 +215,7 @@ export default function ProductVariantManager({
     onVariantsChange(updatedVariants);
   };
 
-  const sortedVariants = [...variants].sort((a, b) => a.sort_order - b.sort_order);
+  const sortedVariants = [...variants].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
   return (
     <div className="space-y-4">
@@ -257,19 +258,7 @@ export default function ProductVariantManager({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="variant-currency">Currency</Label>
-                <Select value={newVariant.currency} onValueChange={(value) => setNewVariant(prev => ({ ...prev, currency: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="NGN">NGN (₦)</SelectItem>
-                    <SelectItem value="GHS">GHS (₵)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="variant-price">Fallback Price *</Label>
                 <Input
@@ -453,7 +442,7 @@ function VariantDisplay({
             {!variant.is_active && (
               <Badge variant="secondary">Inactive</Badge>
             )}
-            {variant.stock <= 0 && (
+            {variant.stock && variant.stock <= 0 && (
               <Badge variant="destructive">Out of Stock</Badge>
             )}
           </div>

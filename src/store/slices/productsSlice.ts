@@ -73,8 +73,8 @@ interface ProductsActions {
 
     // Product actions
     getProducts: () => Promise<void>;
-    addProduct: (product: Partial<Product>) => Promise<void>;
-    updateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
+    addProduct: (product: Partial<Product>) => Promise<Product | null>;
+    updateProduct: (id: string, updates: Partial<Product>) => Promise<Product | null>;
     deleteProduct: (id: string) => Promise<void>;
 
     // Product type actions
@@ -445,8 +445,13 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                 addProduct: async product => {
                     set({ loading: true, error: null });
                     try {
+                        console.log(product, 'The product data to be inserted');
                         const data = await createProduct(product);
-                        set({ products: [...get().products, data], loading: false, error: null });
+                        if (data) {
+                            set({ products: [...get().products, data as Product], loading: false, error: null });
+                            return data as Product;
+                        }
+                        return null;
                     } catch (e) {
                         set({ loading: false, error: 'Failed to add product' });
                         toast.error('Failed to add product', {
@@ -460,7 +465,11 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                     set({ loading: true, error: null });
                     try {
                         const data = await updateProduct(id, updates);
-                        set({ products: [...get().products, data], loading: false, error: null });
+                        if (data) {
+                            set({ products: [...get().products, data as Product], loading: false, error: null });
+                            return data as Product;
+                        }
+                        return null;
                     } catch (e) {
                         set({ loading: false, error: 'Failed to update product' });
                         toast.error('Failed to update product', {
@@ -498,7 +507,9 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                         if (error || !data) {
                             throw new Error(error?.message || 'Failed to create product type');
                         }
-                        set({ products: [...get().products, data], loading: false, error: null });
+                        if (data) {
+                            set({ products: [...get().products, data as Product], loading: false, error: null });
+                        }
                     } catch (e) {
                         set({ loading: false, error: 'Failed to create product type' });
                         toast.error('Failed to create product type', {
@@ -515,7 +526,7 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                         if (error || !data) {
                             throw new Error(error?.message || 'Failed to update product type');
                         }
-                        set({ products: [...get().products, data], loading: false, error: null });
+                        set({ products: [...get().products, data as Product], loading: false, error: null });
                     } catch (e) {
                         set({ loading: false, error: 'Failed to update product type' });
                         toast.error('Failed to update product type', {
@@ -530,6 +541,7 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                     try {
                         const success = await deleteProductType(id);
                         if (success) {
+                            // Remove from categories instead of products
                             set(state => ({
                                 products: state.products.filter(product => product.id !== id),
                                 loading: false,
@@ -580,7 +592,7 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                 deleteProductVariant: async (id: string) => {
                     try {
                         const success = await deleteProductVariant(id);
-                        return success;
+                        return success || false;
                     } catch (e) {
                         console.error('Failed to delete product variant:', e);
                         return false;
@@ -608,10 +620,10 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                     }
                 },
             }),
-        ),
             {
                 name: 'products-store',
                 storage: createJSONStorage(() => localStorage)
-        }
+            }
+        ),
     )
 ); 
