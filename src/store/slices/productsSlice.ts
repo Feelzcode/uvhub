@@ -6,7 +6,6 @@ import {
     deleteCategory, 
     getAllCategories, 
     getAllProducts, 
-    getPaginatedProducts, 
     updateCategory,
     getPaginatedSubcategories,
     getAllSubcategories,
@@ -33,7 +32,6 @@ import {
     createVariantImage,
 } from '@/app/admin/dashboard/products/actions';
 import { toast } from 'sonner';
-import { deleteFileFromStorage } from '@/lib/utils';
 
 interface ProductsActions {
     // Actions

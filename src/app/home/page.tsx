@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/store/hooks";
 import { useProductsStore } from '@/store'
-import { Product, ProductType } from "@/store/types";
+import { ProductType } from "@/store/types";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCurrencyStore } from "@/store";

@@ -56,6 +56,7 @@ export function CategoryTypeForm({ onClose, category }: CategoryTypeFormProps) {
         setProductTypes(productTypes.filter((_, i) => i !== index))
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateProductTypeField = (index: number, field: keyof ProductType, value: any) => {
         const updatedTypes = [...productTypes]
         updatedTypes[index] = { ...updatedTypes[index], [field]: value }
@@ -81,7 +82,7 @@ export function CategoryTypeForm({ onClose, category }: CategoryTypeFormProps) {
                         // Create new type
                         await createProductType({
                             ...type,
-                            categoryId: category.id,
+                            category_id: category.id,
                         })
                     }
                 }
@@ -97,7 +98,7 @@ export function CategoryTypeForm({ onClose, category }: CategoryTypeFormProps) {
                         if (type.name && type.price && type.price > 0) {
                             await createProductType({
                                 ...type,
-                                categoryId: (category as Category).id,
+                                category_id: (category as Category).id,
                             })
                         }
                     }
@@ -163,7 +164,7 @@ export function CategoryTypeForm({ onClose, category }: CategoryTypeFormProps) {
 
                 {productTypes.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                        No product types added yet. Click "Add Type" to get started.
+                        No product types added yet. Click &quot;Add Type&quot; to get started.
                     </p>
                 )}
 

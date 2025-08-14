@@ -1,11 +1,8 @@
 'use client'
 
 import * as React from "react"
-import { useSortable } from "@dnd-kit/sortable"
 import {
     IconDotsVertical,
-    IconGripVertical,
-    IconStar,
     IconEye,
     IconEdit,
     IconTrash,
@@ -37,20 +34,9 @@ import {
     PaginationState,
     Updater,
 } from "@tanstack/react-table"
-import { useIsMobile } from "@/hooks/use-mobile"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-    Drawer,
-    DrawerClose,
-    DrawerContent,
-    DrawerDescription,
-    DrawerFooter,
-    DrawerHeader,
-    DrawerTitle,
-    DrawerTrigger,
-} from "@/components/ui/drawer"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -91,14 +77,12 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { Product, Category, Customer, Subcategory, PaginatedResponse, ProductImage, ProductVariant } from "@/store/types"
+import { Category, Customer, PaginatedResponse, ProductVariant, Subcategory } from "@/store/types"
 import Image from "next/image"
-import { getProductImage } from '@/utils/productImage';
 import { toast } from "sonner"
-import ProductImageManager from "@/components/ProductImageManager"
 import ProductVariantManager from "@/components/ProductVariantManager"
 import { CategoryTypeForm } from "@/components/CategoryTypeForm"
-import { useProductsStore, useCategories, useSubcategories } from "@/store"
+import { useProductsStore, useSubcategories } from "@/store"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -112,33 +96,27 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { productInputSchema, ProductInputType, transformProductInput } from "@/utils/schema"
-import { 
-    getPaginatedProducts, 
-    getPaginatedCustomers, 
-    getPaginatedCategories, 
-    getPaginatedSubcategories 
-} from "@/app/admin/dashboard/products/actions"
+import { productInputSchema, transformProductInput } from "@/utils/schema"
 
 
 // Create a separate component for the drag handle
-function DragHandle({ id }: { id: string }) {
-    const { attributes, listeners } = useSortable({
-        id,
-    })
-    return (
-        <Button
-            {...attributes}
-            {...listeners}
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground size-7 hover:bg-transparent"
-        >
-            <IconGripVertical className="text-muted-foreground size-3" />
-            <span className="sr-only">Drag to reorder</span>
-        </Button>
-    )
-}
+// function DragHandle({ id }: { id: string }) {
+//     const { attributes, listeners } = useSortable({
+//         id,
+//     })
+//     return (
+//         <Button
+//             {...attributes}
+//             {...listeners}
+//             variant="ghost"
+//             size="icon"
+//             className="text-muted-foreground size-7 hover:bg-transparent"
+//         >
+//             <IconGripVertical className="text-muted-foreground size-3" />
+//             <span className="sr-only">Drag to reorder</span>
+//         </Button>
+//     )
+// }
 
 // Create a separate component for category actions
 function CategoryActions({ category }: { category: Category }) {
@@ -258,7 +236,7 @@ function CategoryActions({ category }: { category: Category }) {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete Category</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete "{category.name}"? This action cannot be undone and will also delete all associated product types.
+                            Are you sure you want to delete &quot;{category.name}&quot;? This action cannot be undone and will also delete all associated product types.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -278,467 +256,467 @@ function CategoryActions({ category }: { category: Category }) {
 }
 
 // Create a separate component for product actions
-function ProductActions({ product }: { product: Product }) {
-    const { deleteProduct, updateProduct, loading, getProductImages, createProductImage, updateProductImage, deleteProductImage } = useProductsStore();
-    const [isEditDrawerOpen, setIsEditDrawerOpen] = React.useState(false);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-    const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
-    const [productImages, setProductImages] = React.useState<ProductImage[]>([]);
-    const [isLoadingImages, setIsLoadingImages] = React.useState(false);
+// function ProductActions({ product }: { product: Product }) {
+//     const { deleteProduct, updateProduct, loading, getProductImages, createProductImage, updateProductImage, deleteProductImage } = useProductsStore();
+//     const [isEditDrawerOpen, setIsEditDrawerOpen] = React.useState(false);
+//     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+//     const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
+//     const [productImages, setProductImages] = React.useState<ProductImage[]>([]);
+//     const [isLoadingImages, setIsLoadingImages] = React.useState(false);
 
-    const formData = useForm<ProductInputType>({
-        defaultValues: {
-            name: product.name,
-            description: product.description,
-            price: product.price.toString(),
-            stock: product.stock.toString(),
-            image: product.image,
-        },
-        resolver: zodResolver(productInputSchema),
-    });
+//     const formData = useForm<ProductInputType>({
+//         defaultValues: {
+//             name: product.name,
+//             description: product.description,
+//             price: product.price.toString(),
+//             stock: product.stock.toString(),
+//             image: product.image,
+//         },
+//         resolver: zodResolver(productInputSchema),
+//     });
 
-    const handleDelete = async () => {
-        await deleteProduct(product.id);
-        setIsDeleteDialogOpen(false);
-    };
+//     const handleDelete = async () => {
+//         await deleteProduct(product.id);
+//         setIsDeleteDialogOpen(false);
+//     };
 
-    const handleEdit = async () => {
-        setIsEditDrawerOpen(true);
-        // Load existing product images
-        setIsLoadingImages(true);
-        try {
-            const images = await getProductImages(product.id);
-            setProductImages(images);
-        } catch (error) {
-            console.error('Error loading product images:', error);
-        } finally {
-            setIsLoadingImages(false);
-        }
-    };
+//     const handleEdit = async () => {
+//         setIsEditDrawerOpen(true);
+//         // Load existing product images
+//         setIsLoadingImages(true);
+//         try {
+//             const images = await getProductImages(product.id);
+//             setProductImages(images);
+//         } catch (error) {
+//             console.error('Error loading product images:', error);
+//         } finally {
+//             setIsLoadingImages(false);
+//         }
+//     };
 
-    const handleSave = async (data: ProductInputType) => {
-        try {
-            const transformedData = transformProductInput(data);
-            await updateProduct(product.id, transformedData);
+//     const handleSave = async (data: ProductInputType) => {
+//         try {
+//             const transformedData = transformProductInput(data);
+//             await updateProduct(product.id, transformedData);
             
-            // Handle product images
-            if (productImages.length > 0) {
-                // Get existing images to compare
-                const existingImages = await getProductImages(product.id);
+//             // Handle product images
+//             if (productImages.length > 0) {
+//                 // Get existing images to compare
+//                 const existingImages = await getProductImages(product.id);
                 
-                // Find new images (those with temp IDs)
-                const newImages = productImages.filter(img => img.id.startsWith('temp-'));
+//                 // Find new images (those with temp IDs)
+//                 const newImages = productImages.filter(img => img.id.startsWith('temp-'));
                 
-                // Find deleted images
-                const deletedImages = existingImages.filter(existing => 
-                    !productImages.some(current => current.id === existing.id)
-                );
+//                 // Find deleted images
+//                 const deletedImages = existingImages.filter(existing => 
+//                     !productImages.some(current => current.id === existing.id)
+//                 );
                 
-                // Delete removed images
-                for (const deletedImage of deletedImages) {
-                    await deleteProductImage(deletedImage.id);
-                }
+//                 // Delete removed images
+//                 for (const deletedImage of deletedImages) {
+//                     await deleteProductImage(deletedImage.id);
+//                 }
                 
-                // Add new images
-                for (const newImage of newImages) {
-                    await createProductImage({
-                        product_id: product.id,
-                        image_url: newImage.image_url,
-                        alt_text: newImage.alt_text,
-                        is_primary: newImage.is_primary,
-                        sort_order: newImage.sort_order,
-                    });
-                }
+//                 // Add new images
+//                 for (const newImage of newImages) {
+//                     await createProductImage({
+//                         product_id: product.id,
+//                         image_url: newImage.image_url,
+//                         alt_text: newImage.alt_text,
+//                         is_primary: newImage.is_primary,
+//                         sort_order: newImage.sort_order,
+//                     });
+//                 }
                 
-                // Update existing images (for primary status and order changes)
-                const existingImagesToUpdate = productImages.filter(img => 
-                    !img.id.startsWith('temp-') && existingImages.some(existing => existing.id === img.id)
-                );
+//                 // Update existing images (for primary status and order changes)
+//                 const existingImagesToUpdate = productImages.filter(img => 
+//                     !img.id.startsWith('temp-') && existingImages.some(existing => existing.id === img.id)
+//                 );
                 
-                for (const imageToUpdate of existingImagesToUpdate) {
-                    const existingImage = existingImages.find(existing => existing.id === imageToUpdate.id);
-                    if (existingImage && (
-                        existingImage.is_primary !== imageToUpdate.is_primary ||
-                        existingImage.sort_order !== imageToUpdate.sort_order
-                    )) {
-                        await updateProductImage(imageToUpdate.id, {
-                            is_primary: imageToUpdate.is_primary,
-                            sort_order: imageToUpdate.sort_order,
-                        });
-                    }
-                }
-            }
+//                 for (const imageToUpdate of existingImagesToUpdate) {
+//                     const existingImage = existingImages.find(existing => existing.id === imageToUpdate.id);
+//                     if (existingImage && (
+//                         existingImage.is_primary !== imageToUpdate.is_primary ||
+//                         existingImage.sort_order !== imageToUpdate.sort_order
+//                     )) {
+//                         await updateProductImage(imageToUpdate.id, {
+//                             is_primary: imageToUpdate.is_primary,
+//                             sort_order: imageToUpdate.sort_order,
+//                         });
+//                     }
+//                 }
+//             }
             
-            setIsEditDrawerOpen(false);
-            toast.success("Product updated successfully");
-        }
-        catch (error) {
-            console.error(error);
-            toast.error("Failed to update product");
-        }
-    };
+//             setIsEditDrawerOpen(false);
+//             toast.success("Product updated successfully");
+//         }
+//         catch (error) {
+//             console.error(error);
+//             toast.error("Failed to update product");
+//         }
+//     };
 
-    const handleView = () => {
-        setIsViewDrawerOpen(true);
-    }
+//     const handleView = () => {
+//         setIsViewDrawerOpen(true);
+//     }
 
-    const handleImagesChange = (images: ProductImage[]) => {
-        setProductImages(images);
-        // Update the main image field with the primary image
-        const primaryImage = images.find(img => img.is_primary);
-        if (primaryImage) {
-            formData.setValue('image', primaryImage.image_url);
-        }
-    };
-    return (
-        <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-                        size="icon"
-                    >
-                        <IconDotsVertical />
-                        <span className="sr-only">Open menu</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-32">
-                    <DropdownMenuItem className="cursor-pointer" onClick={handleView}>
-                        <IconEye className="mr-2 size-4" />
-                        View
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer" onClick={handleEdit}>
-                        <IconEdit className="mr-2 size-4" />
-                        Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                        <AlertDialogTrigger asChild>
-                            <DropdownMenuItem
-                                className="cursor-pointer"
-                                variant="destructive"
-                                onSelect={(e) => e.preventDefault()}
-                            >
-                                <IconTrash className="mr-2 size-4" />
-                                Delete
-                            </DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete the product &quot;{product.name}&quot; and remove it from your database.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={handleDelete}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                    Delete
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </DropdownMenuContent>
-            </DropdownMenu>
+//     const handleImagesChange = (images: ProductImage[]) => {
+//         setProductImages(images);
+//         // Update the main image field with the primary image
+//         const primaryImage = images.find(img => img.is_primary);
+//         if (primaryImage) {
+//             formData.setValue('image', primaryImage.image_url);
+//         }
+//     };
+//     return (
+//         <>
+//             <DropdownMenu>
+//                 <DropdownMenuTrigger asChild>
+//                     <Button
+//                         variant="ghost"
+//                         className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+//                         size="icon"
+//                     >
+//                         <IconDotsVertical />
+//                         <span className="sr-only">Open menu</span>
+//                     </Button>
+//                 </DropdownMenuTrigger>
+//                 <DropdownMenuContent align="end" className="w-32">
+//                     <DropdownMenuItem className="cursor-pointer" onClick={handleView}>
+//                         <IconEye className="mr-2 size-4" />
+//                         View
+//                     </DropdownMenuItem>
+//                     <DropdownMenuItem className="cursor-pointer" onClick={handleEdit}>
+//                         <IconEdit className="mr-2 size-4" />
+//                         Edit
+//                     </DropdownMenuItem>
+//                     <DropdownMenuSeparator />
+//                     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+//                         <AlertDialogTrigger asChild>
+//                             <DropdownMenuItem
+//                                 className="cursor-pointer"
+//                                 variant="destructive"
+//                                 onSelect={(e) => e.preventDefault()}
+//                             >
+//                                 <IconTrash className="mr-2 size-4" />
+//                                 Delete
+//                             </DropdownMenuItem>
+//                         </AlertDialogTrigger>
+//                         <AlertDialogContent>
+//                             <AlertDialogHeader>
+//                                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+//                                 <AlertDialogDescription>
+//                                     This action cannot be undone. This will permanently delete the product &quot;{product.name}&quot; and remove it from your database.
+//                                 </AlertDialogDescription>
+//                             </AlertDialogHeader>
+//                             <AlertDialogFooter>
+//                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
+//                                 <AlertDialogAction
+//                                     onClick={handleDelete}
+//                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+//                                 >
+//                                     Delete
+//                                 </AlertDialogAction>
+//                             </AlertDialogFooter>
+//                         </AlertDialogContent>
+//                     </AlertDialog>
+//                 </DropdownMenuContent>
+//             </DropdownMenu>
 
-            {/* Edit Drawer */}
-            <Drawer open={isEditDrawerOpen} onOpenChange={setIsEditDrawerOpen}>
-                <DrawerContent>
-                    <DrawerHeader className="gap-1">
-                        <DrawerTitle>Edit Product: {product.name}</DrawerTitle>
-                        <DrawerDescription>
-                            Update product details
-                        </DrawerDescription>
-                    </DrawerHeader>
-                    <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-                        <form className="flex flex-col gap-4" onSubmit={formData.handleSubmit(handleSave)} id="edit-product-form">
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="edit-name">Product Name</Label>
-                                <Input id="edit-name" {...formData.register('name')} />
-                                {formData.formState.errors.name && <p className="text-red-500">{formData.formState.errors.name.message}</p>}
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="edit-description">Description</Label>
-                                <Input id="edit-description" {...formData.register('description')} />
-                                {formData.formState.errors.description && <p className="text-red-500">{formData.formState.errors.description.message}</p>}
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-3">
-                                    <Label htmlFor="edit-price">Fallback Price</Label>
-                                    <Input id="edit-price" type="number" step="0.01" {...formData.register('price')} />
-                                    {formData.formState.errors.price && <p className="text-red-500">{formData.formState.errors.price.message}</p>}
-                                    <p className="text-xs text-muted-foreground">Used as fallback for other countries</p>
-                                </div>
-                                <div className="flex flex-col gap-3">
-                                    <Label htmlFor="edit-stock">Stock</Label>
-                                    <Input id="edit-stock" type="number" {...formData.register('stock')} />
-                                    {formData.formState.errors.stock && <p className="text-red-500">{formData.formState.errors.stock.message}</p>}
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-3">
-                                    <Label htmlFor="edit-price-ngn">Nigerian Price (₦)</Label>
-                                    <Input id="edit-price-ngn" type="number" step="0.01" {...formData.register('price_ngn')} />
-                                    {formData.formState.errors.price_ngn && <p className="text-red-500">{formData.formState.errors.price_ngn.message}</p>}
-                                </div>
-                                <div className="flex flex-col gap-3">
-                                    <Label htmlFor="edit-price-ghs">Ghanaian Price (₵)</Label>
-                                    <Input id="edit-price-ghs" type="number" step="0.01" {...formData.register('price_ghs')} />
-                                    {formData.formState.errors.price_ghs && <p className="text-red-500">{formData.formState.errors.price_ghs.message}</p>}
-                                </div>
-                            </div>
-                            {isLoadingImages ? (
-                                <div className="flex items-center justify-center py-4">
-                                    <IconLoader2 className="animate-spin mr-2" />
-                                    Loading images...
-                                </div>
-                            ) : (
-                                <ProductImageManager
-                                    images={productImages}
-                                    onImagesChange={handleImagesChange}
-                                    productId={product.id}
-                                    maxImages={6}
-                                />
-                            )}
+//             {/* Edit Drawer */}
+//             <Drawer open={isEditDrawerOpen} onOpenChange={setIsEditDrawerOpen}>
+//                 <DrawerContent>
+//                     <DrawerHeader className="gap-1">
+//                         <DrawerTitle>Edit Product: {product.name}</DrawerTitle>
+//                         <DrawerDescription>
+//                             Update product details
+//                         </DrawerDescription>
+//                     </DrawerHeader>
+//                     <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
+//                         <form className="flex flex-col gap-4" onSubmit={formData.handleSubmit(handleSave)} id="edit-product-form">
+//                             <div className="flex flex-col gap-3">
+//                                 <Label htmlFor="edit-name">Product Name</Label>
+//                                 <Input id="edit-name" {...formData.register('name')} />
+//                                 {formData.formState.errors.name && <p className="text-red-500">{formData.formState.errors.name.message}</p>}
+//                             </div>
+//                             <div className="flex flex-col gap-3">
+//                                 <Label htmlFor="edit-description">Description</Label>
+//                                 <Input id="edit-description" {...formData.register('description')} />
+//                                 {formData.formState.errors.description && <p className="text-red-500">{formData.formState.errors.description.message}</p>}
+//                             </div>
+//                             <div className="grid grid-cols-2 gap-4">
+//                                 <div className="flex flex-col gap-3">
+//                                     <Label htmlFor="edit-price">Fallback Price</Label>
+//                                     <Input id="edit-price" type="number" step="0.01" {...formData.register('price')} />
+//                                     {formData.formState.errors.price && <p className="text-red-500">{formData.formState.errors.price.message}</p>}
+//                                     <p className="text-xs text-muted-foreground">Used as fallback for other countries</p>
+//                                 </div>
+//                                 <div className="flex flex-col gap-3">
+//                                     <Label htmlFor="edit-stock">Stock</Label>
+//                                     <Input id="edit-stock" type="number" {...formData.register('stock')} />
+//                                     {formData.formState.errors.stock && <p className="text-red-500">{formData.formState.errors.stock.message}</p>}
+//                                 </div>
+//                             </div>
+//                             <div className="grid grid-cols-2 gap-4">
+//                                 <div className="flex flex-col gap-3">
+//                                     <Label htmlFor="edit-price-ngn">Nigerian Price (₦)</Label>
+//                                     <Input id="edit-price-ngn" type="number" step="0.01" {...formData.register('price_ngn')} />
+//                                     {formData.formState.errors.price_ngn && <p className="text-red-500">{formData.formState.errors.price_ngn.message}</p>}
+//                                 </div>
+//                                 <div className="flex flex-col gap-3">
+//                                     <Label htmlFor="edit-price-ghs">Ghanaian Price (₵)</Label>
+//                                     <Input id="edit-price-ghs" type="number" step="0.01" {...formData.register('price_ghs')} />
+//                                     {formData.formState.errors.price_ghs && <p className="text-red-500">{formData.formState.errors.price_ghs.message}</p>}
+//                                 </div>
+//                             </div>
+//                             {isLoadingImages ? (
+//                                 <div className="flex items-center justify-center py-4">
+//                                     <IconLoader2 className="animate-spin mr-2" />
+//                                     Loading images...
+//                                 </div>
+//                             ) : (
+//                                 <ProductImageManager
+//                                     images={productImages}
+//                                     onImagesChange={handleImagesChange}
+//                                     productId={product.id}
+//                                     maxImages={6}
+//                                 />
+//                             )}
                             
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="edit-image">Main Image URL (Fallback)</Label>
-                                <Input id="edit-image" {...formData.register('image')} />
-                                {formData.formState.errors.image && <p className="text-red-500">{formData.formState.errors.image.message}</p>}
-                                <p className="text-xs text-muted-foreground">
-                                    This will be used as a fallback if no images are uploaded above
-                                </p>
-                            </div>
-                        </form>
-                    </div>
-                    <DrawerFooter>
-                        <Button type="submit" className="cursor-pointer" form="edit-product-form" disabled={loading}>
-                            {loading ? <IconLoader2 className="animate-spin" /> : "Save Changes"}
-                        </Button>
-                        <DrawerClose asChild>
-                            <Button variant="outline">Cancel</Button>
-                        </DrawerClose>
-                    </DrawerFooter>
-                </DrawerContent>
-            </Drawer>
+//                             <div className="flex flex-col gap-3">
+//                                 <Label htmlFor="edit-image">Main Image URL (Fallback)</Label>
+//                                 <Input id="edit-image" {...formData.register('image')} />
+//                                 {formData.formState.errors.image && <p className="text-red-500">{formData.formState.errors.image.message}</p>}
+//                                 <p className="text-xs text-muted-foreground">
+//                                     This will be used as a fallback if no images are uploaded above
+//                                 </p>
+//                             </div>
+//                         </form>
+//                     </div>
+//                     <DrawerFooter>
+//                         <Button type="submit" className="cursor-pointer" form="edit-product-form" disabled={loading}>
+//                             {loading ? <IconLoader2 className="animate-spin" /> : "Save Changes"}
+//                         </Button>
+//                         <DrawerClose asChild>
+//                             <Button variant="outline">Cancel</Button>
+//                         </DrawerClose>
+//                     </DrawerFooter>
+//                 </DrawerContent>
+//             </Drawer>
 
-            {/* View Drawer */}
-            <Drawer open={isViewDrawerOpen} onOpenChange={setIsViewDrawerOpen}>
-                <DrawerContent>
-                    <DrawerHeader>
-                        <DrawerTitle>View Product: {product.name}</DrawerTitle>
-                    </DrawerHeader>
-                    <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="view-name">Product Name</Label>
-                            <Input id="view-name" value={product.name} disabled />
-                        </div>
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="view-description">Description</Label>
-                            <Input id="view-description" value={product.description} disabled />
-                        </div>
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="view-price">Fallback Price</Label>
-                            <Input id="view-price" value={product.price.toString()} disabled />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="view-price-ngn">Nigerian Price (₦)</Label>
-                                <Input id="view-price-ngn" value={product.price_ngn?.toString() || 'Not set'} disabled />
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="view-price-ghs">Ghanaian Price (₵)</Label>
-                                <Input id="view-price-ghs" value={product.price_ghs?.toString() || 'Not set'} disabled />
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="view-stock">Stock</Label>
-                            <Input id="view-stock" value={product.stock.toString()} disabled />
-                        </div>
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="view-image">Main Image</Label>
-                            <Image src={getProductImage(product)} alt={product.name} width={100} height={100} />
-                        </div>
-                        {product.images && product.images.length > 0 && (
-                            <div className="flex flex-col gap-3">
-                                <Label>All Images ({product.images.length})</Label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {product.images.map((image, index) => (
-                                        <div key={image.id} className="relative">
-                                            <Image 
-                                                src={image.image_url} 
-                                                alt={image.alt_text || `Product image ${index + 1}`} 
-                                                width={80} 
-                                                height={80}
-                                                className="object-cover rounded"
-                                            />
-                                            {image.is_primary && (
-                                                <div className="absolute top-1 right-1">
-                                                    <Badge variant="default" className="bg-blue-500 text-xs px-1 py-0">
-                                                        <IconStar className="size-2 mr-1" />
-                                                        Primary
-                                                    </Badge>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="view-category">Category</Label>
-                            <Input id="view-category" value={product.category_data?.name || product.category} disabled />
-                        </div>
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="view-created-at">Created At</Label>
-                            <Input id="view-created-at" value={new Date(product.created_at).toLocaleDateString()} disabled />
-                        </div>
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="view-updated-at">Updated At</Label>
-                            <Input id="view-updated-at" value={new Date(product.updated_at).toLocaleDateString()} disabled />
-                        </div>
-                    </div>
-                </DrawerContent>
-            </Drawer>
-        </>
-    );
-}
+//             {/* View Drawer */}
+//             <Drawer open={isViewDrawerOpen} onOpenChange={setIsViewDrawerOpen}>
+//                 <DrawerContent>
+//                     <DrawerHeader>
+//                         <DrawerTitle>View Product: {product.name}</DrawerTitle>
+//                     </DrawerHeader>
+//                     <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
+//                         <div className="flex flex-col gap-3">
+//                             <Label htmlFor="view-name">Product Name</Label>
+//                             <Input id="view-name" value={product.name} disabled />
+//                         </div>
+//                         <div className="flex flex-col gap-3">
+//                             <Label htmlFor="view-description">Description</Label>
+//                             <Input id="view-description" value={product.description} disabled />
+//                         </div>
+//                         <div className="flex flex-col gap-3">
+//                             <Label htmlFor="view-price">Fallback Price</Label>
+//                             <Input id="view-price" value={product.price.toString()} disabled />
+//                         </div>
+//                         <div className="grid grid-cols-2 gap-4">
+//                             <div className="flex flex-col gap-3">
+//                                 <Label htmlFor="view-price-ngn">Nigerian Price (₦)</Label>
+//                                 <Input id="view-price-ngn" value={product.price_ngn?.toString() || 'Not set'} disabled />
+//                             </div>
+//                             <div className="flex flex-col gap-3">
+//                                 <Label htmlFor="view-price-ghs">Ghanaian Price (₵)</Label>
+//                                 <Input id="view-price-ghs" value={product.price_ghs?.toString() || 'Not set'} disabled />
+//                             </div>
+//                         </div>
+//                         <div className="flex flex-col gap-3">
+//                             <Label htmlFor="view-stock">Stock</Label>
+//                             <Input id="view-stock" value={product.stock.toString()} disabled />
+//                         </div>
+//                         <div className="flex flex-col gap-3">
+//                             <Label htmlFor="view-image">Main Image</Label>
+//                             <Image src={getProductImage(product)} alt={product.name} width={100} height={100} />
+//                         </div>
+//                         {product.images && product.images.length > 0 && (
+//                             <div className="flex flex-col gap-3">
+//                                 <Label>All Images ({product.images.length})</Label>
+//                                 <div className="grid grid-cols-3 gap-2">
+//                                     {product.images.map((image, index) => (
+//                                         <div key={image.id} className="relative">
+//                                             <Image 
+//                                                 src={image.image_url} 
+//                                                 alt={image.alt_text || `Product image ${index + 1}`} 
+//                                                 width={80} 
+//                                                 height={80}
+//                                                 className="object-cover rounded"
+//                                             />
+//                                             {image.is_primary && (
+//                                                 <div className="absolute top-1 right-1">
+//                                                     <Badge variant="default" className="bg-blue-500 text-xs px-1 py-0">
+//                                                         <IconStar className="size-2 mr-1" />
+//                                                         Primary
+//                                                     </Badge>
+//                                                 </div>
+//                                             )}
+//                                         </div>
+//                                     ))}
+//                                 </div>
+//                             </div>
+//                         )}
+//                         <div className="flex flex-col gap-3">
+//                             <Label htmlFor="view-category">Category</Label>
+//                             <Input id="view-category" value={product.category_data?.name || product.category} disabled />
+//                         </div>
+//                         <div className="flex flex-col gap-3">
+//                             <Label htmlFor="view-created-at">Created At</Label>
+//                             <Input id="view-created-at" value={new Date(product.created_at).toLocaleDateString()} disabled />
+//                         </div>
+//                         <div className="flex flex-col gap-3">
+//                             <Label htmlFor="view-updated-at">Updated At</Label>
+//                             <Input id="view-updated-at" value={new Date(product.updated_at).toLocaleDateString()} disabled />
+//                         </div>
+//                     </div>
+//                 </DrawerContent>
+//             </Drawer>
+//         </>
+//     );
+// }
 
 // Product columns
-const productColumns: ColumnDef<Product>[] = [
-    {
-        id: "drag",
-        header: () => null,
-        cell: ({ row }) => <DragHandle id={row.original.id} />,
-    },
-    {
-        id: "select",
-        header: ({ table }) => (
-            <div className="flex items-center justify-center">
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected() ||
-                        (table.getIsSomePageRowsSelected() && "indeterminate")
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                />
-            </div>
-        ),
-        cell: ({ row }) => (
-            <div className="flex items-center justify-center">
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                />
-            </div>
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
-    {
-        accessorKey: "name",
-        header: "Product Name",
-        cell: ({ row }) => {
-            return <ProductCellViewer product={row.original} />
-        },
-        enableHiding: false,
-    },
-    {
-        accessorKey: "category",
-        header: "Category",
-        cell: ({ row }) => (
-            <div className="w-32">
-                <Badge variant="outline" className="text-muted-foreground px-1.5">
-                    {row.original.category_data?.name || row.original.category}
-                </Badge>
-            </div>
-        ),
-    },
-    {
-        accessorKey: "subcategory",
-        header: "Subcategory",
-        cell: ({ row }) => (
-            <div className="w-32">
-                {row.original.subcategory ? (
-                    <Badge variant="outline" className="text-muted-foreground px-1.5">
-                        {row.original.subcategory.name}
-                    </Badge>
-                ) : (
-                    <span className="text-muted-foreground text-sm">-</span>
-                )}
-            </div>
-        ),
-    },
-    {
-        accessorKey: "images",
-        header: "Images",
-        cell: ({ row }) => (
-            <div className="w-20">
-                {row.original.images && row.original.images.length > 0 ? (
-                    <Badge variant="secondary" className="text-xs">
-                        {row.original.images.length} image{row.original.images.length !== 1 ? 's' : ''}
-                    </Badge>
-                ) : (
-                    <span className="text-muted-foreground text-xs">1 image</span>
-                )}
-            </div>
-        ),
-    },
-    {
-        accessorKey: "price",
-        header: () => <div className="w-full text-right">Price</div>,
-        cell: ({ row }) => (
-            <div className="text-right font-medium">
-                ${row.original.price.toFixed(2)}
-            </div>
-        ),
-    },
-    {
-        accessorKey: "stock",
-        header: () => <div className="w-full text-right">Stock</div>,
-        cell: ({ row }) => (
-            <div className="text-right">
-                <Badge
-                    variant={row.original.stock > 10 ? "default" : row.original.stock > 0 ? "secondary" : "destructive"}
-                >
-                    {row.original.stock}
-                </Badge>
-            </div>
-        ),
-    },
-    {
-        accessorKey: "rating",
-        header: "Rating",
-        cell: ({ row }) => (
-            <div className="flex items-center gap-1">
-                <IconStar className="size-4 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm font-medium">{row.original.rating}</span>
-                <span className="text-xs text-muted-foreground">({row.original.reviews})</span>
-            </div>
-        ),
-    },
-    {
-        accessorKey: "created_at",
-        header: "Created",
-        cell: ({ row }) => (
-            <div className="text-sm text-muted-foreground">
-                {new Date(row.original.created_at).toDateString()}
-            </div>
-        ),
-    },
-    {
-        id: "actions",
-        cell: ({ row }) => {
-            return <ProductActions product={row.original} />
-        },
-    },
-]
+// const productColumns: ColumnDef<Product>[] = [
+//     {
+//         id: "drag",
+//         header: () => null,
+//         cell: ({ row }) => <DragHandle id={row.original.id} />,
+//     },
+//     {
+//         id: "select",
+//         header: ({ table }) => (
+//             <div className="flex items-center justify-center">
+//                 <Checkbox
+//                     checked={
+//                         table.getIsAllPageRowsSelected() ||
+//                         (table.getIsSomePageRowsSelected() && "indeterminate")
+//                     }
+//                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+//                     aria-label="Select all"
+//                 />
+//             </div>
+//         ),
+//         cell: ({ row }) => (
+//             <div className="flex items-center justify-center">
+//                 <Checkbox
+//                     checked={row.getIsSelected()}
+//                     onCheckedChange={(value) => row.toggleSelected(!!value)}
+//                     aria-label="Select row"
+//                 />
+//             </div>
+//         ),
+//         enableSorting: false,
+//         enableHiding: false,
+//     },
+//     {
+//         accessorKey: "name",
+//         header: "Product Name",
+//         cell: ({ row }) => {
+//             return <ProductCellViewer product={row.original} />
+//         },
+//         enableHiding: false,
+//     },
+//     {
+//         accessorKey: "category",
+//         header: "Category",
+//         cell: ({ row }) => (
+//             <div className="w-32">
+//                 <Badge variant="outline" className="text-muted-foreground px-1.5">
+//                     {row.original.category_data?.name || row.original.category}
+//                 </Badge>
+//             </div>
+//         ),
+//     },
+//     {
+//         accessorKey: "subcategory",
+//         header: "Subcategory",
+//         cell: ({ row }) => (
+//             <div className="w-32">
+//                 {row.original.subcategory ? (
+//                     <Badge variant="outline" className="text-muted-foreground px-1.5">
+//                         {row.original.subcategory.name}
+//                     </Badge>
+//                 ) : (
+//                     <span className="text-muted-foreground text-sm">-</span>
+//                 )}
+//             </div>
+//         ),
+//     },
+//     {
+//         accessorKey: "images",
+//         header: "Images",
+//         cell: ({ row }) => (
+//             <div className="w-20">
+//                 {row.original.images && row.original.images.length > 0 ? (
+//                     <Badge variant="secondary" className="text-xs">
+//                         {row.original.images.length} image{row.original.images.length !== 1 ? 's' : ''}
+//                     </Badge>
+//                 ) : (
+//                     <span className="text-muted-foreground text-xs">1 image</span>
+//                 )}
+//             </div>
+//         ),
+//     },
+//     {
+//         accessorKey: "price",
+//         header: () => <div className="w-full text-right">Price</div>,
+//         cell: ({ row }) => (
+//             <div className="text-right font-medium">
+//                 ${row.original.price.toFixed(2)}
+//             </div>
+//         ),
+//     },
+//     {
+//         accessorKey: "stock",
+//         header: () => <div className="w-full text-right">Stock</div>,
+//         cell: ({ row }) => (
+//             <div className="text-right">
+//                 <Badge
+//                     variant={row.original.stock > 10 ? "default" : row.original.stock > 0 ? "secondary" : "destructive"}
+//                 >
+//                     {row.original.stock}
+//                 </Badge>
+//             </div>
+//         ),
+//     },
+//     {
+//         accessorKey: "rating",
+//         header: "Rating",
+//         cell: ({ row }) => (
+//             <div className="flex items-center gap-1">
+//                 <IconStar className="size-4 fill-yellow-400 text-yellow-400" />
+//                 <span className="text-sm font-medium">{row.original.rating}</span>
+//                 <span className="text-xs text-muted-foreground">({row.original.reviews})</span>
+//             </div>
+//         ),
+//     },
+//     {
+//         accessorKey: "created_at",
+//         header: "Created",
+//         cell: ({ row }) => (
+//             <div className="text-sm text-muted-foreground">
+//                 {new Date(row.original.created_at).toDateString()}
+//             </div>
+//         ),
+//     },
+//     {
+//         id: "actions",
+//         cell: ({ row }) => {
+//             return <ProductActions product={row.original} />
+//         },
+//     },
+// ]
 
 // Customer columns
 const customerColumns: ColumnDef<Customer>[] = [
@@ -1105,8 +1083,7 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
     const [variants, setVariants] = React.useState<Partial<ProductVariant>[]>([])
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [subcategories, setSubcategories] = React.useState<Subcategory[]>([])
-    const { addProduct, getSubcategoriesByCategory, createProductImage, createProductVariant, createVariantImage } = useProductsStore();
-    const { categories, getCategories } = useCategories();
+    const { addProduct, getSubcategoriesByCategory, createProductVariant, createVariantImage, categories, getCategories } = useProductsStore();
 
     // Debug: Log categories when they change
     React.useEffect(() => {
@@ -1114,7 +1091,7 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
             await getCategories();
         }
         fetchCategories();
-    }, []);
+    }, [getCategories]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -1505,71 +1482,71 @@ function CreateSubcategoryForm({ onClose }: { onClose: () => void }) {
 }
 
 // Category creation form
-function CreateCategoryForm({ onClose }: { onClose: () => void }) {
-    const [formData, setFormData] = React.useState({
-        name: '',
-        description: '',
-    })
-    const [isSubmitting, setIsSubmitting] = React.useState(false)
-    const { addCategory } = useCategories();
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsSubmitting(true)
+// function CreateCategoryForm({ onClose }: { onClose: () => void }) {
+//     const [formData, setFormData] = React.useState({
+//         name: '',
+//         description: '',
+//     })
+//     const [isSubmitting, setIsSubmitting] = React.useState(false)
+//     const { addCategory } = useCategories();
+//     const handleSubmit = async (e: React.FormEvent) => {
+//         e.preventDefault()
+//         setIsSubmitting(true)
 
-        try {
-            await addCategory({
-                name: formData.name,
-                description: formData.description,
-            });
+//         try {
+//             await addCategory({
+//                 name: formData.name,
+//                 description: formData.description,
+//             });
 
-            toast.success('Category created successfully')
-            onClose()
-        } catch (error) {
-            console.error('Error creating category:', error)
-            toast.error('Failed to create category')
-        } finally {
-            setIsSubmitting(false)
-        }
-    }
+//             toast.success('Category created successfully')
+//             onClose()
+//         } catch (error) {
+//             console.error('Error creating category:', error)
+//             toast.error('Failed to create category')
+//         } finally {
+//             setIsSubmitting(false)
+//         }
+//     }
 
-    return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="name">Category Name</Label>
-                <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    required
-                />
-            </div>
+//     return (
+//         <form onSubmit={handleSubmit} className="space-y-4">
+//             <div className="space-y-2">
+//                 <Label htmlFor="name">Category Name</Label>
+//                 <Input
+//                     id="name"
+//                     value={formData.name}
+//                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+//                     required
+//                 />
+//             </div>
 
-            <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    required
-                />
-            </div>
+//             <div className="space-y-2">
+//                 <Label htmlFor="description">Description</Label>
+//                 <Textarea
+//                     id="description"
+//                     value={formData.description}
+//                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+//                     required
+//                 />
+//             </div>
 
-            <div className="flex justify-end space-x-2 pt-4">
-                <Button type="button" variant="outline" onClick={onClose}>
-                    Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting} className="cursor-pointer">
-                    {isSubmitting ? (
-                        <div className="flex items-center gap-2">
-                            <IconLoader2 className="size-4 animate-spin" />
-                            Creating...
-                        </div>
-                    ) : 'Create Category'}
-                </Button>
-            </div>
-        </form>
-    )
-}
+//             <div className="flex justify-end space-x-2 pt-4">
+//                 <Button type="button" variant="outline" onClick={onClose}>
+//                     Cancel
+//                 </Button>
+//                 <Button type="submit" disabled={isSubmitting} className="cursor-pointer">
+//                     {isSubmitting ? (
+//                         <div className="flex items-center gap-2">
+//                             <IconLoader2 className="size-4 animate-spin" />
+//                             Creating...
+//                         </div>
+//                     ) : 'Create Category'}
+//                 </Button>
+//             </div>
+//         </form>
+//     )
+// }
 
 export function ProductsDataTable({
     categoriesData,
@@ -1579,7 +1556,6 @@ export function ProductsDataTable({
     customersData: PaginatedResponse<Customer>;
 }) {
     const [activeTab, setActiveTab] = React.useState("categories")
-    const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = React.useState(false)
     const [isCreateSubcategoryDialogOpen, setIsCreateSubcategoryDialogOpen] = React.useState(false)
     const [isCreateProductDialogOpen, setIsCreateProductDialogOpen] = React.useState(false)
     const [currentCustomersData, setCurrentCustomersData] = React.useState(customersData)
@@ -1979,116 +1955,116 @@ export function ProductsDataTable({
 //     },
 // } // satisfies ChartConfig - temporarily disabled
 
-function ProductCellViewer({ product }: { product: Product }) {
-    const isMobile = useIsMobile()
-    const { categories } = useProductsStore();
-    const [isOpen, setIsOpen] = React.useState(false);
+// function ProductCellViewer({ product }: { product: Product }) {
+//     const isMobile = useIsMobile()
+//     const { categories } = useProductsStore();
+//     const [isOpen, setIsOpen] = React.useState(false);
 
-    return (
-        <Drawer open={isOpen} onOpenChange={setIsOpen}>
-            <DrawerTrigger asChild>
-                <Button
-                    variant="link"
-                    className="text-foreground w-fit px-0 text-left"
-                    onClick={() => setIsOpen(true)}
-                >
-                    {product.name}
-                </Button>
-            </DrawerTrigger>
-            <DrawerContent>
-                <DrawerHeader className="gap-1">
-                    <DrawerTitle>{product.name}</DrawerTitle>
-                    <DrawerDescription>
-                        Product details and analytics
-                    </DrawerDescription>
-                </DrawerHeader>
-                <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-                    {!isMobile && (
-                        <>
-                            <div className="relative aspect-video w-full rounded-lg border">
-                                <Image
-                                    src={getProductImage(product)}
-                                    alt={product.name}
-                                    fill
-                                    className="h-full w-full object-cover rounded-lg"
-                                />
-                            </div>
-                            {/* Chart component temporarily disabled - requires chart library imports */}
-                            <div className="h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                                <p className="text-gray-500">Chart component not available</p>
-                            </div>
-                            <Separator />
-                            <div className="grid gap-2">
-                                <div className="flex gap-2 leading-none font-medium">
-                                    Trending up by 5.2% this month{" "}
-                                    <IconTrendingUp className="size-4" />
-                                </div>
-                                <div className="text-muted-foreground">
-                                    Product performance over the last 6 months. Sales and revenue metrics show consistent growth.
-                                </div>
-                            </div>
-                            <Separator />
-                        </>
-                    )}
-                    <form className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="name">Product Name</Label>
-                            <Input id="name" defaultValue={product.name} />
-                        </div>
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="description">Description</Label>
-                            <Input id="description" defaultValue={product.description} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="category">Category</Label>
-                                <Select defaultValue={product.category_data?.name || product.category}>
-                                    <SelectTrigger id="category" className="w-full">
-                                        <SelectValue placeholder="Select a category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {
-                                            categories?.map((category) => (
-                                                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                                            ))
-                                        }
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="price">Fallback Price</Label>
-                                <Input id="price" type="number" step="0.01" defaultValue={product.price} />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="price-ngn">Nigerian Price (₦)</Label>
-                                <Input id="price-ngn" type="number" step="0.01" defaultValue={product.price_ngn || ''} />
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="price-ghs">Ghanaian Price (₵)</Label>
-                                <Input id="price-ghs" type="number" step="0.01" defaultValue={product.price_ghs || ''} />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="stock">Stock</Label>
-                                <Input id="stock" type="number" defaultValue={product.stock} />
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="image">Image URL</Label>
-                                <Input id="image" defaultValue={product.image} />
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <DrawerFooter>
-                    <Button>Save Changes</Button>
-                    <DrawerClose asChild>
-                        <Button variant="outline">Cancel</Button>
-                    </DrawerClose>
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
-    )
-}
+//     return (
+//         <Drawer open={isOpen} onOpenChange={setIsOpen}>
+//             <DrawerTrigger asChild>
+//                 <Button
+//                     variant="link"
+//                     className="text-foreground w-fit px-0 text-left"
+//                     onClick={() => setIsOpen(true)}
+//                 >
+//                     {product.name}
+//                 </Button>
+//             </DrawerTrigger>
+//             <DrawerContent>
+//                 <DrawerHeader className="gap-1">
+//                     <DrawerTitle>{product.name}</DrawerTitle>
+//                     <DrawerDescription>
+//                         Product details and analytics
+//                     </DrawerDescription>
+//                 </DrawerHeader>
+//                 <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
+//                     {!isMobile && (
+//                         <>
+//                             <div className="relative aspect-video w-full rounded-lg border">
+//                                 <Image
+//                                     src={getProductImage(product)}
+//                                     alt={product.name}
+//                                     fill
+//                                     className="h-full w-full object-cover rounded-lg"
+//                                 />
+//                             </div>
+//                             {/* Chart component temporarily disabled - requires chart library imports */}
+//                             <div className="h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+//                                 <p className="text-gray-500">Chart component not available</p>
+//                             </div>
+//                             <Separator />
+//                             <div className="grid gap-2">
+//                                 <div className="flex gap-2 leading-none font-medium">
+//                                     Trending up by 5.2% this month{" "}
+//                                     <IconTrendingUp className="size-4" />
+//                                 </div>
+//                                 <div className="text-muted-foreground">
+//                                     Product performance over the last 6 months. Sales and revenue metrics show consistent growth.
+//                                 </div>
+//                             </div>
+//                             <Separator />
+//                         </>
+//                     )}
+//                     <form className="flex flex-col gap-4">
+//                         <div className="flex flex-col gap-3">
+//                             <Label htmlFor="name">Product Name</Label>
+//                             <Input id="name" defaultValue={product.name} />
+//                         </div>
+//                         <div className="flex flex-col gap-3">
+//                             <Label htmlFor="description">Description</Label>
+//                             <Input id="description" defaultValue={product.description} />
+//                         </div>
+//                         <div className="grid grid-cols-2 gap-4">
+//                             <div className="flex flex-col gap-3">
+//                                 <Label htmlFor="category">Category</Label>
+//                                 <Select defaultValue={product.category_data?.name || product.category}>
+//                                     <SelectTrigger id="category" className="w-full">
+//                                         <SelectValue placeholder="Select a category" />
+//                                     </SelectTrigger>
+//                                     <SelectContent>
+//                                         {
+//                                             categories?.map((category) => (
+//                                                 <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+//                                             ))
+//                                         }
+//                                     </SelectContent>
+//                                 </Select>
+//                             </div>
+//                             <div className="flex flex-col gap-3">
+//                                 <Label htmlFor="price">Fallback Price</Label>
+//                                 <Input id="price" type="number" step="0.01" defaultValue={product.price} />
+//                             </div>
+//                         </div>
+//                         <div className="grid grid-cols-2 gap-4">
+//                             <div className="flex flex-col gap-3">
+//                                 <Label htmlFor="price-ngn">Nigerian Price (₦)</Label>
+//                                 <Input id="price-ngn" type="number" step="0.01" defaultValue={product.price_ngn || ''} />
+//                             </div>
+//                             <div className="flex flex-col gap-3">
+//                                 <Label htmlFor="price-ghs">Ghanaian Price (₵)</Label>
+//                                 <Input id="price-ghs" type="number" step="0.01" defaultValue={product.price_ghs || ''} />
+//                             </div>
+//                         </div>
+//                         <div className="grid grid-cols-2 gap-4">
+//                             <div className="flex flex-col gap-3">
+//                                 <Label htmlFor="stock">Stock</Label>
+//                                 <Input id="stock" type="number" defaultValue={product.stock} />
+//                             </div>
+//                             <div className="flex flex-col gap-3">
+//                                 <Label htmlFor="image">Image URL</Label>
+//                                 <Input id="image" defaultValue={product.image} />
+//                             </div>
+//                         </div>
+//                     </form>
+//                 </div>
+//                 <DrawerFooter>
+//                     <Button>Save Changes</Button>
+//                     <DrawerClose asChild>
+//                         <Button variant="outline">Cancel</Button>
+//                     </DrawerClose>
+//                 </DrawerFooter>
+//             </DrawerContent>
+//         </Drawer>
+//     )
+// }

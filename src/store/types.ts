@@ -1,4 +1,5 @@
 export interface Category {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subcategories: any;
   id: string;
   name: string;

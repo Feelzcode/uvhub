@@ -9,13 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Plus, 
   Trash2, 
   Edit, 
-  Save, 
-  X, 
   GripVertical,
   Star 
 } from 'lucide-react';
@@ -25,7 +22,7 @@ interface ProductVariantManagerProps {
   variants: Partial<ProductVariant>[];
   onVariantsChange: (variants: Partial<ProductVariant>[]) => void;
   maxVariants?: number;
-  categoryId?: string; // Make categoryId optional to maintain backward compatibility
+  categoryId?: string;
 }
 
 export default function ProductVariantManager({
@@ -170,49 +167,6 @@ export default function ProductVariantManager({
       ...prev,
       images: prev.images?.filter((_, index) => index !== imageIndex) || []
     }));
-  };
-
-  const handleEditVariantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, variantIndex: number) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    try {
-      // For now, we'll create temporary image objects
-      // In a real implementation, you'd upload these to your storage service
-      const newImages: ProductImage[] = Array.from(files).map((file, index) => ({
-        id: `temp-${Date.now()}-${index}`,
-        product_id: '',
-        image_url: URL.createObjectURL(file),
-        alt_text: file.name,
-        is_primary: false,
-        sort_order: 0,
-        created_at: new Date(),
-        updated_at: new Date()
-      }));
-
-      // Update the variant with the new images
-      const updatedVariants = variants.map((variant, i) =>
-        i === variantIndex
-          ? { ...variant, images: [...(variant.images || []), ...newImages] }
-          : variant
-      );
-      
-      onVariantsChange(updatedVariants);
-
-    } catch (error) {
-      console.error('Error handling image upload:', error);
-      toast.error('Failed to upload images. Please try again.');
-    }
-  };
-
-  const removeEditVariantImage = (variantIndex: number, imageIndex: number) => {
-    const updatedVariants = variants.map((variant, i) =>
-      i === variantIndex
-        ? { ...variant, images: variant.images?.filter((_, index) => index !== imageIndex) || [] }
-        : variant
-    );
-    
-    onVariantsChange(updatedVariants);
   };
 
   const sortedVariants = [...variants].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
