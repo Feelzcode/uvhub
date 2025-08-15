@@ -68,8 +68,13 @@ export const sampleCategories: Category[] = [
                 name: 'Recumbent Bike Comfort',
                 image: '/api/placeholder/300/200',
                 price: 799.99,
+                price_ngn: 799.99,
+                price_ghs: 799.99,
                 description: 'Comfortable recumbent bike for low-impact cardio',
                 category_id: '2',
+                stock: 12,
+                rating: 4.2,
+                reviews: 31,
                 created_at: new Date(),
                 updated_at: new Date(),
             }
@@ -88,8 +93,13 @@ export const sampleCategories: Category[] = [
                 name: 'Power Rack System',
                 image: '/api/placeholder/300/200',
                 price: 2499.99,
+                price_ngn: 2499.99,
+                price_ghs: 2499.99,
                 description: 'Complete power rack with safety bars and pull-up bar',
-                categoryId: '3',
+                category_id: '3',
+                stock: 8,
+                rating: 4.7,
+                reviews: 23,
                 created_at: new Date(),
                 updated_at: new Date(),
             },
@@ -98,8 +108,13 @@ export const sampleCategories: Category[] = [
                 name: 'Dumbbell Set',
                 image: '/api/placeholder/300/200',
                 price: 399.99,
+                price_ngn: 399.99,
+                price_ghs: 399.99,
                 description: 'Adjustable dumbbell set from 5-50 lbs',
-                categoryId: '3',
+                category_id: '3',
+                stock: 30,
+                rating: 4.4,
+                reviews: 56,
                 created_at: new Date(),
                 updated_at: new Date(),
             }
@@ -115,8 +130,13 @@ export const sampleProductTypes: ProductType[] = [
         name: 'Commercial Treadmill Pro',
         image: '/api/placeholder/300/200',
         price: 2999.99,
+        price_ngn: 2999.99,
+        price_ghs: 2999.99,
         description: 'Heavy-duty commercial grade treadmill with advanced features',
-        categoryId: '1',
+        category_id: '1',
+        stock: 15,
+        rating: 4.8,
+        reviews: 45,
         created_at: new Date(),
         updated_at: new Date(),
     },
@@ -125,8 +145,13 @@ export const sampleProductTypes: ProductType[] = [
         name: 'Home Treadmill Basic',
         image: '/api/placeholder/300/200',
         price: 899.99,
+        price_ngn: 899.99,
+        price_ghs: 899.99,
         description: 'Compact home treadmill perfect for daily cardio',
-        categoryId: '1',
+        category_id: '1',
+        stock: 25,
+        rating: 4.3,
+        reviews: 67,
         created_at: new Date(),
         updated_at: new Date(),
     },
@@ -135,8 +160,13 @@ export const sampleProductTypes: ProductType[] = [
         name: 'Spin Bike Pro',
         image: '/api/placeholder/300/200',
         price: 1299.99,
+        price_ngn: 1299.99,
+        price_ghs: 1299.99,
         description: 'Professional spin bike with magnetic resistance',
-        categoryId: '2',
+        category_id: '2',
+        stock: 20,
+        rating: 4.6,
+        reviews: 34,
         created_at: new Date(),
         updated_at: new Date(),
     }
@@ -151,7 +181,7 @@ export const sampleProducts: Product[] = [
     price_ngn: 129.99,
     price_ghs: 129.99,
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop',
-    category: sampleCategories[0], // Electronics
+    category: '1', // Electronics category ID
     stock: 25,
     rating: 4.5,
     reviews: 128,
@@ -166,7 +196,7 @@ export const sampleProducts: Product[] = [
     price_ngn: 199.99,
     price_ghs: 199.99,
     image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop',
-    category: sampleCategories[0], // Electronics
+    category: '1', // Electronics category ID
     stock: 15,
     rating: 4.3,
     reviews: 89,
@@ -178,10 +208,10 @@ export const sampleProducts: Product[] = [
     name: 'Organic Cotton T-Shirt',
     description: 'Comfortable and sustainable cotton t-shirt available in multiple colors.',
     price: 29.99,
-      price_ngn: 29.99,
-      price_ghs: 29.99,
+    price_ngn: 29.99,
+    price_ghs: 29.99,
     image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop',
-    category: sampleCategories[1], // Clothing
+    category: '2', // Clothing category ID
     stock: 50,
     rating: 4.7,
     reviews: 256,
@@ -196,7 +226,7 @@ export const sampleProducts: Product[] = [
     price_ngn: 24.99,
     price_ghs: 24.99,
     image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=400&fit=crop',
-    category: sampleCategories[2], // Home & Garden
+    category: '3', // Home & Garden category ID
     stock: 75,
     rating: 4.8,
     reviews: 342,
@@ -211,7 +241,7 @@ export const sampleProducts: Product[] = [
     price_ngn: 399.99,
     price_ghs: 399.99,
     image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&h=400&fit=crop',
-    category: sampleCategories[0], // Electronics
+    category: '1', // Electronics category ID
     stock: 8,
     rating: 4.9,
     reviews: 67,
@@ -226,7 +256,7 @@ export const sampleProducts: Product[] = [
     price_ngn: 34.99,
     price_ghs: 34.99,
     image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=400&fit=crop',
-    category: sampleCategories[3], // Sports
+    category: '4', // Sports category ID
     stock: 30,
     rating: 4.4,
     reviews: 156,
@@ -241,7 +271,7 @@ export const sampleProducts: Product[] = [
     price_ngn: 49.99,
     price_ghs: 49.99,
     image: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=400&fit=crop',
-    category: sampleCategories[0], // Electronics
+    category: '1', // Electronics category ID
     stock: 20,
     rating: 4.2,
     reviews: 94,
@@ -256,7 +286,7 @@ export const sampleProducts: Product[] = [
     price_ngn: 19.99,
     price_ghs: 19.99,
     image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&h=400&fit=crop',
-    category: sampleCategories[2], // Home & Garden
+    category: '2', // Home & Garden category ID
     stock: 40,
     rating: 4.6,
     reviews: 203,
