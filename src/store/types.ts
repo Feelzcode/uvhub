@@ -40,6 +40,7 @@ export interface Subcategory {
 export interface ProductImage {
   id: string;
   product_id: string;
+  variant_id?: string; // Optional field for variant images
   image_url: string;
   alt_text?: string;
   is_primary: boolean;
@@ -82,6 +83,7 @@ export interface Product {
   subcategory_id?: string;
   types?: ProductType[];
   images?: ProductImage[];
+  variants?: ProductVariant[]; // Product variants with individual pricing and stock
   stock: number; // Total stock across all types
   rating: number;
   reviews: number;

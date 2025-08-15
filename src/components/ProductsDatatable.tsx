@@ -14,7 +14,6 @@ import {
     IconChevronLeft,
     IconChevronRight,
     IconChevronsRight,
-    IconTrendingUp,
     IconCategory,
     IconLoader2,
 } from "@tabler/icons-react"
@@ -53,7 +52,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
+
 import {
     Table,
     TableBody,
@@ -78,11 +77,16 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Category, Customer, PaginatedResponse, ProductVariant, Subcategory } from "@/store/types"
-import Image from "next/image"
+
 import { toast } from "sonner"
 import ProductVariantManager from "@/components/ProductVariantManager"
 import { CategoryTypeForm } from "@/components/CategoryTypeForm"
 import { useProductsStore, useSubcategories } from "@/store"
+import {
+    getPaginatedCustomers,
+    getPaginatedCategories,
+    getPaginatedSubcategories
+} from "@/app/admin/dashboard/products/actions"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -92,11 +96,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { productInputSchema, transformProductInput } from "@/utils/schema"
 
 
 // Create a separate component for the drag handle
@@ -1195,6 +1195,7 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                             for (const image of variant.images) {
                                 try {
                                     await createVariantImage({
+                                        variant_id: createdVariant.id,
                                         product_id: (product as { id: string }).id,
                                         image_url: image.image_url,
                                         alt_text: image.alt_text || `${variant.name} image`,

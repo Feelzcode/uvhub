@@ -10,53 +10,40 @@ export const useProducts = () => {
         products,
         loading,
         error,
-        selectedProduct,
         filters,
-        setProducts,
-        addProduct,
-        updateProduct,
-        deleteProduct,
-        setSelectedProduct,
         setLoading,
         setError,
         setFilters,
         clearFilters,
-        getFilteredProducts,
-        getProductById,
-        getProductsByCategory,
+        addProduct,
+        updateProduct,
+        deleteProduct,
+        getProducts,
     } = useProductsStore();
 
     const fetchProducts = useCallback(async () => {
         setLoading(true);
         try {
-            // Simulate API call - replace with actual API
-            // For demo purposes, we'll use sample data
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-            const { sampleProducts } = await import('@/lib/sampleData');
-            setProducts(sampleProducts);
+            // Use the actual getProducts function from the store
+            await getProducts();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch products');
         }
-    }, [setProducts, setLoading, setError]);
+    }, [getProducts, setLoading, setError]);
 
     return {
         products,
         loading,
         error,
-        selectedProduct,
         filters,
-        setProducts,
-        addProduct,
-        updateProduct,
-        deleteProduct,
-        setSelectedProduct,
         setLoading,
         setError,
         setFilters,
         clearFilters,
-        getFilteredProducts,
-        getProductById,
-        getProductsByCategory,
+        addProduct,
+        updateProduct,
+        deleteProduct,
+        getProducts,
         fetchProducts,
     };
 };

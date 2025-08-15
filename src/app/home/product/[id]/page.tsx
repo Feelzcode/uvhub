@@ -6,36 +6,38 @@ import { Star, ChevronLeft, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { use, useEffect, useState } from 'react';
 import { Product, useCurrencyStore, useProductsStore } from '@/store';
+import { getProductById, getAllProducts } from '@/app/admin/dashboard/products/actions';
 import { NextSeo } from 'next-seo';
 import { trackViewContent } from '@/components/FacebookPixel';
 import { trackGAViewItem } from '@/components/GoogleAnalytics';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import { getProductImage } from '@/utils/productImage';
-import { getProductPrice } from '@/utils/productPrice';
-import { getVariantPrice, getDefaultVariant } from '@/utils/variantPrice';
-import ProductVariantSelector from '@/components/ProductVariantSelector';
-import { ProductImage, ProductVariant } from '@/store/types';
+
+
+
+import { ProductImage } from '@/store/types';
 
 type PageProps = { params: Promise<{ id: string }> }
 
 export default function ProductDetails({ params }: PageProps) {
   const router = useRouter();
-  const { getProductById, getProductsByCategory } = useProductsStore();
-  const { addToCart, isInCart } = useCart();
+  // Functions are now imported directly from actions
+  const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setsimilarProducts] = useState<Product[] | []>([]);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
-  const { formatPrice, currentCurrency, location } = useCurrencyStore();
+
+  const { formatPrice, currentCurrency } = useCurrencyStore();
   const { getProductImages } = useProductsStore();
   const id = use(params).id;
 
   // Find the current product
   useEffect(() => {
     async function getDetails() {
-      const product = getProductById(id);
+      const product = await getProductById(id);
       if (product) {
-        const products = getProductsByCategory(product.category?.id as string);
+        const allProducts = await getAllProducts();
+        const products = allProducts.filter(p => p.category === product.category);
 
         setProduct(product);
         setsimilarProducts(products!);
@@ -49,15 +51,13 @@ export default function ProductDetails({ params }: PageProps) {
         }
 
         // Set default variant if product has variants
-        if (product.variants && product.variants.length > 0) {
-          const defaultVariant = getDefaultVariant(product.variants);
-          if (defaultVariant) {
-            setSelectedVariant(defaultVariant);
-          }
+        if (product.types && product.types.length > 0) {
+          // For now, we'll use the first type as default variant
+          // You may need to implement getDefaultVariant for ProductType
         }
 
         // Track Facebook Pixel ViewContent event
-        trackViewContent(product.name, product.category?.name);
+        trackViewContent(product.name, product.category);
 
         // Track Google Analytics ViewItem event
         trackGAViewItem(product.id, product.name, product.price, 'NGN');
@@ -65,7 +65,7 @@ export default function ProductDetails({ params }: PageProps) {
     }
 
     getDetails();
-  }, [id, getProductById, getProductsByCategory, getProductImages]);
+  }, [id, getProductImages]);
 
 
   if (!product) {
@@ -129,46 +129,57 @@ export default function ProductDetails({ params }: PageProps) {
           )}
         </div>
         <div className="md:w-1/2 p-8 flex flex-col">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl font-semibold text-blue-600">
-              {selectedVariant 
-                ? formatPrice(getVariantPrice(selectedVariant, location), currentCurrency)
-                : formatPrice(getProductPrice(product, location), currentCurrency)
-              }
-            </span>
-            {product.price && (
-              <span className="text-gray-400 line-through text-lg">
-                {selectedVariant 
-                  ? formatPrice(getVariantPrice(selectedVariant, location), currentCurrency)
-                  : formatPrice(getProductPrice(product, location), currentCurrency)
-                }
-              </span>
-            )}
-            <span className="flex items-center ml-4 text-yellow-500 font-medium">
-              <Star className="w-5 h-5 mr-1 fill-current" />
-              {product.rating}
-            </span>
-          </div>
-          <p className="text-gray-700 mb-6">{product.description}</p>
-          
-          {/* Variant Selector */}
+          {/* Variants Section */}
           {product.variants && product.variants.length > 0 && (
-            <div className="mb-6">
-              <ProductVariantSelector
-                variants={product.variants}
-                location={location}
-                selectedVariantId={selectedVariant?.id}
-                onVariantChange={setSelectedVariant}
-                showLocationIndicator={true}
-              />
+            <div className="mt-0">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Available Variants</h2>
+              <div className="space-y-6">
+                {product.variants.map((variant) => (
+                  <div key={variant.id} className="border border-gray-200 rounded-lg p-6 bg-gray-50 shadow-sm hover:shadow-md transition-shadow">
+                    {/* Variant Details - Full Width */}
+                    <div className="w-full">
+                      <h4 className="font-semibold text-xl text-gray-900 mb-3">{variant.name}</h4>
+                      {variant.description && (
+                        <p className="text-gray-600 mb-4 leading-relaxed text-base">{variant.description}</p>
+                      )}
+                      
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-2xl font-bold text-blue-600">
+                          {formatPrice(variant.price || variant.price_ngn || 0, currentCurrency)}
+                        </span>
+                        <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                          variant.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {variant.stock > 0 ? `${variant.stock} in stock` : 'Out of stock'}
+                        </span>
+                      </div>
+                      
+                      {/* Add to Cart Button for Variant */}
+                      <button
+                        onClick={() => addToCart(product, 1)}
+                        disabled={variant.stock === 0}
+                        className={`w-full py-3 rounded-lg font-medium transition-all duration-300 ${
+                          variant.stock === 0
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-105'
+                        }`}
+                      >
+                        {variant.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           
-          <div className="flex items-center gap-4 mb-8">
+          {/* Product Category and Subcategory Info */}
+          <div className="flex items-center gap-4 mt-6">
             <div className="flex flex-col gap-1">
               <span className="text-sm text-gray-500">
-                Category: <span className="font-medium text-gray-700">{product.category.name}</span>
+                Category: <span className="font-medium text-gray-700">
+                  {product.category_data?.name || (typeof product.category === 'object' ? (product.category as { name: string }).name : product.category)}
+                </span>
               </span>
               {product.subcategory && (
                 <span className="text-sm text-gray-500">
@@ -176,38 +187,7 @@ export default function ProductDetails({ params }: PageProps) {
                 </span>
               )}
             </div>
-            <span className={`text-sm font-medium ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
-              {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
-            </span>
           </div>
-          <button
-            onClick={() => {
-              if (selectedVariant) {
-                // Add variant to cart (you'll need to update the cart system to handle variants)
-                addToCart(product, 1);
-              } else {
-                addToCart(product, 1);
-              }
-            }}
-            disabled={
-              Boolean(
-                isInCart(product.id) ||
-                product.stock === 0 ||
-                (selectedVariant ? selectedVariant.stock === 0 : false)
-              )
-            }
-            className={`w-full py-4 rounded-lg font-semibold text-lg shadow-md transition-all duration-300
-              ${isInCart(product.id) || product.stock === 0 || (selectedVariant && selectedVariant.stock === 0)
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 hover:scale-105'
-              }`}
-          >
-            {isInCart(product.id)
-              ? 'Already in Cart'
-              : product.stock === 0 || (selectedVariant && selectedVariant.stock === 0)
-                ? 'Out of Stock'
-                : 'Add to Cart'}
-          </button>
         </div>
       </div>
 
@@ -220,7 +200,7 @@ export default function ProductDetails({ params }: PageProps) {
               onClick={() => router.push(`/home/all-products`)}
               className="flex items-center text-blue-600 hover:underline"
             >
-              View all in {product.category.name} <ArrowRight className="w-4 h-4 ml-1" />
+              View all in {product.category_data?.name || (typeof product.category === 'object' ? (product.category as { name: string }).name : product.category)} <ArrowRight className="w-4 h-4 ml-1" />
             </button>
           </div>
 

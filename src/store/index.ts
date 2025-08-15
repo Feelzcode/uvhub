@@ -9,6 +9,7 @@ export { useCategoriesStore } from './slices/categoriesSlice';
 export { useSubcategoriesStore } from './slices/subcategoriesSlice';
 
 // Export hooks
+export { useProducts } from './hooks';
 export { useCurrency } from './hooks/useCurrency';
 export { useCategories } from './hooks/useCategories';
 export { useSubcategories } from './hooks/useSubcategories';

@@ -2,6 +2,7 @@
 
 import { useProductsStore } from '@/store';
 import { useEffect } from 'react';
+import Image from 'next/image';
 
 export function ProductExample() {
     const { categories, loading, error, getCategories } = useProductsStore();
@@ -31,11 +32,14 @@ export function ProductExample() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {category.types.map((type) => (
                                 <div key={type.id} className="border rounded p-3">
-                                    <img 
-                                        src={type.image} 
-                                        alt={type.name}
-                                        className="w-full h-32 object-cover rounded mb-2"
-                                    />
+                                    <div className="relative w-full h-32 mb-2">
+                                        <Image 
+                                            src={type.image} 
+                                            alt={type.name}
+                                            fill
+                                            className="object-cover rounded"
+                                        />
+                                    </div>
                                     <h3 className="font-medium">{type.name}</h3>
                                     <p className="text-sm text-gray-600 mb-2">{type.description}</p>
                                     <p className="font-bold text-green-600">${type.price}</p>

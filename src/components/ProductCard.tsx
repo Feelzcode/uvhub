@@ -1,6 +1,6 @@
 'use client';
 
-import { useCart, useProducts } from '@/store/hooks';
+import { useCart } from '@/store/hooks';
 import { useCurrency } from '@/store/hooks/useCurrency';
 import { Currency, Product } from '@/store/types';
 import Image from 'next/image';
@@ -14,15 +14,10 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, currency }: ProductCardProps) {
     const { addToCart, isInCart } = useCart();
-    const { setSelectedProduct } = useProducts();
     const { formatCurrentPrice, location } = useCurrency();
 
     const handleAddToCart = () => {
         addToCart(product, 1);
-    };
-
-    const handleViewDetails = () => {
-        setSelectedProduct(product);
     };
 
     return (
@@ -61,12 +56,6 @@ export default function ProductCard({ product, currency }: ProductCardProps) {
                 </div>
 
                 <div className="flex gap-2">
-                    <button
-                        onClick={handleViewDetails}
-                        className="flex-1 bg-gray-100 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors duration-200"
-                    >
-                        View Details
-                    </button>
                     <button
                         onClick={handleAddToCart}
                         disabled={isInCart(product.id) || product.stock === 0}

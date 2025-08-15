@@ -89,13 +89,14 @@ export async function getPaginatedProducts(params: { page: number, limit: number
 export async function getAllProducts() {
     const supabase = await createClient()
 
-    // First try without the category join to see if basic query works
+    // Fetch products with categories, subcategories, and variants
     const { data, error } = await supabase
         .from('products')
         .select(`
             *,
             category:categories(*),
-            subcategory:subcategories(*)`,
+            subcategory:subcategories(*),
+            variants:product_variants(*)`,
             { count: 'exact' }
         )
         .order('created_at', { ascending: false });
@@ -114,7 +115,8 @@ export async function getProductById(id: string) {
         .select(`
             *,
             category:categories(*),
-            subcategory:subcategories(*)
+            subcategory:subcategories(*),
+            variants:product_variants(*)
         `)
         .eq('id', id)
         .single();
@@ -133,7 +135,8 @@ export async function createProduct(product: Partial<Product>): Promise<Product 
         .select(`
             *,
             category:categories(*),
-            subcategory:subcategories(*)
+            subcategory:subcategories(*),
+            variants:product_variants(*)
         `)
         .single();
     if (error) {
@@ -152,7 +155,8 @@ export async function updateProduct(id: string, product: Partial<Product>): Prom
         .select(`
             *,
             category:categories(*),
-            subcategory:subcategories(*)
+            subcategory:subcategories(*),
+            variants:product_variants(*)
         `)
         .single();
     if (error) {
@@ -887,7 +891,14 @@ export async function createVariantImage(variantImage: Partial<ProductImage>) {
     const supabase = await createClient()
     const { data, error } = await supabase
         .from('variant_images')
-        .insert(variantImage)
+        .insert({
+            variant_id: variantImage.variant_id,
+            product_id: variantImage.product_id,
+            image_url: variantImage.image_url,
+            alt_text: variantImage.alt_text,
+            is_primary: variantImage.is_primary || false,
+            sort_order: variantImage.sort_order || 0
+        })
         .select()
         .single();
     

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ProductVariant, ProductImage } from '@/store/types';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,9 +15,13 @@ import {
   Trash2, 
   Edit, 
   GripVertical,
-  Star 
+  Star,
+  Save,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useUppyWithSupabase } from '@/hooks/use-uppy-with-supabase';
+import { getPublicUrlOfUploadedFile } from '@/lib/utils';
 
 interface ProductVariantManagerProps {
   variants: Partial<ProductVariant>[];
@@ -44,6 +49,9 @@ export default function ProductVariantManager({
     sort_order: variants.length,
     images: []
   });
+  
+  // Initialize Uppy for variant image uploads
+  const uppy = useUppyWithSupabase({ bucketName: 'file-bucket', folderName: 'variants' });
 
   const handleAddVariant = () => {
     if (variants.length >= maxVariants) {
@@ -126,36 +134,46 @@ export default function ProductVariantManager({
     if (!files || files.length === 0) return;
 
     try {
-      // For now, we'll create temporary image objects
-      // In a real implementation, you'd upload these to your storage service
-      const newImages: ProductImage[] = Array.from(files).map((file, index) => ({
-        id: `temp-${Date.now()}-${index}`,
-        product_id: '',
-        image_url: URL.createObjectURL(file),
-        alt_text: file.name,
-        is_primary: index === 0,
-        sort_order: index,
-        created_at: new Date(),
-        updated_at: new Date()
-      }));
-
-      if (variantIndex === -1) {
-        // This is for the new variant form
-        setNewVariant(prev => ({
-          ...prev,
-          images: [...(prev.images || []), ...newImages]
-        }));
-      } else {
-        // This is for editing an existing variant
-        const updatedVariants = variants.map((variant, i) =>
-          i === variantIndex
-            ? { ...variant, images: [...(variant.images || []), ...newImages] }
-            : variant
-        );
-        
-        onVariantsChange(updatedVariants);
+      // Upload files to Supabase storage
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        uppy.addFile(file);
       }
 
+      const response = await uppy.upload();
+      
+      if (response?.successful) {
+        const newImages: ProductImage[] = response.successful.map((file, index) => {
+          const imageUrl = getPublicUrlOfUploadedFile(file.meta.objectName as string);
+          return {
+            id: `temp-${Date.now()}-${index}`,
+            product_id: '',
+            image_url: imageUrl,
+            alt_text: file.name,
+            is_primary: index === 0,
+            sort_order: index,
+            created_at: new Date(),
+            updated_at: new Date()
+          };
+        });
+
+        if (variantIndex === -1) {
+          // This is for the new variant form
+          setNewVariant(prev => ({
+            ...prev,
+            images: [...(prev.images || []), ...newImages]
+          }));
+        } else {
+          // This is for editing an existing variant
+          const updatedVariants = variants.map((variant, i) =>
+            i === variantIndex
+              ? { ...variant, images: [...(variant.images || []), ...newImages] }
+              : variant
+          );
+          
+          onVariantsChange(updatedVariants);
+        }
+      }
     } catch (error) {
       console.error('Error handling image upload:', error);
       toast.error('Failed to upload images. Please try again.');
@@ -167,6 +185,63 @@ export default function ProductVariantManager({
       ...prev,
       images: prev.images?.filter((_, index) => index !== imageIndex) || []
     }));
+  };
+
+  const handleEditVariantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, variantIndex: number) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      // Upload files to Supabase storage
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        uppy.addFile(file);
+      }
+
+      const response = await uppy.upload();
+      
+      if (response?.successful) {
+        const newImages: ProductImage[] = response.successful.map((file, index) => {
+          const imageUrl = getPublicUrlOfUploadedFile(file.meta.objectName as string);
+          return {
+            id: `temp-${Date.now()}-${index}`,
+            product_id: variants[variantIndex].product_id || '',
+            variant_id: variants[variantIndex].id,
+            image_url: imageUrl,
+            alt_text: file.name,
+            is_primary: index === 0,
+            sort_order: index,
+            created_at: new Date(),
+            updated_at: new Date()
+          };
+        });
+
+        // This is for editing an existing variant
+        const updatedVariants = variants.map((variant, i) =>
+          i === variantIndex
+            ? { ...variant, images: [...(variant.images || []), ...newImages] }
+            : variant
+        );
+        
+        onVariantsChange(updatedVariants);
+      }
+    } catch (error) {
+      console.error('Error handling image upload:', error);
+      toast.error('Failed to upload images. Please try again.');
+    }
+  };
+
+  const removeEditVariantImage = (variantIndex: number, imageIndex: number) => {
+    const updatedVariants = variants.map((variant, i) =>
+      i === variantIndex
+        ? { 
+            ...variant, 
+            images: variant.images?.filter((_, imgIndex) => imgIndex !== imageIndex) || [] 
+          }
+        : variant
+    );
+    
+    onVariantsChange(updatedVariants);
   };
 
   const sortedVariants = [...variants].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
@@ -296,11 +371,14 @@ export default function ProductVariantManager({
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   {newVariant.images.map((image, index) => (
                     <div key={index} className="relative">
-                      <img
-                        src={image.image_url}
-                        alt={image.alt_text || `Variant image ${index + 1}`}
-                        className="w-full h-20 object-cover rounded"
-                      />
+                      <div className="relative w-full h-20">
+                        <Image
+                          src={image.image_url}
+                          alt={image.alt_text || `Variant image ${index + 1}`}
+                          fill
+                          className="object-cover rounded"
+                        />
+                      </div>
                       <button
                         onClick={() => removeVariantImage(index)}
                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
@@ -341,6 +419,8 @@ export default function ProductVariantManager({
                     variantIndex={index}
                     onSave={(updates) => handleUpdateVariant(index, updates)}
                     onCancel={() => setEditingVariant(null)}
+                    onImageUpload={handleEditVariantImageUpload}
+                    onImageRemove={removeEditVariantImage}
                   />
                 ) : (
                   <VariantDisplay
@@ -418,11 +498,14 @@ function VariantDisplay({
               <div className="grid grid-cols-4 gap-2">
                 {variant.images.map((image, imgIndex) => (
                   <div key={imgIndex} className="relative">
-                    <img
-                      src={image.image_url}
-                      alt={image.alt_text || `Variant image ${imgIndex + 1}`}
-                      className="w-full h-16 object-cover rounded border"
-                    />
+                    <div className="relative w-full h-16">
+                      <Image
+                        src={image.image_url}
+                        alt={image.alt_text || `Variant image ${imgIndex + 1}`}
+                        fill
+                        className="object-cover rounded border"
+                      />
+                    </div>
                     {image.is_primary && (
                       <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs px-1 rounded-bl">
                         Primary
@@ -456,12 +539,16 @@ function VariantEditForm({
   variant,
   variantIndex,
   onSave,
-  onCancel
+  onCancel,
+  onImageUpload,
+  onImageRemove
 }: {
   variant: Partial<ProductVariant>;
   variantIndex: number;
   onSave: (updates: Partial<ProductVariant>) => void;
   onCancel: () => void;
+  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>, variantIndex: number) => void;
+  onImageRemove: (variantIndex: number, imageIndex: number) => void;
 }) {
   const [formData, setFormData] = useState({
     name: variant.name,
@@ -563,7 +650,7 @@ function VariantEditForm({
             type="file"
             multiple
             accept="image/*"
-            onChange={(e) => handleEditVariantImageUpload(e, variantIndex)}
+            onChange={(e) => onImageUpload(e, variantIndex)}
             className="hidden"
             id={`edit-variant-images-${variantIndex}`}
           />
@@ -579,13 +666,16 @@ function VariantEditForm({
           <div className="grid grid-cols-4 gap-2 mt-2">
             {variant.images.map((image, imgIndex) => (
               <div key={imgIndex} className="relative">
-                <img
-                  src={image.image_url}
-                  alt={image.alt_text || `Variant image ${imgIndex + 1}`}
-                  className="w-full h-20 object-cover rounded border"
-                />
+                                    <div className="relative w-full h-20">
+                      <Image
+                        src={image.image_url}
+                        alt={image.alt_text || `Variant image ${imgIndex + 1}`}
+                        fill
+                        className="object-cover rounded border"
+                      />
+                    </div>
                 <button
-                  onClick={() => removeEditVariantImage(variantIndex, imgIndex)}
+                  onClick={() => onImageRemove(variantIndex, imgIndex)}
                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
                 >
                   ×

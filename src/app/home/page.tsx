@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/store/hooks";
 import { useProductsStore } from '@/store'
-import { ProductType } from "@/store/types";
+import { Product } from "@/store/types";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCurrencyStore } from "@/store";
@@ -32,16 +32,19 @@ const Home = () => {
     filters,
     setFilters,
     clearFilters,
-    getFilteredCategories,
+
     getCategories,
+    getProducts,
+    products,
   } = useProductsStore();
   const [searchTerm, setSearchTerm] = useState(filters.search);
   const router = useRouter();
 
   useEffect(() => {
     getCategories();
+    getProducts();
     clearFilters();
-  }, [getCategories, clearFilters]);
+  }, [getCategories, getProducts, clearFilters]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -72,12 +75,11 @@ const Home = () => {
   const getAutocompleteSuggestions = () => {
     if (!searchTerm || searchTerm.length < 2) return [];
 
-    const filteredCategories = getFilteredCategories();
-    const allTypes = filteredCategories.flatMap(category => category.types || []);
-    return allTypes
-      .filter((type) =>
-        type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        type.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    // Use real products for autocomplete instead of sample data
+    return (products || [])
+      .filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
       )
       .slice(0, 5); // Limit to 5 suggestions
   };
@@ -91,7 +93,7 @@ const Home = () => {
     setSelectedSuggestion(-1);
   };
 
-  const handleSuggestionClick = (product: ProductType) => {
+  const handleSuggestionClick = (product: Product) => {
     setSearchTerm(product.name);
     setShowAutocomplete(false);
     setSelectedSuggestion(-1);
@@ -173,8 +175,9 @@ const Home = () => {
     );
   }
 
-  const filteredCategories = getFilteredCategories();
-  const allTypes = filteredCategories.flatMap(category => category.types || []);
+
+  // Use real products from database instead of sample data types
+  const realProducts = products || [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -291,7 +294,7 @@ const Home = () => {
               {/* Autocomplete Dropdown */}
               {showAutocomplete && suggestions.length > 0 && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {suggestions.map((product: ProductType, index: number) => (
+                  {suggestions.map((product: Product, index: number) => (
                     <div
                       key={product.id}
                       onClick={() => handleSuggestionClick(product)}
@@ -345,73 +348,92 @@ const Home = () => {
             </div>
           </div>
 
-          {allTypes.length > 0 ? (
+          {realProducts.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {allTypes.map((product: ProductType) => (
-                <div
-                  key={product.id}
-                  className="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 relative"
-                >
-                  {/* Product Image with View Details Overlay */}
-                  <div className="h-80 overflow-hidden relative">
-                    <Image
-                      src={getProductImage(product)}
-                      alt={product.name}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                    />
-                    {/* View Details Overlay */}
-                    <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-40 transition-all duration-500 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <button
-                        onClick={() => router.push(`/home/product/${product.id}`)}
-                        className="bg-white bg-opacity-90 text-gray-900 px-6 py-3 rounded-lg font-medium transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 hover:bg-opacity-100 flex items-center shadow-md"
-                      >
-                        View Details
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </button>
+                             {realProducts.map((product: Product) => {
+                 // Get the first variant image or fallback to product image
+                 const variantImage = product.variants && product.variants.length > 0 
+                   ? product.variants[0].image_url || product.image
+                   : product.image;
+                 
+                 // Get the lowest variant price or fallback to product price
+                 const lowestPrice = product.variants && product.variants.length > 0
+                   ? Math.min(...product.variants.map(v => v.price || v.price_ngn || 0))
+                   : product.price;
+                
+                return (
+                  <div
+                    key={product.id}
+                    className="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 relative"
+                  >
+                    {/* Product Image with View Details Overlay */}
+                    <div className="h-80 overflow-hidden relative">
+                      <Image
+                        src={variantImage || product.image}
+                        alt={product.name}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                      />
+                      {/* View Details Overlay */}
+                      <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-40 transition-all duration-500 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <button
+                          onClick={() => router.push(`/home/product/${product.id}`)}
+                          className="bg-white bg-opacity-90 text-gray-900 px-6 py-3 rounded-lg font-medium transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 hover:bg-opacity-100 flex items-center shadow-md"
+                        >
+                          View Details
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Product Content */}
-                  <div className="p-6 flex flex-col">
-                    <div className="flex-grow">
-                      <div className="flex justify-between items-start mb-4">
+                    {/* Product Content */}
+                    <div className="p-6 flex flex-col">
+                      <div className="flex-grow">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{product.name}</h3>
+                            <p className="text-gray-600 mt-2 line-clamp-2">{product.description}</p>
+                          </div>
+                          <div className="flex items-center bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                            <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                            <span className="ml-1">{product.rating}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center mt-4">
                         <div>
-                          <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{product.name}</h3>
-                          <p className="text-gray-600 mt-2 line-clamp-2">{product.description}</p>
+                          <span className="text-2xl font-bold text-gray-900">
+                            {product.variants && product.variants.length > 0 
+                              ? formatPrice(lowestPrice, currentCurrency)
+                              : formatPrice(getProductPrice(product, location), currentCurrency)
+                            }
+                          </span>
+                          {product.variants && product.variants.length > 0 && (
+                            <span className="text-sm text-gray-500 ml-2">
+                              {product.variants.length} variant{product.variants.length > 1 ? 's' : ''} available
+                            </span>
+                          )}
                         </div>
-                        <div className="flex items-center bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
-                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                          <span className="ml-1">{product.rating}</span>
-                        </div>
+                        <button
+                          disabled={isInCart(product.id) || product.stock === 0}
+                          onClick={() => {
+                            addToCart(product, 1);
+                          }}
+                          className={`px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 ${isInCart(product.id)
+                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                            : product.stock === 0
+                              ? 'bg-red-100 text-red-600 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                            }`}
+                        >
+                          {isInCart(product.id) ? 'Added to Cart' : product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex justify-between items-center mt-4">
-                      <div>
-                        <span className="text-2xl font-bold text-gray-900">{formatPrice(getProductPrice(product, location), currentCurrency)}</span>
-                        {product.price && (
-                          <span className="text-gray-500 line-through ml-2">{formatPrice(getProductPrice(product, location), currentCurrency)}</span>
-                        )}
-                      </div>
-                      <button
-                        disabled={isInCart(product.id) || product.stock === 0}
-                        onClick={() => {
-                          addToCart(product, 1);
-                        }}
-                        className={`px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 ${isInCart(product.id)
-                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                          : product.stock === 0
-                            ? 'bg-red-100 text-red-600 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
-                          }`}
-                      >
-                        {isInCart(product.id) ? 'Added to Cart' : product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="lg:col-span-2 text-center py-16 px-6 bg-white rounded-lg shadow-md">

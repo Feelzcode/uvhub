@@ -1,11 +1,12 @@
 'use client';
 
-import { useProductsStore } from '@/store';
-import { ProductCard } from './ProductCard';
+import { useProductsStore, useCurrencyStore } from '@/store';
+import ProductCard from './ProductCard';
 import { useEffect } from 'react';
 
 export function ProductList() {
     const { categories, loading, error, getCategories } = useProductsStore();
+    const { currentCurrency } = useCurrencyStore();
 
     useEffect(() => {
         getCategories();
@@ -41,7 +42,7 @@ export function ProductList() {
                                         description: type.description,
                                         price: type.price,
                                         image: type.image,
-                                        category: category,
+                                        category: category.id,
                                         stock: 0,
                                         rating: 0,
                                         reviews: 0,
@@ -51,6 +52,7 @@ export function ProductList() {
                                         price_ghs: 0,
                                         types: [type]
                                     }}
+                                    currency={currentCurrency}
                                 />
                             ))}
                         </div>
