@@ -122,12 +122,14 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                         const { data, error } = await createCategory(category);
                         if (error) throw new Error(error.message);
                         if (data) {
+
                         set(state => ({
                             categories: [...state.categories, data],
                             loading: false,
                             error: null
                         }));
                         toast.success('Category created successfully', { duration: 5000 });
+
                         } else {
                             throw new Error('Category data is null');
                         }
@@ -154,6 +156,7 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                             error: null
                         }));
                         toast.success('Category updated successfully', { duration: 5000 });
+
                         } else {
                             throw new Error('Category update data is null');
                         }

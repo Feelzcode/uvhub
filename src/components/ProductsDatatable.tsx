@@ -1729,6 +1729,7 @@ export function ProductsDataTable({
                     </SelectContent>
                 </Select>
                 <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
+
                     <TabsTrigger value="categories">
                          Categories <Badge variant="secondary">{categoriesData.total}</Badge>
                     </TabsTrigger>
