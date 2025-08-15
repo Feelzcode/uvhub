@@ -748,28 +748,42 @@ const productColumns: ColumnDef<Product>[] = [
     {
         accessorKey: "category",
         header: "Category",
-        cell: ({ row }) => (
-            <div className="w-32">
-                <Badge variant="outline" className="text-muted-foreground px-1.5">
-                    {row.original.category_data?.name || (typeof row.original.category === 'object' ? row.original.category.name : row.original.category) || '-'}
-                </Badge>
-            </div>
-        ),
+        cell: ({ row }) => {
+            const category = row.original.category;
+            const categoryName = typeof category === 'object' && category && 'name' in category 
+                ? (category as { name: string }).name 
+                : typeof category === 'string' ? category : '-';
+            
+            return (
+                <div className="w-32">
+                    <Badge variant="outline" className="text-muted-foreground px-1.5">
+                        {row.original.category_data?.name || categoryName}
+                    </Badge>
+                </div>
+            );
+        },
     },
     {
         accessorKey: "subcategory",
         header: "Subcategory",
-        cell: ({ row }) => (
-            <div className="w-32">
-                {row.original.subcategory && typeof row.original.subcategory === 'object' && row.original.subcategory.name ? (
-                    <Badge variant="outline" className="text-muted-foreground px-1.5">
-                        {row.original.subcategory.name}
-                    </Badge>
-                ) : (
-                    <span className="text-muted-foreground text-sm">-</span>
-                )}
-            </div>
-        ),
+        cell: ({ row }) => {
+            const subcategory = row.original.subcategory;
+            const subcategoryName = typeof subcategory === 'object' && subcategory && 'name' in subcategory 
+                ? (subcategory as { name: string }).name 
+                : null;
+            
+            return (
+                <div className="w-32">
+                    {subcategoryName ? (
+                        <Badge variant="outline" className="text-muted-foreground px-1.5">
+                            {subcategoryName}
+                        </Badge>
+                    ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                    )}
+                </div>
+            );
+        },
     },
 //     {
 //         accessorKey: "images",
