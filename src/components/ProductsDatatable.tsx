@@ -754,11 +754,11 @@ const productColumns: ColumnDef<Product>[] = [
                 : typeof category === 'string' ? category : '-';
             
             return (
-                <div className="w-32">
-                    <Badge variant="outline" className="text-muted-foreground px-1.5">
+            <div className="w-32">
+                <Badge variant="outline" className="text-muted-foreground px-1.5">
                         {row.original.category_data?.name || categoryName}
-                    </Badge>
-                </div>
+                </Badge>
+            </div>
             );
         },
     },
@@ -772,15 +772,15 @@ const productColumns: ColumnDef<Product>[] = [
                 : null;
             
             return (
-                <div className="w-32">
+            <div className="w-32">
                     {subcategoryName ? (
-                        <Badge variant="outline" className="text-muted-foreground px-1.5">
+                    <Badge variant="outline" className="text-muted-foreground px-1.5">
                             {subcategoryName}
-                        </Badge>
-                    ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                    )}
-                </div>
+                    </Badge>
+                ) : (
+                    <span className="text-muted-foreground text-sm">-</span>
+                )}
+            </div>
             );
         },
     },
@@ -1729,9 +1729,10 @@ export function ProductsDataTable({
                     </SelectContent>
                 </Select>
                 <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-                                         <TabsTrigger value="categories">
+
+                    <TabsTrigger value="categories">
                          Categories <Badge variant="secondary">{categoriesData.total}</Badge>
-                     </TabsTrigger>
+                    </TabsTrigger>
                     <TabsTrigger value="products">
                         Products <Badge variant="secondary">{productsData.total}</Badge>
                     </TabsTrigger>
