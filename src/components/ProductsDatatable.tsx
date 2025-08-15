@@ -751,7 +751,7 @@ const productColumns: ColumnDef<Product>[] = [
         cell: ({ row }) => (
             <div className="w-32">
                 <Badge variant="outline" className="text-muted-foreground px-1.5">
-                    {row.original.category_data?.name || row.original.category}
+                    {row.original.category_data?.name || (typeof row.original.category === 'object' ? row.original.category.name : row.original.category) || '-'}
                 </Badge>
             </div>
         ),
@@ -761,7 +761,7 @@ const productColumns: ColumnDef<Product>[] = [
         header: "Subcategory",
         cell: ({ row }) => (
             <div className="w-32">
-                {row.original.subcategory ? (
+                {row.original.subcategory && typeof row.original.subcategory === 'object' && row.original.subcategory.name ? (
                     <Badge variant="outline" className="text-muted-foreground px-1.5">
                         {row.original.subcategory.name}
                     </Badge>
@@ -893,7 +893,10 @@ const customerColumns: ColumnDef<Customer>[] = [
         header: "Address",
         cell: ({ row }) => (
             <div className="text-sm text-muted-foreground">
-                {row.original.address.street}, {row.original.address.city}
+                {row.original.address && typeof row.original.address === 'object' ? 
+                    `${row.original.address.street || ''}, ${row.original.address.city || ''}`.replace(/^,\s*/, '').replace(/,\s*$/, '') || '-'
+                    : '-'
+                }
             </div>
         ),
     },
@@ -1599,73 +1602,6 @@ function CreateSubcategoryForm({ onClose }: { onClose: () => void }) {
         </form>
     )
 }
-
-// Category creation form
-// function CreateCategoryForm({ onClose }: { onClose: () => void }) {
-//     const [formData, setFormData] = React.useState({
-//         name: '',
-//         description: '',
-//     })
-//     const [isSubmitting, setIsSubmitting] = React.useState(false)
-//     const { addCategory } = useCategories();
-//     const handleSubmit = async (e: React.FormEvent) => {
-//         e.preventDefault()
-//         setIsSubmitting(true)
-
-//         try {
-//             await addCategory({
-//                 name: formData.name,
-//                 description: formData.description,
-//             });
-
-//             toast.success('Category created successfully')
-//             onClose()
-//         } catch (error) {
-//             console.error('Error creating category:', error)
-//             toast.error('Failed to create category')
-//         } finally {
-//             setIsSubmitting(false)
-//         }
-//     }
-
-//     return (
-//         <form onSubmit={handleSubmit} className="space-y-4">
-//             <div className="space-y-2">
-//                 <Label htmlFor="name">Category Name</Label>
-//                 <Input
-//                     id="name"
-//                     value={formData.name}
-//                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-//                     required
-//                 />
-//             </div>
-
-//             <div className="space-y-2">
-//                 <Label htmlFor="description">Description</Label>
-//                 <Textarea
-//                     id="description"
-//                     value={formData.description}
-//                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-//                     required
-//                 />
-//             </div>
-
-//             <div className="flex justify-end space-x-2 pt-4">
-//                 <Button type="button" variant="outline" onClick={onClose}>
-//                     Cancel
-//                 </Button>
-//                 <Button type="submit" disabled={isSubmitting} className="cursor-pointer">
-//                     {isSubmitting ? (
-//                         <div className="flex items-center gap-2">
-//                             <IconLoader2 className="size-4 animate-spin" />
-//                             Creating...
-//                         </div>
-//                     ) : 'Create Category'}
-//                 </Button>
-//             </div>
-//         </form>
-//     )
-// }
 
 export function ProductsDataTable({
     categoriesData,

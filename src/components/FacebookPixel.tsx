@@ -32,10 +32,16 @@ export default function FacebookPixel({ children }: FacebookPixelProps) {
       t.src=v;s=b.getElementsByTagName(e)[0];
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '${settings.facebook_pixel_id}');
-      fbq('track', 'PageView');
     `;
         document.head.appendChild(script);
+
+        // Initialize Facebook Pixel after script loads
+        script.onload = () => {
+            if (window.fbq) {
+                window.fbq('init', settings.facebook_pixel_id);
+                window.fbq('track', 'PageView');
+            }
+        };
 
         // Add noscript fallback
         const noscript = document.createElement('noscript');
@@ -123,4 +129,4 @@ export const trackInitiateCheckout = (value: number, currency: string = 'NGN') =
             currency: currency,
         });
     }
-}; 
+};
