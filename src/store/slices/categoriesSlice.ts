@@ -58,11 +58,13 @@ export const useCategoriesStore = create<CategoriesStore>()(
             // For now, we'll simulate the API call
             const newCategory = await createCategory(categoryData as Partial<Category>);
 
-            if (newCategory) {
+            if (newCategory && newCategory.data) {
               set((state) => ({
-                categories: [...state.categories, newCategory as Category],
+                categories: [...state.categories, newCategory.data as Category],
                 loading: false,
               }));
+            } else if (newCategory && newCategory.error) {
+              throw new Error(newCategory.error.message || 'Failed to create category');
             }
           } catch (error) {
             console.error('Error adding category:', error);
