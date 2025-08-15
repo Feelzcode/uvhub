@@ -121,12 +121,16 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                     try {
                         const { data, error } = await createCategory(category);
                         if (error) throw new Error(error.message);
-                        set(state => ({
-                            categories: [...state.categories, data],
-                            loading: false,
-                            error: null
-                        }));
-                        toast.success('Category created successfully', { duration: 5000 });
+                        if (data) {
+                            set(state => ({
+                                categories: [...state.categories, data],
+                                loading: false,
+                                error: null
+                            }));
+                            toast.success('Category created successfully', { duration: 5000 });
+                        } else {
+                            throw new Error('Category data is null');
+                        }
                     } catch (e) {
                         set({ loading: false, error: 'Failed to create category' });
                         toast.error('Failed to create category', {
@@ -141,14 +145,18 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                     try {
                         const { data, error } = await updateCategory(id, updates as Category);
                         if (error) throw new Error(error.message);
-                        set(state => ({
-                            categories: state.categories.map(category =>
-                                category.id === id ? { ...category, ...data } : category
-                            ),
-                            loading: false,
-                            error: null
-                        }));
-                        toast.success('Category updated successfully', { duration: 5000 });
+                        if (data) {
+                            set(state => ({
+                                categories: state.categories.map(category =>
+                                    category.id === id ? { ...category, ...data } : category
+                                ),
+                                loading: false,
+                                error: null
+                            }));
+                            toast.success('Category updated successfully', { duration: 5000 });
+                        } else {
+                            throw new Error('Category update data is null');
+                        }
                     } catch (e) {
                         set({ loading: false, error: 'Failed to update category' });
                         toast.error('Failed to update category', {
@@ -456,6 +464,7 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                             description: e instanceof Error ? e.message : 'Unknown error',
                             duration: 5000
                         });
+                        return null;
                     }
                 },
 
@@ -474,6 +483,7 @@ export const useProductsStore = create<ProductsState & ProductsActions>()(
                             description: e instanceof Error ? e.message : 'Unknown error',
                             duration: 5000
                         });
+                        return null;
                     }
                 },
 

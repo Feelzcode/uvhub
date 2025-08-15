@@ -703,7 +703,6 @@ function ProductCellViewer({ product }: { product: Product }) {
         <div className="flex items-center gap-2">
             <div className="flex flex-col">
                 <span className="font-medium">{product.name}</span>
-                <span className="text-sm text-muted-foreground">{product.description || 'No description'}</span>
             </div>
         </div>
     );
@@ -986,21 +985,12 @@ const subcategoryColumns: ColumnDef<Subcategory>[] = [
         enableHiding: false,
     },
     {
-        accessorKey: "name",
+        accessorKey: "subcategory",
         header: "Subcategory Name",
         cell: ({ row }) => (
             <div className="flex items-center gap-2">
                 <IconCategory className="size-4" />
                 <span className="font-medium">{row.original.name}</span>
-            </div>
-        ),
-    },
-    {
-        accessorKey: "description",
-        header: "Description",
-        cell: ({ row }) => (
-            <div className="text-sm text-muted-foreground max-w-xs truncate">
-                {row.original.description}
             </div>
         ),
     },
@@ -1084,15 +1074,6 @@ const categoryColumns: ColumnDef<Category>[] = [
             <div className="flex items-center gap-2">
                 <IconCategory className="size-4" />
                 <span className="font-medium">{row.original.name}</span>
-            </div>
-        ),
-    },
-    {
-        accessorKey: "description",
-        header: "Description",
-        cell: ({ row }) => (
-            <div className="text-sm text-muted-foreground max-w-xs truncate">
-                {row.original.description}
             </div>
         ),
     },
@@ -1741,16 +1722,16 @@ export function ProductsDataTable({
                         <SelectValue placeholder="Select a view" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="categories">Products & Categories</SelectItem>
+                        <SelectItem value="categories">Categories</SelectItem>
                         <SelectItem value="products">Products</SelectItem>
                         <SelectItem value="subcategories">Subcategories</SelectItem>
                         <SelectItem value="customers">Customers</SelectItem>
                     </SelectContent>
                 </Select>
                 <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-                    <TabsTrigger value="categories">
-                        Products & Categories <Badge variant="secondary">{categoriesData.total}</Badge>
-                    </TabsTrigger>
+                                         <TabsTrigger value="categories">
+                         Categories <Badge variant="secondary">{categoriesData.total}</Badge>
+                     </TabsTrigger>
                     <TabsTrigger value="products">
                         Products <Badge variant="secondary">{productsData.total}</Badge>
                     </TabsTrigger>

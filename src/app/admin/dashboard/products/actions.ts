@@ -451,7 +451,7 @@ export async function getAllCategories(): Promise<Category[] | null> {
     return data as Category[];
 }
 
-export async function createCategory(category: Partial<Category>): Promise<Category | null> {
+export async function createCategory(category: Partial<Category>): Promise<{ data: Category | null; error: Error | null }> {
     const supabase = await createClient();
 
     const { data, error } = await supabase
@@ -462,10 +462,10 @@ export async function createCategory(category: Partial<Category>): Promise<Categ
 
     if (error) {
         console.error('Error creating category:', error);
-        return null;
+        return { data: null, error: new Error(error.message) };
     }
 
-    return data as Category;
+    return { data: data as Category, error: null };
 }
 
 export async function updateCategory(id: string, updates: Partial<Category>) {
