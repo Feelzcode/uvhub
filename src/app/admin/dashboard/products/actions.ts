@@ -127,6 +127,24 @@ export async function getProductById(id: string) {
     return data as Product;
 }
 
+export async function getProducts(): Promise<Product[]> {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('products')
+        .select(`
+            *,
+            category:categories(*),
+            subcategory:subcategories(*)
+        `)
+        .order('created_at', { ascending: false });
+    
+    if (error) {
+        console.error('Error fetching products:', error)
+        return []
+    }
+    return data as Product[];
+}
+
 export async function createProduct(product: Partial<Product>): Promise<Product | null> {
     const supabase = await createClient()
     const { data, error } = await supabase

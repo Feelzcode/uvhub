@@ -75,8 +75,15 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+    Drawer,
+    DrawerContent,
+    DrawerDescription,
+    DrawerHeader,
+    DrawerTitle,
+} from "@/components/ui/drawer"
 import { Textarea } from "@/components/ui/textarea"
-import { Category, Customer, PaginatedResponse, ProductVariant, Subcategory } from "@/store/types"
+import { Category, Customer, PaginatedResponse, ProductVariant, Subcategory, Product } from "@/store/types"
 
 import { toast } from "sonner"
 import ProductVariantManager from "@/components/ProductVariantManager"
@@ -85,7 +92,8 @@ import { useProductsStore, useSubcategories } from "@/store"
 import {
     getPaginatedCustomers,
     getPaginatedCategories,
-    getPaginatedSubcategories
+    getPaginatedSubcategories,
+    getProducts
 } from "@/app/admin/dashboard/products/actions"
 import {
     AlertDialog,
@@ -256,45 +264,55 @@ function CategoryActions({ category }: { category: Category }) {
 }
 
 // Create a separate component for product actions
-// function ProductActions({ product }: { product: Product }) {
-//     const { deleteProduct, updateProduct, loading, getProductImages, createProductImage, updateProductImage, deleteProductImage } = useProductsStore();
-//     const [isEditDrawerOpen, setIsEditDrawerOpen] = React.useState(false);
-//     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-//     const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
-//     const [productImages, setProductImages] = React.useState<ProductImage[]>([]);
-//     const [isLoadingImages, setIsLoadingImages] = React.useState(false);
+function ProductActions({ product }: { product: Product }) {
+    const { deleteProduct, updateProduct, loading } = useProductsStore();
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = React.useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+    const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
 
-//     const formData = useForm<ProductInputType>({
-//         defaultValues: {
-//             name: product.name,
-//             description: product.description,
-//             price: product.price.toString(),
-//             stock: product.stock.toString(),
-//             image: product.image,
-//         },
-//         resolver: zodResolver(productInputSchema),
-//     });
+    const [formData, setFormData] = React.useState({
+        name: product.name,
+        description: product.description || '',
+        price: product.price?.toString() || '0',
+        stock: product.stock?.toString() || '0',
+        category: product.category,
+        subcategory_id: product.subcategory_id || 'none'
+    });
 
-//     const handleDelete = async () => {
-//         await deleteProduct(product.id);
-//         setIsDeleteDialogOpen(false);
-//     };
+    const handleDelete = async () => {
+        await deleteProduct(product.id);
+        setIsDeleteDialogOpen(false);
+        toast.success("Product deleted successfully");
+    };
 
-//     const handleEdit = async () => {
-//         setIsEditDrawerOpen(true);
-//         // Load existing product images
-//         setIsLoadingImages(true);
-//         try {
-//             const images = await getProductImages(product.id);
-//             setProductImages(images);
-//         } catch (error) {
-//             console.error('Error loading product images:', error);
-//         } finally {
-//             setIsLoadingImages(false);
-//         }
-//     };
+    const handleEdit = () => {
+        setIsEditDrawerOpen(true);
+    };
 
-//     const handleSave = async (data: ProductInputType) => {
+    const handleSave = async () => {
+        try {
+            const transformedData = {
+                name: formData.name,
+                description: formData.description,
+                price: parseFloat(formData.price) || 0,
+                stock: parseInt(formData.stock) || 0,
+                category: formData.category,
+                subcategory_id: formData.subcategory_id === 'none' ? undefined : formData.subcategory_id
+            };
+            
+            await updateProduct(product.id, transformedData);
+            setIsEditDrawerOpen(false);
+            toast.success("Product updated successfully");
+        }
+        catch (error) {
+            console.error(error);
+            toast.error("Failed to update product");
+        }
+    };
+
+    const handleView = () => {
+        setIsViewDrawerOpen(true);
+    };
 //         try {
 //             const transformedData = transformProductInput(data);
 //             await updateProduct(product.id, transformedData);
@@ -368,64 +386,158 @@ function CategoryActions({ category }: { category: Category }) {
 //             formData.setValue('image', primaryImage.image_url);
 //         }
 //     };
-//     return (
-//         <>
-//             <DropdownMenu>
-//                 <DropdownMenuTrigger asChild>
-//                     <Button
-//                         variant="ghost"
-//                         className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-//                         size="icon"
-//                     >
-//                         <IconDotsVertical />
-//                         <span className="sr-only">Open menu</span>
-//                     </Button>
-//                 </DropdownMenuTrigger>
-//                 <DropdownMenuContent align="end" className="w-32">
-//                     <DropdownMenuItem className="cursor-pointer" onClick={handleView}>
-//                         <IconEye className="mr-2 size-4" />
-//                         View
-//                     </DropdownMenuItem>
-//                     <DropdownMenuItem className="cursor-pointer" onClick={handleEdit}>
-//                         <IconEdit className="mr-2 size-4" />
-//                         Edit
-//                     </DropdownMenuItem>
-//                     <DropdownMenuSeparator />
-//                     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-//                         <AlertDialogTrigger asChild>
-//                             <DropdownMenuItem
-//                                 className="cursor-pointer"
-//                                 variant="destructive"
-//                                 onSelect={(e) => e.preventDefault()}
-//                             >
-//                                 <IconTrash className="mr-2 size-4" />
-//                                 Delete
-//                             </DropdownMenuItem>
-//                         </AlertDialogTrigger>
-//                         <AlertDialogContent>
-//                             <AlertDialogHeader>
-//                                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-//                                 <AlertDialogDescription>
-//                                     This action cannot be undone. This will permanently delete the product &quot;{product.name}&quot; and remove it from your database.
-//                                 </AlertDialogDescription>
-//                             </AlertDialogHeader>
-//                             <AlertDialogFooter>
-//                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-//                                 <AlertDialogAction
-//                                     onClick={handleDelete}
-//                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-//                                 >
-//                                     Delete
-//                                 </AlertDialogAction>
-//                             </AlertDialogFooter>
-//                         </AlertDialogContent>
-//                     </AlertDialog>
-//                 </DropdownMenuContent>
-//             </DropdownMenu>
+    return (
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+                        size="icon"
+                    >
+                        <IconDotsVertical />
+                        <span className="sr-only">Open menu</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-32">
+                    <DropdownMenuItem className="cursor-pointer" onClick={handleView}>
+                        <IconEye className="mr-2 size-4" />
+                        View
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={handleEdit}>
+                        <IconEdit className="mr-2 size-4" />
+                        Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        className="cursor-pointer text-destructive focus:text-destructive"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                        <IconTrash className="mr-2 size-4" />
+                        Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {/* View Drawer */}
+            <Drawer open={isViewDrawerOpen} onOpenChange={setIsViewDrawerOpen}>
+                <DrawerContent>
+                    <DrawerHeader>
+                        <DrawerTitle>Product Details</DrawerTitle>
+                        <DrawerDescription>
+                            View detailed information about this product.
+                        </DrawerDescription>
+                    </DrawerHeader>
+                    <div className="p-6 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="view-name">Name</Label>
+                                <Input id="view-name" value={product.name} disabled />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="view-description">Description</Label>
+                                <Input id="view-description" value={product.description || ''} disabled />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="view-price">Price</Label>
+                                <Input id="view-price" value={`$${product.price?.toFixed(2) || '0.00'}`} disabled />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="view-stock">Stock</Label>
+                                <Input id="view-stock" value={product.stock?.toString() || '0'} disabled />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="view-category">Category</Label>
+                                <Input id="view-category" value={product.category_data?.name || product.category} disabled />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="view-created-at">Created At</Label>
+                                <Input id="view-created-at" value={new Date(product.created_at).toLocaleDateString()} disabled />
+                            </div>
+                        </div>
+                    </div>
+                </DrawerContent>
+            </Drawer>
 
-//             {/* Edit Drawer */}
-//             <Drawer open={isEditDrawerOpen} onOpenChange={setIsEditDrawerOpen}>
-//                 <DrawerContent>
+            {/* Edit Drawer */}
+            <Drawer open={isEditDrawerOpen} onOpenChange={setIsEditDrawerOpen}>
+                <DrawerContent>
+                    <DrawerHeader>
+                        <DrawerTitle>Edit Product</DrawerTitle>
+                        <DrawerDescription>
+                            Update product information.
+                        </DrawerDescription>
+                    </DrawerHeader>
+                    <div className="p-6 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-name">Name</Label>
+                                <Input 
+                                    id="edit-name" 
+                                    value={formData.name}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-description">Description</Label>
+                                <Textarea 
+                                    id="edit-description" 
+                                    value={formData.description}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-price">Price</Label>
+                                <Input 
+                                    id="edit-price" 
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.price}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-stock">Stock</Label>
+                                <Input 
+                                    id="edit-stock" 
+                                    type="number"
+                                    value={formData.stock}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button onClick={handleSave} disabled={loading}>
+                                {loading ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                            <Button variant="outline" onClick={() => setIsEditDrawerOpen(false)}>
+                                Cancel
+                            </Button>
+                        </div>
+                    </div>
+                </DrawerContent>
+            </Drawer>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the product &quot;{product.name}&quot;.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    );
+}
 //                     <DrawerHeader className="gap-1">
 //                         <DrawerTitle>Edit Product: {product.name}</DrawerTitle>
 //                         <DrawerDescription>
@@ -586,73 +698,79 @@ function CategoryActions({ category }: { category: Category }) {
 //     );
 // }
 
+function ProductCellViewer({ product }: { product: Product }) {
+    return (
+        <div className="flex items-center gap-2">
+            <div className="flex flex-col">
+                <span className="font-medium">{product.name}</span>
+                <span className="text-sm text-muted-foreground">{product.description || 'No description'}</span>
+            </div>
+        </div>
+    );
+}
+
 // Product columns
-// const productColumns: ColumnDef<Product>[] = [
-//     {
-//         id: "drag",
-//         header: () => null,
-//         cell: ({ row }) => <DragHandle id={row.original.id} />,
-//     },
-//     {
-//         id: "select",
-//         header: ({ table }) => (
-//             <div className="flex items-center justify-center">
-//                 <Checkbox
-//                     checked={
-//                         table.getIsAllPageRowsSelected() ||
-//                         (table.getIsSomePageRowsSelected() && "indeterminate")
-//                     }
-//                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-//                     aria-label="Select all"
-//                 />
-//             </div>
-//         ),
-//         cell: ({ row }) => (
-//             <div className="flex items-center justify-center">
-//                 <Checkbox
-//                     checked={row.getIsSelected()}
-//                     onCheckedChange={(value) => row.toggleSelected(!!value)}
-//                     aria-label="Select row"
-//                 />
-//             </div>
-//         ),
-//         enableSorting: false,
-//         enableHiding: false,
-//     },
-//     {
-//         accessorKey: "name",
-//         header: "Product Name",
-//         cell: ({ row }) => {
-//             return <ProductCellViewer product={row.original} />
-//         },
-//         enableHiding: false,
-//     },
-//     {
-//         accessorKey: "category",
-//         header: "Category",
-//         cell: ({ row }) => (
-//             <div className="w-32">
-//                 <Badge variant="outline" className="text-muted-foreground px-1.5">
-//                     {row.original.category_data?.name || row.original.category}
-//                 </Badge>
-//             </div>
-//         ),
-//     },
-//     {
-//         accessorKey: "subcategory",
-//         header: "Subcategory",
-//         cell: ({ row }) => (
-//             <div className="w-32">
-//                 {row.original.subcategory ? (
-//                     <Badge variant="outline" className="text-muted-foreground px-1.5">
-//                         {row.original.subcategory.name}
-//                     </Badge>
-//                 ) : (
-//                     <span className="text-muted-foreground text-sm">-</span>
-//                 )}
-//             </div>
-//         ),
-//     },
+const productColumns: ColumnDef<Product>[] = [
+    {
+        id: "select",
+        header: ({ table }) => (
+            <div className="flex items-center justify-center">
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            </div>
+        ),
+        cell: ({ row }) => (
+            <div className="flex items-center justify-center">
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+    },
+    {
+        accessorKey: "name",
+        header: "Product Name",
+        cell: ({ row }) => {
+            return <ProductCellViewer product={row.original} />
+        },
+        enableHiding: false,
+    },
+    {
+        accessorKey: "category",
+        header: "Category",
+        cell: ({ row }) => (
+            <div className="w-32">
+                <Badge variant="outline" className="text-muted-foreground px-1.5">
+                    {row.original.category_data?.name || row.original.category}
+                </Badge>
+            </div>
+        ),
+    },
+    {
+        accessorKey: "subcategory",
+        header: "Subcategory",
+        cell: ({ row }) => (
+            <div className="w-32">
+                {row.original.subcategory ? (
+                    <Badge variant="outline" className="text-muted-foreground px-1.5">
+                        {row.original.subcategory.name}
+                    </Badge>
+                ) : (
+                    <span className="text-muted-foreground text-sm">-</span>
+                )}
+            </div>
+        ),
+    },
 //     {
 //         accessorKey: "images",
 //         header: "Images",
@@ -668,28 +786,28 @@ function CategoryActions({ category }: { category: Category }) {
 //             </div>
 //         ),
 //     },
-//     {
-//         accessorKey: "price",
-//         header: () => <div className="w-full text-right">Price</div>,
-//         cell: ({ row }) => (
-//             <div className="text-right font-medium">
-//                 ${row.original.price.toFixed(2)}
-//             </div>
-//         ),
-//     },
-//     {
-//         accessorKey: "stock",
-//         header: () => <div className="w-full text-right">Stock</div>,
-//         cell: ({ row }) => (
-//             <div className="text-right">
-//                 <Badge
-//                     variant={row.original.stock > 10 ? "default" : row.original.stock > 0 ? "secondary" : "destructive"}
-//                 >
-//                     {row.original.stock}
-//                 </Badge>
-//             </div>
-//         ),
-//     },
+    {
+        accessorKey: "price",
+        header: () => <div className="w-full text-right">Price</div>,
+        cell: ({ row }) => (
+            <div className="text-right font-medium">
+                ${row.original.price?.toFixed(2) || '0.00'}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "stock",
+        header: () => <div className="w-full text-right">Stock</div>,
+        cell: ({ row }) => (
+            <div className="text-right">
+                <Badge
+                    variant={row.original.stock > 10 ? "default" : row.original.stock > 0 ? "secondary" : "destructive"}
+                >
+                    {row.original.stock || 0}
+                </Badge>
+            </div>
+        ),
+    },
 //     {
 //         accessorKey: "rating",
 //         header: "Rating",
@@ -701,22 +819,22 @@ function CategoryActions({ category }: { category: Category }) {
 //             </div>
 //         ),
 //     },
-//     {
-//         accessorKey: "created_at",
-//         header: "Created",
-//         cell: ({ row }) => (
-//             <div className="text-sm text-muted-foreground">
-//                 {new Date(row.original.created_at).toDateString()}
-//             </div>
-//         ),
-//     },
-//     {
-//         id: "actions",
-//         cell: ({ row }) => {
-//             return <ProductActions product={row.original} />
-//         },
-//     },
-// ]
+    {
+        accessorKey: "created_at",
+        header: "Created",
+        cell: ({ row }) => (
+            <div className="text-sm text-muted-foreground">
+                {new Date(row.original.created_at).toDateString()}
+            </div>
+        ),
+    },
+    {
+        id: "actions",
+        cell: ({ row }) => {
+            return <ProductActions product={row.original} />
+        },
+    },
+]
 
 // Customer columns
 const customerColumns: ColumnDef<Customer>[] = [
@@ -1573,11 +1691,46 @@ export function ProductsDataTable({
         }
     })
 
+    const [productsData, setProductsData] = React.useState<PaginatedResponse<Product>>({
+        documents: [],
+        total: 0,
+        meta: {
+            page: 1,
+            limit: 10,
+            totalPages: 0,
+            previousPage: null,
+            nextPage: null,
+        }
+    })
+
     // Update state when prop changes
     React.useEffect(() => {
         setCurrentCustomersData(customersData)
         setCurrentCategoriesData(categoriesData)
     }, [customersData, categoriesData])
+
+    // Fetch products when component mounts
+    React.useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const products = await getProducts();
+                setProductsData({
+                    documents: products,
+                    total: products.length,
+                    meta: {
+                        page: 1,
+                        limit: 10,
+                        totalPages: Math.ceil(products.length / 10),
+                        previousPage: null,
+                        nextPage: products.length > 10 ? 2 : null,
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching products:', error);
+            }
+        };
+        fetchProducts();
+    }, []);
 
     // Internal pagination handlers
     const handleCustomersPageChange = React.useCallback(async (updaterOrValue: Updater<PaginationState> | PaginationState) => {
@@ -1639,6 +1792,7 @@ export function ProductsDataTable({
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="categories">Products & Categories</SelectItem>
+                        <SelectItem value="products">Products</SelectItem>
                         <SelectItem value="subcategories">Subcategories</SelectItem>
                         <SelectItem value="customers">Customers</SelectItem>
                     </SelectContent>
@@ -1646,6 +1800,9 @@ export function ProductsDataTable({
                 <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
                     <TabsTrigger value="categories">
                         Products & Categories <Badge variant="secondary">{categoriesData.total}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="products">
+                        Products <Badge variant="secondary">{productsData.total}</Badge>
                     </TabsTrigger>
                     <TabsTrigger value="subcategories">
                         Subcategories <Badge variant="secondary">{subcategoriesData.total}</Badge>
@@ -1710,6 +1867,28 @@ export function ProductsDataTable({
                             </DialogHeader>
                             <div className="flex-1 overflow-y-auto pr-2">
                                 <CreateSubcategoryForm onClose={() => setIsCreateSubcategoryDialogOpen(false)} />
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
+
+                {activeTab === "products" && (
+                    <Dialog open={isCreateProductDialogOpen} onOpenChange={setIsCreateProductDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                <IconPlus />
+                                <span className="hidden lg:inline">Add Product</span>
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
+                            <DialogHeader>
+                                <DialogTitle>Create New Product</DialogTitle>
+                                <DialogDescription>
+                                    Add a new product to your inventory. Fill in all the required fields.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex-1 overflow-y-auto pr-2">
+                                <CreateProductForm onClose={() => setIsCreateProductDialogOpen(false)} />
                             </div>
                         </DialogContent>
                     </Dialog>
@@ -1784,6 +1963,28 @@ export function ProductsDataTable({
                                 <span className="sr-only">Go to last page</span>
                                 <IconChevronsRight />
                             </Button>
+                        </div>
+                    </div>
+                </div>
+            </TabsContent><TabsContent
+                value="products"
+                className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
+            >
+                <DataTable
+                    data={productsData.documents}
+                    columns={productColumns}
+                    pagination={{
+                        pageIndex: productsData.meta.page - 1,
+                        pageSize: productsData.meta.limit,
+                    }}
+                    onPaginationChange={() => {}} />
+                <div className="flex items-center justify-between px-4">
+                    <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
+                        Showing {productsData.documents.length} of {productsData.total} products
+                    </div>
+                    <div className="flex w-full items-center gap-8 lg:w-fit">
+                        <div className="flex w-fit items-center justify-center text-sm font-medium">
+                            Page {productsData.meta.page} of {productsData.meta.totalPages}
                         </div>
                     </div>
                 </div>
