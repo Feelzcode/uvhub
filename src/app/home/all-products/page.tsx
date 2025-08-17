@@ -10,6 +10,7 @@ import { Category, Product } from '@/store/types';
 import { useProductsStore, useCurrencyStore } from '@/store';
 import { getProductImage } from '@/utils/productImage';
 import { getProductPrice } from '@/utils/productPrice';
+import { getCategoryName } from '@/lib/utils';
 
 
 export default function AllEquipmentPage() {
@@ -46,11 +47,18 @@ export default function AllEquipmentPage() {
     : [];
 
   // Filter products based on active filters
-  const filteredProducts = products?.filter((product): product is Product => {
-    if (!product) return false;
-    if (filters.category && product.category !== filters.category) return false;
-    return true;
-  }) || [];
+  const filteredProducts =
+    products?.filter((product): product is Product => {
+      if (!product) return false;
+
+      // Ensure filters.category is always compared as string ID
+      const filterCategoryId =
+        typeof filters.category === 'object' ? (filters.category as Category).id : filters.category;
+
+      if (filterCategoryId && product.category !== filterCategoryId) return false;
+
+      return true;
+    }) || [];
 
   const handleSetCategoryFilter = (categoryId: string) => {
     setFilters({ ...filters, category: categoryId });
@@ -234,7 +242,7 @@ export default function AllEquipmentPage() {
                   <div className="h-48 overflow-hidden relative bg-gray-100">
                     <Image
                       src={getProductImage(product)}
-                      alt={product.name} 
+                      alt={product.name}
                       fill
                       className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -259,7 +267,7 @@ export default function AllEquipmentPage() {
                       </div>
                     </div>
                     <div className="mt-2 text-sm text-gray-500">
-                      {product.category_data?.name || product.category}
+                      {getCategoryName(product.category_data?.id || product.category)}
                     </div>
                   </div>
                 </div>
@@ -270,17 +278,32 @@ export default function AllEquipmentPage() {
               <h3 className="text-xl font-semibold text-gray-800">No Products Found</h3>
               <p className="text-gray-500 mt-2">
                 {filters.category
-                  ? `No products in "${categories.find((cat) => cat.id === filters.category)?.name || filters.category}" category`
+                  ? `No products in "${getCategoryName(filters.category)}" category`
                   : 'No products available'}
               </p>
               {filters.category && (
-                <button
-                  onClick={clearFilters}
-                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Clear filters
-                </button>
+                <div className="mb-6 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="text-gray-600 mr-2">Filtered by:</span>
+                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+                      {getCategoryName(filters.category)}
+                      <button
+                        onClick={handleClearCategoryFilter}
+                        className="ml-2 text-blue-600 hover:text-blue-800"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </span>
+                  </div>
+                  <button
+                    onClick={clearFilters}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
               )}
+
             </div>
           )}
         </div>

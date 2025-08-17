@@ -1,3 +1,5 @@
+import { Category } from "@/store/types"
+import { useCategoriesStore } from "@/store/slices/categoriesSlice"
 import { createClient } from "@/utils/supabase/client"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
@@ -31,3 +33,9 @@ export function deleteFileFromStorage(publicUrl: string) {
   }
   supabase.storage.from('file-bucket').remove([folder, objectName]);
 }
+
+export const getCategoryName = (categoryIdOrObj: string | Category | undefined) => {
+  if (!categoryIdOrObj) return '';
+  if (typeof categoryIdOrObj === 'object') return categoryIdOrObj.name || '';
+  return useCategoriesStore.getState().categories.find((cat: Category) => cat.id === categoryIdOrObj)?.name || categoryIdOrObj;
+};
