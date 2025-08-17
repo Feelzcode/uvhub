@@ -9,6 +9,7 @@ import {
     ShoppingCart,
     Settings,
     Facebook,
+    Package,
 } from "lucide-react"
 
 import { NavMain } from "@/components/NavMain"
@@ -30,6 +31,11 @@ const data = {
             title: "Products",
             url: "/admin/dashboard/products",
             icon: ShoppingCart,
+        },
+        {
+            title: "Variant Test",
+            url: "/admin/dashboard/variant-test",
+            icon: Package,
         },
         {
             title: "Orders",

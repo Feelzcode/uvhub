@@ -96,7 +96,10 @@ export async function getAllProducts() {
             *,
             category:categories(*),
             subcategory:subcategories(*),
-            variants:product_variants(*)`,
+            variants:product_variants(
+                *,
+                images:variant_images(*)
+            )`,
             { count: 'exact' }
         )
         .order('created_at', { ascending: false });
@@ -134,10 +137,14 @@ export async function getProducts(): Promise<Product[]> {
         .select(`
             *,
             category:categories(*),
-            subcategory:subcategories(*)
+            subcategory:subcategories(*),
+            variants:product_variants(
+                *,
+                images:variant_images(*)
+            )
         `)
         .order('created_at', { ascending: false });
-    
+
     if (error) {
         console.error('Error fetching products:', error)
         return []
@@ -754,7 +761,7 @@ export async function getProductImages(productId: string): Promise<ProductImage[
         .select('*')
         .eq('product_id', productId)
         .order('sort_order', { ascending: true });
-    
+
     if (error) {
         console.error(error)
         return []
@@ -769,7 +776,7 @@ export async function createProductImage(productImage: Partial<ProductImage>) {
         .insert(productImage)
         .select()
         .single();
-    
+
     if (error) {
         console.error('Error creating product image:', error)
         return null
@@ -785,7 +792,7 @@ export async function updateProductImage(id: string, productImage: Partial<Produ
         .eq('id', id)
         .select()
         .single();
-    
+
     if (error) {
         console.error(error)
         return null
@@ -805,18 +812,18 @@ export async function deleteProductImage(id: string) {
 
 export async function setPrimaryProductImage(productId: string, imageId: string) {
     const supabase = await createClient()
-    
+
     // First, set all images for this product to not primary
     const { error: updateError } = await supabase
         .from('product_images')
         .update({ is_primary: false })
         .eq('product_id', productId);
-    
+
     if (updateError) {
         console.error('Error updating existing primary images:', updateError)
         return null
     }
-    
+
     // Then set the specified image as primary
     const { data, error } = await supabase
         .from('product_images')
@@ -824,7 +831,7 @@ export async function setPrimaryProductImage(productId: string, imageId: string)
         .eq('id', imageId)
         .select()
         .single();
-    
+
     if (error) {
         console.error('Error setting primary image:', error)
         return null
@@ -840,7 +847,7 @@ export async function getProductVariants(productId: string): Promise<ProductVari
         .select('*')
         .eq('product_id', productId)
         .order('sort_order', { ascending: true });
-    
+
     if (error) {
         console.error(error)
         return []
@@ -855,7 +862,7 @@ export async function createProductVariant(variant: Partial<ProductVariant>) {
         .insert(variant)
         .select()
         .single();
-    
+
     if (error) {
         console.error('Error creating product variant:', error)
         return null
@@ -871,7 +878,7 @@ export async function updateProductVariant(id: string, variant: Partial<ProductV
         .eq('id', id)
         .select()
         .single();
-    
+
     if (error) {
         console.error(error)
         return null
@@ -897,7 +904,7 @@ export async function getVariantImages(variantId: string): Promise<ProductImage[
         .select('*')
         .eq('variant_id', variantId)
         .order('sort_order', { ascending: true });
-    
+
     if (error) {
         console.error(error)
         return []
@@ -919,9 +926,64 @@ export async function createVariantImage(variantImage: Partial<ProductImage>) {
         })
         .select()
         .single();
-    
+
     if (error) {
         console.error('Error creating variant image:', error)
+        return null
+    }
+    return data;
+}
+
+export async function updateVariantImage(id: string, variantImage: Partial<ProductImage>) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('variant_images')
+        .update(variantImage)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating variant image:', error)
+        return null
+    }
+    return data;
+}
+
+export async function deleteVariantImage(id: string) {
+    const supabase = await createClient()
+    const { error } = await supabase.from('variant_images').delete().eq('id', id);
+    if (error) {
+        console.error('Error deleting variant image:', error)
+        return false
+    }
+    return true;
+}
+
+export async function setPrimaryVariantImage(variantId: string, imageId: string) {
+    const supabase = await createClient()
+
+    // First, unset all primary images for this variant
+    const { error: unsetError } = await supabase
+        .from('variant_images')
+        .update({ is_primary: false })
+        .eq('variant_id', variantId);
+
+    if (unsetError) {
+        console.error('Error unsetting primary images:', unsetError)
+        return null
+    }
+
+    // Then set the new primary image
+    const { data, error } = await supabase
+        .from('variant_images')
+        .update({ is_primary: true })
+        .eq('id', imageId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error setting primary variant image:', error)
         return null
     }
     return data;

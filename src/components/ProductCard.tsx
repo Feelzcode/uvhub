@@ -6,6 +6,8 @@ import { Currency, Product } from '@/store/types';
 import Image from 'next/image';
 import { getProductImage } from '@/utils/productImage';
 import { getProductPrice } from '@/utils/productPrice';
+import { Badge } from '@/components/ui/badge';
+import { Eye, Star } from 'lucide-react';
 
 interface ProductCardProps {
     product: Product;
@@ -36,9 +38,16 @@ export default function ProductCard({ product, currency }: ProductCardProps) {
             </div>
 
             <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                    {product.name}
-                </h3>
+                <div className="flex items-start justify-between mb-2">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                        {product.name}
+                    </h3>
+                    {product.variants && product.variants.length > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                            {product.variants.length} variant{product.variants.length !== 1 ? 's' : ''}
+                        </Badge>
+                    )}
+                </div>
                 <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                     {product.description}
                 </p>
@@ -50,16 +59,46 @@ export default function ProductCard({ product, currency }: ProductCardProps) {
                             {product.rating} ({product.reviews} reviews)
                         </span>
                     </div>
-                    <span className="text-sm text-gray-500">
-                        {product.stock} in stock
-                    </span>
+                    <div className="text-right">
+                        {product.variants && product.variants.length > 0 ? (
+                            <div className="text-xs text-gray-500">
+                                <div>From {formatCurrentPrice(getProductPrice(product, location), currency)}</div>
+                                <div>{product.variants.length} options</div>
+                            </div>
+                        ) : (
+                            <span className="text-sm text-gray-500">
+                                {product.stock} in stock
+                            </span>
+                        )}
+                    </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="space-y-2">
+                    {product.variants && product.variants.length > 0 && (
+                        <div className="text-xs text-gray-600">
+                            <div className="flex items-center gap-1 mb-1">
+                                <Eye className="w-3 h-3" />
+                                <span>Hover to see variants</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-1">
+                                {product.variants.slice(0, 3).map((variant, index) => (
+                                    <div key={variant.id} className="text-center p-1 bg-gray-50 rounded text-xs">
+                                        {variant.name}
+                                    </div>
+                                ))}
+                                {product.variants.length > 3 && (
+                                    <div className="text-center p-1 bg-gray-50 rounded text-xs">
+                                        +{product.variants.length - 3}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    
                     <button
                         onClick={handleAddToCart}
                         disabled={isInCart(product.id) || product.stock === 0}
-                        className={`flex-1 py-2 px-4 rounded-md transition-colors duration-200 ${isInCart(product.id)
+                        className={`w-full py-2 px-4 rounded-md transition-colors duration-200 ${isInCart(product.id)
                             ? 'bg-green-500 text-white cursor-not-allowed'
                             : product.stock === 0
                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'

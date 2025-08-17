@@ -22,6 +22,7 @@ import {
 import { toast } from 'sonner';
 import { useUppyWithSupabase } from '@/hooks/use-uppy-with-supabase';
 import { getPublicUrlOfUploadedFile } from '@/lib/utils';
+import VariantImageManager from './VariantImageManager';
 
 interface ProductVariantManagerProps {
   variants: Partial<ProductVariant>[];
@@ -495,24 +496,38 @@ function VariantDisplay({
           {/* Display variant images */}
           {variant.images && variant.images.length > 0 && (
             <div className="mt-2">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm text-gray-600">Images: {variant.images.length}</span>
+                {variant.images.some(img => img.is_primary) && (
+                  <Badge variant="outline" className="text-xs">
+                    <Star className="w-3 h-3 mr-1" />
+                    Primary Set
+                  </Badge>
+                )}
+              </div>
               <div className="grid grid-cols-4 gap-2">
-                {variant.images.map((image, imgIndex) => (
-                  <div key={imgIndex} className="relative">
-                    <div className="relative w-full h-16">
+                {variant.images.slice(0, 4).map((image, imgIndex) => (
+                  <div key={imgIndex} className="relative group">
+                    <div className="relative w-full h-16 overflow-hidden rounded border">
                       <Image
                         src={image.image_url}
                         alt={image.alt_text || `Variant image ${imgIndex + 1}`}
                         fill
-                        className="object-cover rounded border"
+                        className="object-cover transition-transform group-hover:scale-105"
                       />
+                      {image.is_primary && (
+                        <div className="absolute top-0 left-0 bg-blue-500 text-white text-xs px-1 rounded-tr">
+                          Primary
+                        </div>
+                      )}
                     </div>
-                    {image.is_primary && (
-                      <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs px-1 rounded-bl">
-                        Primary
-                      </div>
-                    )}
                   </div>
                 ))}
+                {variant.images.length > 4 && (
+                  <div className="relative w-full h-16 bg-gray-100 rounded border flex items-center justify-center">
+                    <span className="text-xs text-gray-500">+{variant.images.length - 4} more</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -643,53 +658,16 @@ function VariantEditForm({
       </div>
       
       {/* Image Management */}
-      <div className="space-y-2">
-        <Label>Variant Images</Label>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={(e) => onImageUpload(e, variantIndex)}
-            className="hidden"
-            id={`edit-variant-images-${variantIndex}`}
-          />
-          <label 
-            htmlFor={`edit-variant-images-${variantIndex}`}
-            className="cursor-pointer text-blue-600 hover:text-blue-800"
-          >
-            Click to add more images
-          </label>
-        </div>
-        {/* Display existing images */}
-        {variant.images && variant.images.length > 0 && (
-          <div className="grid grid-cols-4 gap-2 mt-2">
-            {variant.images.map((image, imgIndex) => (
-              <div key={imgIndex} className="relative">
-                                    <div className="relative w-full h-20">
-                      <Image
-                        src={image.image_url}
-                        alt={image.alt_text || `Variant image ${imgIndex + 1}`}
-                        fill
-                        className="object-cover rounded border"
-                      />
-                    </div>
-                <button
-                  onClick={() => onImageRemove(variantIndex, imgIndex)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                >
-                  ×
-                </button>
-                {image.is_primary && (
-                  <div className="absolute top-0 left-0 bg-blue-500 text-white text-xs px-1 rounded-tr">
-                    Primary
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <VariantImageManager
+        variantId={variant.id || `temp-${variantIndex}`}
+        productId={variant.product_id || ''}
+        images={variant.images || []}
+        onImagesChange={(newImages) => {
+          const updatedVariant = { ...variant, images: newImages };
+          onSave(updatedVariant);
+        }}
+        maxImages={6}
+      />
       
       <div className="flex gap-2">
         <Button type="button" onClick={handleSave}>
