@@ -555,8 +555,10 @@ function VariantEditForm({
   variantIndex,
   onSave,
   onCancel,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onImageUpload,
-  onImageRemove
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onImageRemove,
 }: {
   variant: Partial<ProductVariant>;
   variantIndex: number;

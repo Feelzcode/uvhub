@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { getProductImage } from '@/utils/productImage';
 import { getProductPrice } from '@/utils/productPrice';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Star } from 'lucide-react';
+import { Eye } from 'lucide-react';
 
 interface ProductCardProps {
     product: Product;
@@ -81,7 +81,7 @@ export default function ProductCard({ product, currency }: ProductCardProps) {
                                 <span>Hover to see variants</span>
                             </div>
                             <div className="grid grid-cols-3 gap-1">
-                                {product.variants.slice(0, 3).map((variant, index) => (
+                                {product.variants.slice(0, 3).map((variant) => (
                                     <div key={variant.id} className="text-center p-1 bg-gray-50 rounded text-xs">
                                         {variant.name}
                                     </div>

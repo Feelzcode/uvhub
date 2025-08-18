@@ -71,7 +71,7 @@ export default function ProductVariantDisplay({ product, onClose }: ProductVaria
   const handleAddToCart = () => {
     if (selectedVariant) {
       // Add the variant to cart
-      addToCart(product, 1, selectedVariant);
+      addToCart(product, 1);
     } else {
       // Add the main product to cart
       addToCart(product, 1);
@@ -89,9 +89,6 @@ export default function ProductVariantDisplay({ product, onClose }: ProductVaria
   };
 
   const getDisplayPrice = () => {
-    if (selectedVariant) {
-      return getProductPrice(selectedVariant, location);
-    }
     return getProductPrice(product, location);
   };
 
@@ -193,7 +190,7 @@ export default function ProductVariantDisplay({ product, onClose }: ProductVaria
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-3xl font-bold text-gray-900">
-                {formatCurrentPrice(displayPrice, { code: 'USD', symbol: '$' })}
+                {formatCurrentPrice(displayPrice, 'USD')}
               </span>
               {selectedVariant && (
                 <Badge variant="outline" className="text-sm">
