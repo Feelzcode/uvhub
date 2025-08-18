@@ -842,6 +842,8 @@ export async function setPrimaryProductImage(productId: string, imageId: string)
 // Product Variants Information
 export async function getProductVariants(productId: string): Promise<ProductVariant[]> {
     const supabase = await createClient()
+    console.log('Fetching variants for product:', productId);
+
     const { data, error } = await supabase
         .from('product_variants')
         .select('*')
@@ -849,10 +851,14 @@ export async function getProductVariants(productId: string): Promise<ProductVari
         .order('sort_order', { ascending: true });
 
     if (error) {
-        console.error(error)
+        console.error('Error fetching variants:', error)
         return []
     }
-    return data;
+
+    console.log('Raw variants data from database:', data);
+    console.log('Variants count:', data?.length || 0);
+
+    return data || [];
 }
 
 export async function createProductVariant(variant: Partial<ProductVariant>) {

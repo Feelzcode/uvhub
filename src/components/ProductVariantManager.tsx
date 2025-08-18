@@ -29,13 +29,19 @@ interface ProductVariantManagerProps {
   onVariantsChange: (variants: Partial<ProductVariant>[]) => void;
   maxVariants?: number;
   categoryId?: string;
+  onVariantUpdate?: (variantId: string, updates: Partial<ProductVariant>) => Promise<void>;
+  onVariantCreate?: (variant: Partial<ProductVariant>) => Promise<void>;
+  onVariantDelete?: (variantId: string) => Promise<void>;
 }
 
 export default function ProductVariantManager({
   variants = [],
   onVariantsChange,
   maxVariants = 6,
-  categoryId
+  categoryId,
+  onVariantUpdate,
+  onVariantCreate,
+  onVariantDelete
 }: ProductVariantManagerProps) {
   const [editingVariant, setEditingVariant] = useState<number | null>(null);
   const [newVariant, setNewVariant] = useState<Partial<ProductVariant>>({
@@ -54,7 +60,7 @@ export default function ProductVariantManager({
   // Initialize Uppy for variant image uploads
   const uppy = useUppyWithSupabase({ bucketName: 'file-bucket', folderName: 'variants' });
 
-  const handleAddVariant = () => {
+  const handleAddVariant = async () => {
     if (variants.length >= maxVariants) {
       toast.error(`Maximum ${maxVariants} variants allowed`);
       return;
@@ -81,32 +87,95 @@ export default function ProductVariantManager({
       ...(categoryId && { category_id: categoryId }) // Include category_id if available
     };
 
-    onVariantsChange([...variants, variant]);
-    setNewVariant({
-      name: '',
-      description: '',
-      sku: '',
-      price: 0,
-      price_ngn: 0,
-      price_ghs: 0,
-      stock: 0,
-      is_active: true,
-      sort_order: variants.length + 1,
-      images: []
-    });
+    if (onVariantCreate) {
+      // If we have a create handler, use it
+      try {
+        await onVariantCreate(variant);
+        // Reset form after successful creation
+        setNewVariant({
+          name: '',
+          description: '',
+          sku: '',
+          price: 0,
+          price_ngn: 0,
+          price_ghs: 0,
+          stock: 0,
+          is_active: true,
+          sort_order: variants.length + 1,
+          images: []
+        });
+      } catch (error) {
+        console.error('Error creating variant:', error);
+        toast.error('Failed to create variant');
+      }
+    } else {
+      // Fallback to local state management
+      onVariantsChange([...variants, variant]);
+      setNewVariant({
+        name: '',
+        description: '',
+        sku: '',
+        price: 0,
+        price_ngn: 0,
+        price_ghs: 0,
+        stock: 0,
+        is_active: true,
+        sort_order: variants.length + 1,
+        images: []
+      });
+    }
   };
 
-  const handleUpdateVariant = (index: number, updates: Partial<ProductVariant>) => {
-    const updatedVariants = variants.map((variant, i) =>
-      i === index ? { ...variant, ...updates } : variant
-    );
-    onVariantsChange(updatedVariants);
-    setEditingVariant(null);
+  const handleUpdateVariant = async (index: number, updates: Partial<ProductVariant>) => {
+    const variant = variants[index];
+    if (!variant) return;
+
+    if (onVariantUpdate && variant.id && !variant.id.startsWith('temp-')) {
+      // If we have an update handler and this is an existing variant, use it
+      try {
+        await onVariantUpdate(variant.id, updates);
+        // Update local state
+        const updatedVariants = variants.map((v, i) =>
+          i === index ? { ...v, ...updates } : v
+        );
+        onVariantsChange(updatedVariants);
+        setEditingVariant(null);
+        toast.success('Variant updated successfully');
+      } catch (error) {
+        console.error('Error updating variant:', error);
+        toast.error('Failed to update variant');
+      }
+    } else {
+      // Fallback to local state management
+      const updatedVariants = variants.map((v, i) =>
+        i === index ? { ...v, ...updates } : v
+      );
+      onVariantsChange(updatedVariants);
+      setEditingVariant(null);
+    }
   };
 
-  const handleDeleteVariant = (index: number) => {
-    const updatedVariants = variants.filter((_, i) => i !== index);
-    onVariantsChange(updatedVariants);
+  const handleDeleteVariant = async (index: number) => {
+    const variant = variants[index];
+    if (!variant) return;
+
+    if (onVariantDelete && variant.id && !variant.id.startsWith('temp-')) {
+      // If we have a delete handler and this is an existing variant, use it
+      try {
+        await onVariantDelete(variant.id);
+        // Remove from local state
+        const updatedVariants = variants.filter((_, i) => i !== index);
+        onVariantsChange(updatedVariants);
+        toast.success('Variant deleted successfully');
+      } catch (error) {
+        console.error('Error deleting variant:', error);
+        toast.error('Failed to delete variant');
+      }
+    } else {
+      // Fallback to local state management
+      const updatedVariants = variants.filter((_, i) => i !== index);
+      onVariantsChange(updatedVariants);
+    }
   };
 
   const handleToggleActive = (index: number) => {
@@ -247,7 +316,9 @@ export default function ProductVariantManager({
 
   const sortedVariants = [...variants].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
-  return (
+
+
+    return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
@@ -259,6 +330,12 @@ export default function ProductVariantManager({
         <Badge variant="secondary">
           {variants.length}/{maxVariants} variants
         </Badge>
+      </div>
+      
+      {/* Temporary debug info */}
+      <div className="text-xs text-gray-400 p-2 bg-gray-100 rounded">
+        <p><strong>Debug:</strong> variants.length = {variants.length}, maxVariants = {maxVariants}</p>
+        <p>Should show form: {variants.length < maxVariants ? 'YES' : 'NO'}</p>
       </div>
 
       {/* Add New Variant Form */}
@@ -405,14 +482,15 @@ export default function ProductVariantManager({
             </Button>
           </CardContent>
         </Card>
-      )}
+        )}
 
       {/* Existing Variants */}
-      {sortedVariants.length > 0 && (
-        <div className="space-y-3">
-          <h4 className="font-medium">Existing Variants</h4>
-          {sortedVariants.map((variant, index) => (
-            <Card key={index}>
+      <div className="space-y-3">
+        <h4 className="font-medium">Existing Variants ({sortedVariants.length})</h4>
+        
+        {sortedVariants.length > 0 ? (
+          sortedVariants.map((variant, index) => (
+            <Card key={variant.id || index}>
               <CardContent className="p-4">
                 {editingVariant === index ? (
                   <VariantEditForm
@@ -435,9 +513,14 @@ export default function ProductVariantManager({
                 )}
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          ))
+        ) : (
+          <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+            <p>No variants have been created yet.</p>
+            <p className="text-sm mt-2">Use the form above to add your first variant.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

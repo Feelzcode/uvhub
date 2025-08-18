@@ -127,7 +127,6 @@ export default function VariantImageManager({
     updatedImages.splice(toIndex, 0, movedImage);
     
     // Update sort_order for all images
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const reorderedImages = updatedImages.map((img, index) => ({
       ...img,
       sort_order: index

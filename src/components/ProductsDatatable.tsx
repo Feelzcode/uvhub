@@ -93,7 +93,12 @@ import {
     getPaginatedCustomers,
     getPaginatedCategories,
     getPaginatedSubcategories,
-    getProducts
+    getProducts,
+    getProductVariants,
+    getSubcategoriesByCategory,
+    createProductVariant,
+    updateProductVariant,
+    deleteProductVariant
 } from "@/app/admin/dashboard/products/actions"
 import {
     AlertDialog,
@@ -265,8 +270,8 @@ function CategoryActions({ category }: { category: Category }) {
 
 // Create a separate component for product actions
 function ProductActions({ product }: { product: Product }) {
-    const { deleteProduct, updateProduct, loading } = useProductsStore();
-    const [isEditDrawerOpen, setIsEditDrawerOpen] = React.useState(false);
+    const { deleteProduct, updateProduct, loading, categories } = useProductsStore();
+    const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
     const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
 
@@ -274,10 +279,17 @@ function ProductActions({ product }: { product: Product }) {
         name: product.name,
         description: product.description || '',
         price: product.price?.toString() || '0',
+        price_ngn: product.price_ngn?.toString() || '0',
+        price_ghs: product.price_ghs?.toString() || '0',
         stock: product.stock?.toString() || '0',
         category: product.category,
         subcategory_id: product.subcategory_id || 'none'
     });
+    
+    const [variants, setVariants] = React.useState<Partial<ProductVariant>[]>([]);
+    const [subcategories, setSubcategories] = React.useState<Subcategory[]>([]);
+    const [isLoadingVariants, setIsLoadingVariants] = React.useState(true);
+    
 
     const handleDelete = async () => {
         await deleteProduct(product.id);
@@ -286,7 +298,7 @@ function ProductActions({ product }: { product: Product }) {
     };
 
     const handleEdit = () => {
-        setIsEditDrawerOpen(true);
+        setIsEditModalOpen(true);
     };
 
     const handleSave = async () => {
@@ -295,14 +307,20 @@ function ProductActions({ product }: { product: Product }) {
                 name: formData.name,
                 description: formData.description,
                 price: parseFloat(formData.price) || 0,
+                price_ngn: parseFloat(formData.price_ngn) || 0,
+                price_ghs: parseFloat(formData.price_ghs) || 0,
                 stock: parseInt(formData.stock) || 0,
                 category: formData.category,
                 subcategory_id: formData.subcategory_id === 'none' ? undefined : formData.subcategory_id
             };
             
             await updateProduct(product.id, transformedData);
-            setIsEditDrawerOpen(false);
-            toast.success("Product updated successfully");
+            
+            // Process variant changes
+            await processVariantChanges();
+            
+            setIsEditModalOpen(false);
+            toast.success("Product and variants updated successfully");
         }
         catch (error) {
             console.error(error);
@@ -310,9 +328,187 @@ function ProductActions({ product }: { product: Product }) {
         }
     };
 
+    // Process variant changes (create, update, delete)
+    const processVariantChanges = async () => {
+        try {
+            // Get the original variants from the database
+            const originalVariants = await getProductVariants(product.id);
+            const currentVariants = variants;
+            
+            // Find variants to delete (in original but not in current)
+            const variantsToDelete = originalVariants.filter(original => 
+                !currentVariants.some(current => current.id === original.id)
+            );
+            
+            // Find variants to create (in current but not in original - have temp IDs)
+            const variantsToCreate = currentVariants.filter(current => 
+                current.id && current.id.startsWith('temp-')
+            );
+            
+            // Find variants to update (in both, but may have changes)
+            const variantsToUpdate = currentVariants.filter(current => 
+                current.id && !current.id.startsWith('temp-')
+            );
+            
+            // Delete removed variants
+            for (const variant of variantsToDelete) {
+                await deleteProductVariant(variant.id);
+            }
+            
+            // Create new variants
+            for (const variant of variantsToCreate) {
+                await createProductVariant({
+                    ...variant,
+                    product_id: product.id,
+                    category_id: formData.category
+                });
+            }
+            
+            // Update existing variants
+            for (const variant of variantsToUpdate) {
+                if (!variant.id) continue; // Skip variants without ID
+                const originalVariant = originalVariants.find(orig => orig.id === variant.id);
+                if (originalVariant && hasVariantChanges(originalVariant, variant)) {
+                    await updateProductVariant(variant.id!, variant);
+                }
+            }
+            
+            if (variantsToDelete.length > 0 || variantsToCreate.length > 0 || variantsToUpdate.length > 0) {
+                toast.success(`Processed ${variantsToDelete.length} deletions, ${variantsToCreate.length} creations, ${variantsToUpdate.length} updates`);
+            }
+            
+        } catch (error) {
+            console.error('Error processing variant changes:', error);
+            toast.error('Failed to process variant changes');
+        }
+    };
+
+    // Helper function to check if a variant has changes
+    const hasVariantChanges = (original: ProductVariant, current: Partial<ProductVariant>): boolean => {
+        return (
+            original.name !== current.name ||
+            original.description !== current.description ||
+            original.price !== current.price ||
+            original.price_ngn !== current.price_ngn ||
+            original.price_ghs !== current.price_ghs ||
+            original.stock !== current.stock ||
+            original.sku !== current.sku ||
+            original.is_active !== current.is_active ||
+            original.sort_order !== current.sort_order
+        );
+    };
+
     const handleView = () => {
         setIsViewDrawerOpen(true);
     };
+
+    // Load variants and subcategories when editing
+    React.useEffect(() => {
+        const loadEditData = async () => {
+            if (isEditModalOpen) {
+
+                setIsLoadingVariants(true);
+                
+                try {
+                    // Load variants
+                    const productVariants = await getProductVariants(product.id);
+                    
+                    if (Array.isArray(productVariants)) {
+                        setVariants(productVariants);
+                    } else {
+                        console.error('Product variants is not an array:', productVariants);
+                        setVariants([]);
+                    }
+                    
+                                               // Load subcategories if category is set
+                           if (formData.category) {
+                               const subcats = await getSubcategoriesByCategory(formData.category);
+                               setSubcategories(subcats);
+                           }
+                } catch (error) {
+                    console.error('Error loading edit data:', error);
+                    toast.error('Failed to load product data for editing');
+                    setVariants([]);
+                } finally {
+                    setIsLoadingVariants(false);
+                }
+            }
+        };
+
+        loadEditData();
+               }, [isEditModalOpen, product.id, formData.category]);
+
+    const handleCategoryChange = async (categoryId: string) => {
+        setFormData(prev => ({ ...prev, category: categoryId, subcategory_id: 'none' }));
+                       if (categoryId) {
+                   try {
+                       const subcats = await getSubcategoriesByCategory(categoryId);
+                       setSubcategories(subcats);
+                   } catch (error) {
+                       console.error('Error fetching subcategories:', error);
+                       setSubcategories([]);
+                   }
+               } else {
+                   setSubcategories([]);
+               }
+    };
+
+    const handleVariantsChange = (newVariants: Partial<ProductVariant>[]) => {
+        setVariants(newVariants);
+    };
+
+    // Handle variant updates
+    const handleVariantUpdate = async (variantId: string, updates: Partial<ProductVariant>) => {
+        try {
+            const updatedVariant = await updateProductVariant(variantId, updates);
+            if (updatedVariant) {
+                // Update the local variants state
+                setVariants(prev => prev.map(v => 
+                    v.id === variantId ? { ...v, ...updatedVariant } : v
+                ));
+                toast.success('Variant updated successfully');
+            }
+        } catch (error) {
+            console.error('Error updating variant:', error);
+            toast.error('Failed to update variant');
+        }
+    };
+
+    // Handle variant creation
+    const handleVariantCreate = async (variant: Partial<ProductVariant>) => {
+        try {
+            const newVariant = await createProductVariant({
+                ...variant,
+                product_id: product.id,
+                category_id: formData.category
+            });
+            
+            if (newVariant) {
+                // Add the new variant to the local state
+                setVariants(prev => [...prev, newVariant]);
+                toast.success('Variant created successfully');
+            }
+        } catch (error) {
+            console.error('Error creating variant:', error);
+            toast.error('Failed to create variant');
+        }
+    };
+
+    // Handle variant deletion
+    const handleVariantDelete = async (variantId: string) => {
+        try {
+            const success = await deleteProductVariant(variantId);
+            if (success) {
+                // Remove the variant from local state
+                setVariants(prev => prev.filter(v => v.id !== variantId));
+                toast.success('Variant deleted successfully');
+            }
+        } catch (error) {
+            console.error('Error deleting variant:', error);
+            toast.error('Failed to delete variant');
+        }
+    };
+
 //         try {
 //             const transformedData = transformProductInput(data);
 //             await updateProduct(product.id, transformedData);
@@ -460,63 +656,181 @@ function ProductActions({ product }: { product: Product }) {
             </Drawer>
 
             {/* Edit Drawer */}
-            <Drawer open={isEditDrawerOpen} onOpenChange={setIsEditDrawerOpen}>
-                <DrawerContent>
-                    <DrawerHeader>
-                        <DrawerTitle>Edit Product</DrawerTitle>
-                        <DrawerDescription>
-                            Update product information.
-                        </DrawerDescription>
-                    </DrawerHeader>
-                    <div className="p-6 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="edit-name">Name</Label>
-                                <Input 
-                                    id="edit-name" 
-                                    value={formData.name}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                />
+            {/* Edit Modal */}
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>Edit Product: {product.name}</DialogTitle>
+                        <DialogDescription>
+                            Update product information, variants, and images.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    {/* Scrollable Content Area */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                        {/* Basic Product Information */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium">Basic Information</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-name">Product Name</Label>
+                                    <Input 
+                                        id="edit-name" 
+                                        value={formData.name}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-category">Category</Label>
+                                    <Select value={formData.category} onValueChange={handleCategoryChange}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {categories.map((category: Category) => (
+                                                <SelectItem key={category.id} value={category.id}>
+                                                    {category.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-subcategory">Subcategory (Optional)</Label>
+                                    <Select 
+                                        value={formData.subcategory_id} 
+                                        onValueChange={(value) => setFormData(prev => ({ ...prev, subcategory_id: value }))}
+                                        disabled={!formData.category || subcategories.length === 0}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder={!formData.category ? "Select category first" : subcategories.length === 0 ? "No subcategories" : "Select subcategory"} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">None</SelectItem>
+                                            {subcategories.map((subcategory) => (
+                                                <SelectItem key={subcategory.id} value={subcategory.id}>
+                                                    {subcategory.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-subcategory">Stock</Label>
+                                    <Input
+                                        id="edit-stock"
+                                        type="number"
+                                        value={formData.stock}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="edit-description">Description</Label>
                                 <Textarea 
                                     id="edit-description" 
                                     value={formData.description}
                                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="edit-price">Price</Label>
-                                <Input 
-                                    id="edit-price" 
-                                    type="number"
-                                    step="0.01"
-                                    value={formData.price}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="edit-stock">Stock</Label>
-                                <Input 
-                                    id="edit-stock" 
-                                    type="number"
-                                    value={formData.stock}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
+                                    rows={3}
+                                    placeholder="Enter product description"
                                 />
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <Button onClick={handleSave} disabled={loading}>
-                                {loading ? 'Saving...' : 'Save Changes'}
-                            </Button>
-                            <Button variant="outline" onClick={() => setIsEditDrawerOpen(false)}>
-                                Cancel
-                            </Button>
+
+                        {/* Pricing Information */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium">Pricing</h3>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-price">Fallback Price ($)</Label>
+                                    <Input
+                                        id="edit-price"
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.price}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                                        placeholder="0.00"
+                                    />
+                                    <p className="text-xs text-muted-foreground">Used as fallback for other countries</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-price-ngn">Nigerian Price (₦)</Label>
+                                    <Input
+                                        id="edit-price-ngn"
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.price_ngn}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, price_ngn: e.target.value }))}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-price-ghs">Ghanaian Price (₵)</Label>
+                                    <Input
+                                        id="edit-price-ghs"
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.price_ghs}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, price_ghs: e.target.value }))}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Product Variants */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-medium">Product Variants</h3>
+                                <Badge variant="secondary">
+                                    {variants.length} variant{variants.length !== 1 ? 's' : ''}
+                                </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                Manage variants of this product. Each variant can have its own pricing, stock, and images.
+                            </p>
+                            
+                            {isLoadingVariants ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <IconLoader2 className="animate-spin mr-2" />
+                                    Loading variants...
+                                </div>
+                            ) : (
+                                <>
+
+                                    
+                                    <ProductVariantManager
+                                        variants={variants}
+                                        onVariantsChange={handleVariantsChange}
+                                        maxVariants={10}
+                                        categoryId={formData.category}
+                                        onVariantUpdate={handleVariantUpdate}
+                                        onVariantCreate={handleVariantCreate}
+                                        onVariantDelete={handleVariantDelete}
+                                    />
+                                    
+                                </>
+                            )}
                         </div>
                     </div>
-                </DrawerContent>
-            </Drawer>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex justify-end space-x-2 p-6 border-t bg-gray-50">
+                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSave} disabled={loading} className="bg-blue-600 hover:bg-blue-700 min-w-[120px]">
+                            {loading ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -538,165 +852,7 @@ function ProductActions({ product }: { product: Product }) {
         </>
     );
 }
-//                     <DrawerHeader className="gap-1">
-//                         <DrawerTitle>Edit Product: {product.name}</DrawerTitle>
-//                         <DrawerDescription>
-//                             Update product details
-//                         </DrawerDescription>
-//                     </DrawerHeader>
-//                     <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-//                         <form className="flex flex-col gap-4" onSubmit={formData.handleSubmit(handleSave)} id="edit-product-form">
-//                             <div className="flex flex-col gap-3">
-//                                 <Label htmlFor="edit-name">Product Name</Label>
-//                                 <Input id="edit-name" {...formData.register('name')} />
-//                                 {formData.formState.errors.name && <p className="text-red-500">{formData.formState.errors.name.message}</p>}
-//                             </div>
-//                             <div className="flex flex-col gap-3">
-//                                 <Label htmlFor="edit-description">Description</Label>
-//                                 <Input id="edit-description" {...formData.register('description')} />
-//                                 {formData.formState.errors.description && <p className="text-red-500">{formData.formState.errors.description.message}</p>}
-//                             </div>
-//                             <div className="grid grid-cols-2 gap-4">
-//                                 <div className="flex flex-col gap-3">
-//                                     <Label htmlFor="edit-price">Fallback Price</Label>
-//                                     <Input id="edit-price" type="number" step="0.01" {...formData.register('price')} />
-//                                     {formData.formState.errors.price && <p className="text-red-500">{formData.formState.errors.price.message}</p>}
-//                                     <p className="text-xs text-muted-foreground">Used as fallback for other countries</p>
-//                                 </div>
-//                                 <div className="flex flex-col gap-3">
-//                                     <Label htmlFor="edit-stock">Stock</Label>
-//                                     <Input id="edit-stock" type="number" {...formData.register('stock')} />
-//                                     {formData.formState.errors.stock && <p className="text-red-500">{formData.formState.errors.stock.message}</p>}
-//                                 </div>
-//                             </div>
-//                             <div className="grid grid-cols-2 gap-4">
-//                                 <div className="flex flex-col gap-3">
-//                                     <Label htmlFor="edit-price-ngn">Nigerian Price (₦)</Label>
-//                                     <Input id="edit-price-ngn" type="number" step="0.01" {...formData.register('price_ngn')} />
-//                                     {formData.formState.errors.price_ngn && <p className="text-red-500">{formData.formState.errors.price_ngn.message}</p>}
-//                                 </div>
-//                                 <div className="flex flex-col gap-3">
-//                                     <Label htmlFor="edit-price-ghs">Ghanaian Price (₵)</Label>
-//                                     <Input id="edit-price-ghs" type="number" step="0.01" {...formData.register('price_ghs')} />
-//                                     {formData.formState.errors.price_ghs && <p className="text-red-500">{formData.formState.errors.price_ghs.message}</p>}
-//                                 </div>
-//                             </div>
-//                             {isLoadingImages ? (
-//                                 <div className="flex items-center justify-center py-4">
-//                                     <IconLoader2 className="animate-spin mr-2" />
-//                                     Loading images...
-//                                 </div>
-//                             ) : (
-//                                 <ProductImageManager
-//                                     images={productImages}
-//                                     onImagesChange={handleImagesChange}
-//                                     productId={product.id}
-//                                     maxImages={6}
-//                                 />
-//                             )}
-                            
-//                             <div className="flex flex-col gap-3">
-//                                 <Label htmlFor="edit-image">Main Image URL (Fallback)</Label>
-//                                 <Input id="edit-image" {...formData.register('image')} />
-//                                 {formData.formState.errors.image && <p className="text-red-500">{formData.formState.errors.image.message}</p>}
-//                                 <p className="text-xs text-muted-foreground">
-//                                     This will be used as a fallback if no images are uploaded above
-//                                 </p>
-//                             </div>
-//                         </form>
-//                     </div>
-//                     <DrawerFooter>
-//                         <Button type="submit" className="cursor-pointer" form="edit-product-form" disabled={loading}>
-//                             {loading ? <IconLoader2 className="animate-spin" /> : "Save Changes"}
-//                         </Button>
-//                         <DrawerClose asChild>
-//                             <Button variant="outline">Cancel</Button>
-//                         </DrawerClose>
-//                     </DrawerFooter>
-//                 </DrawerContent>
-//             </Drawer>
 
-//             {/* View Drawer */}
-//             <Drawer open={isViewDrawerOpen} onOpenChange={setIsViewDrawerOpen}>
-//                 <DrawerContent>
-//                     <DrawerHeader>
-//                         <DrawerTitle>View Product: {product.name}</DrawerTitle>
-//                     </DrawerHeader>
-//                     <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-//                         <div className="flex flex-col gap-3">
-//                             <Label htmlFor="view-name">Product Name</Label>
-//                             <Input id="view-name" value={product.name} disabled />
-//                         </div>
-//                         <div className="flex flex-col gap-3">
-//                             <Label htmlFor="view-description">Description</Label>
-//                             <Input id="view-description" value={product.description} disabled />
-//                         </div>
-//                         <div className="flex flex-col gap-3">
-//                             <Label htmlFor="view-price">Fallback Price</Label>
-//                             <Input id="view-price" value={product.price.toString()} disabled />
-//                         </div>
-//                         <div className="grid grid-cols-2 gap-4">
-//                             <div className="flex flex-col gap-3">
-//                                 <Label htmlFor="view-price-ngn">Nigerian Price (₦)</Label>
-//                                 <Input id="view-price-ngn" value={product.price_ngn?.toString() || 'Not set'} disabled />
-//                             </div>
-//                             <div className="flex flex-col gap-3">
-//                                 <Label htmlFor="view-price-ghs">Ghanaian Price (₵)</Label>
-//                                 <Input id="view-price-ghs" value={product.price_ghs?.toString() || 'Not set'} disabled />
-//                             </div>
-//                         </div>
-//                         <div className="flex flex-col gap-3">
-//                             <Label htmlFor="view-stock">Stock</Label>
-//                             <Input id="view-stock" value={product.stock.toString()} disabled />
-//                         </div>
-//                         <div className="flex flex-col gap-3">
-//                             <Label htmlFor="view-image">Main Image</Label>
-//                             <Image src={getProductImage(product)} alt={product.name} width={100} height={100} />
-//                         </div>
-//                         {product.images && product.images.length > 0 && (
-//                             <div className="flex flex-col gap-3">
-//                                 <Label>All Images ({product.images.length})</Label>
-//                                 <div className="grid grid-cols-3 gap-2">
-//                                     {product.images.map((image, index) => (
-//                                         <div key={image.id} className="relative">
-//                                             <Image 
-//                                                 src={image.image_url} 
-//                                                 alt={image.alt_text || `Product image ${index + 1}`} 
-//                                                 width={80} 
-//                                                 height={80}
-//                                                 className="object-cover rounded"
-//                                             />
-//                                             {image.is_primary && (
-//                                                 <div className="absolute top-1 right-1">
-//                                                     <Badge variant="default" className="bg-blue-500 text-xs px-1 py-0">
-//                                                         <IconStar className="size-2 mr-1" />
-//                                                         Primary
-//                                                     </Badge>
-//                                                 </div>
-//                                             )}
-//                                         </div>
-//                                     ))}
-//                                 </div>
-//                             </div>
-//                         )}
-//                         <div className="flex flex-col gap-3">
-//                             <Label htmlFor="view-category">Category</Label>
-//                             <Input id="view-category" value={product.category_data?.name || product.category} disabled />
-//                         </div>
-//                         <div className="flex flex-col gap-3">
-//                             <Label htmlFor="view-created-at">Created At</Label>
-//                             <Input id="view-created-at" value={new Date(product.created_at).toLocaleDateString()} disabled />
-//                         </div>
-//                         <div className="flex flex-col gap-3">
-//                             <Label htmlFor="view-updated-at">Updated At</Label>
-//                             <Input id="view-updated-at" value={new Date(product.updated_at).toLocaleDateString()} disabled />
-//                         </div>
-//                     </div>
-//                 </DrawerContent>
-//             </Drawer>
-//         </>
-//     );
-// }
 
 function ProductCellViewer({ product }: { product: Product }) {
     return (
@@ -1369,6 +1525,14 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
     const handleVariantsChange = (newVariants: Partial<ProductVariant>[]) => {
         setVariants(newVariants);
     };
+
+    // Load categories when component mounts
+    React.useEffect(() => {
+        const fetchCategories = async () => {
+            await getCategories();
+        };
+        fetchCategories();
+    }, [getCategories]);
 
     const handleCategoryChange = async (categoryId: string) => {
         console.log('Category selected:', { categoryId, type: typeof categoryId });
