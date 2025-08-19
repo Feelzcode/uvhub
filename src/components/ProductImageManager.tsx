@@ -1,47 +1,61 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
+import { ProductImage } from '@/store/types';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { FileInput } from '@/components/ui/file-input';
+import Image from 'next/image';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
-    Upload,
-    Star, 
-    GripVertical, 
-    Trash2,
+  Trash2, 
+  Edit, 
+  Star,
+  Eye,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Upload,
+  Loader2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useUppyWithSupabase } from '@/hooks/use-uppy-with-supabase';
 import { getPublicUrlOfUploadedFile } from '@/lib/utils';
-import { ProductImage } from '@/store/types';
+import { UploadProgressInline } from '@/components/ui/upload-progress';
 
 interface ProductImageManagerProps {
     images: ProductImage[];
     onImagesChange: (images: ProductImage[]) => void;
     productId?: string;
-    maxImages?: number;
+    maxImages?: number 
 }
 
-export default function ProductImageManager({ 
-    images, 
-    onImagesChange, 
+export default function ProductImageManager({
+    images = [],
+    onImagesChange,
     productId,
     maxImages = 6 
 }: ProductImageManagerProps) {
-    const [isUploading, setIsUploading] = useState(false);
-    const uppy = useUppyWithSupabase({ bucketName: 'file-bucket', folderName: 'products' });
+    // Initialize Uppy for image uploads with progress tracking
+    const { uppy, uploadProgress } = useUppyWithSupabase({ 
+        bucketName: 'file-bucket', 
+        folderName: 'products',
+        callbacks: {
+            onStart: () => toast.info('Starting image upload...'),
+            onSuccess: (files) => toast.success(`${files.length} image(s) uploaded successfully`),
+            onError: (error) => toast.error(`Upload failed: ${error.message}`),
+        }
+    });
 
     const handleFileUpload = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
 
         if (images.length + files.length > maxImages) {
-            alert(`You can only upload up to ${maxImages} images. You currently have ${images.length} images.`);
+            toast.error(`You can only upload up to ${maxImages} images. You currently have ${images.length} images.`);
             return;
         }
 
-        setIsUploading(true);
         try {
             const newImages: ProductImage[] = [];
             
@@ -73,9 +87,7 @@ export default function ProductImageManager({
             }
         } catch (error) {
             console.error('Error uploading images:', error);
-            alert('Failed to upload images. Please try again.');
-        } finally {
-            setIsUploading(false);
+            toast.error('Failed to upload images. Please try again.');
         }
     };
 
@@ -143,23 +155,53 @@ export default function ProductImageManager({
             {images.length < maxImages && (
                 <Card className="border-dashed border-2 border-gray-300 hover:border-gray-400 transition-colors">
                     <CardContent className="p-6">
-                        <FileInput
-                            onFileChange={handleFileUpload}
+                        <Input
+                            type="file"
+                            multiple
                             accept="image/*"
-                            maxFiles={maxImages - images.length}
-                            maxSize={5 * 1024 * 1024} // 5MB
-                            disabled={isUploading}
+                            onChange={(e) => handleFileUpload(e.target.files)}
+                            className="hidden"
+                            id="product-images"
+                            disabled={uploadProgress.isUploading}
+                        />
+                        <label 
+                            htmlFor="product-images"
+                            className={`cursor-pointer text-center space-y-2 ${
+                                uploadProgress.isUploading ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
                         >
-                            <div className="text-center space-y-2">
-                                <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                                <p className="text-sm text-gray-600">
-                                    {isUploading ? 'Uploading...' : 'Click to upload images'}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                    PNG, JPG, GIF up to 5MB each
+                            <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                            <p className="text-sm text-gray-600">
+                                {uploadProgress.isUploading ? 'Uploading...' : 'Click to upload images'}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                                PNG, JPG, GIF up to 5MB each
+                            </p>
+                        </label>
+                        
+                        {/* Upload Progress Indicator */}
+                        <UploadProgressInline progress={uploadProgress} />
+                        
+                        {/* Upload Status */}
+                        {uploadProgress.isUploading && (
+                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                <div className="flex items-center gap-2 text-sm text-blue-700 mb-2">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <span>
+                                        {uploadProgress.currentFile ? `Uploading ${uploadProgress.currentFile}...` : 'Uploading...'}
+                                    </span>
+                                </div>
+                                <div className="w-full bg-blue-200 rounded-full h-2">
+                                    <div 
+                                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                        style={{ width: `${uploadProgress.progress}%` }}
+                                    ></div>
+                                </div>
+                                <p className="text-xs text-blue-600 mt-1">
+                                    {uploadProgress.uploadedFiles}/{uploadProgress.totalFiles} files uploaded
                                 </p>
                             </div>
-                        </FileInput>
+                        )}
                     </CardContent>
                 </Card>
             )}

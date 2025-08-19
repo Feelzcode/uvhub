@@ -17,7 +17,8 @@ import {
   GripVertical,
   Star,
   Save,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUppyWithSupabase } from '@/hooks/use-uppy-with-supabase';
@@ -57,8 +58,16 @@ export default function ProductVariantManager({
     images: []
   });
   
-  // Initialize Uppy for variant image uploads
-  const uppy = useUppyWithSupabase({ bucketName: 'file-bucket', folderName: 'variants' });
+  // Initialize Uppy for variant image uploads with progress tracking
+  const { uppy, uploadProgress } = useUppyWithSupabase({ 
+    bucketName: 'file-bucket', 
+    folderName: 'variants',
+    callbacks: {
+      onStart: () => toast.info('Starting image upload...'),
+      onSuccess: (files) => toast.success(`${files.length} image(s) uploaded successfully`),
+      onError: (error) => toast.error(`Upload failed: ${error.message}`),
+    }
+  });
 
   const handleAddVariant = async () => {
     if (variants.length >= maxVariants) {
@@ -91,68 +100,55 @@ export default function ProductVariantManager({
       // If we have a create handler, use it
       try {
         await onVariantCreate(variant);
-        // Reset form after successful creation
-        setNewVariant({
-          name: '',
-          description: '',
-          sku: '',
-          price: 0,
-          price_ngn: 0,
-          price_ghs: 0,
-          stock: 0,
-          is_active: true,
-          sort_order: variants.length + 1,
-          images: []
-        });
+        toast.success('Variant created successfully');
       } catch (error) {
         console.error('Error creating variant:', error);
         toast.error('Failed to create variant');
       }
     } else {
       // Fallback to local state management
-      onVariantsChange([...variants, variant]);
-      setNewVariant({
-        name: '',
-        description: '',
-        sku: '',
-        price: 0,
-        price_ngn: 0,
-        price_ghs: 0,
-        stock: 0,
-        is_active: true,
-        sort_order: variants.length + 1,
-        images: []
-      });
+      const updatedVariants = [...variants, variant];
+      onVariantsChange(updatedVariants);
+      toast.success('Variant added successfully');
     }
+
+    // Reset form
+    setNewVariant({
+      name: '',
+      description: '',
+      sku: '',
+      price: 0,
+      price_ngn: 0,
+      price_ghs: 0,
+      stock: 0,
+      is_active: true,
+      sort_order: variants.length + 1,
+      images: []
+    });
   };
 
   const handleUpdateVariant = async (index: number, updates: Partial<ProductVariant>) => {
     const variant = variants[index];
     if (!variant) return;
 
+    const updatedVariant = { ...variant, ...updates };
+
     if (onVariantUpdate && variant.id && !variant.id.startsWith('temp-')) {
       // If we have an update handler and this is an existing variant, use it
       try {
         await onVariantUpdate(variant.id, updates);
-        // Update local state
-        const updatedVariants = variants.map((v, i) =>
-          i === index ? { ...v, ...updates } : v
-        );
-        onVariantsChange(updatedVariants);
-        setEditingVariant(null);
         toast.success('Variant updated successfully');
       } catch (error) {
         console.error('Error updating variant:', error);
         toast.error('Failed to update variant');
+        return;
       }
-    } else {
-      // Fallback to local state management
-      const updatedVariants = variants.map((v, i) =>
-        i === index ? { ...v, ...updates } : v
-      );
-      onVariantsChange(updatedVariants);
-      setEditingVariant(null);
     }
+
+    // Update local state
+    const updatedVariants = variants.map((v, i) => i === index ? updatedVariant : v);
+    onVariantsChange(updatedVariants);
+    setEditingVariant(null);
   };
 
   const handleDeleteVariant = async (index: number) => {
@@ -316,9 +312,7 @@ export default function ProductVariantManager({
 
   const sortedVariants = [...variants].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
-
-
-    return (
+  return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
@@ -332,19 +326,13 @@ export default function ProductVariantManager({
         </Badge>
       </div>
       
-      {/* Temporary debug info */}
-      <div className="text-xs text-gray-400 p-2 bg-gray-100 rounded">
-        <p><strong>Debug:</strong> variants.length = {variants.length}, maxVariants = {maxVariants}</p>
-        <p>Should show form: {variants.length < maxVariants ? 'YES' : 'NO'}</p>
-      </div>
-
       {/* Add New Variant Form */}
       {variants.length < maxVariants && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Add New Variant</CardTitle>
+            <CardTitle>Add New Variant</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="variant-name">Variant Name *</Label>
@@ -352,7 +340,7 @@ export default function ProductVariantManager({
                   id="variant-name"
                   value={newVariant.name}
                   onChange={(e) => setNewVariant(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Red, Large, Premium"
+                  placeholder="e.g., Small, Red, Premium"
                 />
               </div>
               <div className="space-y-2">
@@ -364,8 +352,6 @@ export default function ProductVariantManager({
                   placeholder="Stock Keeping Unit"
                 />
               </div>
-
-
               <div className="space-y-2">
                 <Label htmlFor="variant-price">Fallback Price *</Label>
                 <Input
@@ -433,16 +419,47 @@ export default function ProductVariantManager({
                   onChange={(e) => handleVariantImageUpload(e, -1)}
                   className="hidden"
                   id="new-variant-images"
+                  disabled={uploadProgress.isUploading}
                 />
                 <label 
                   htmlFor="new-variant-images"
-                  className="cursor-pointer text-blue-600 hover:text-blue-800"
+                  className={`cursor-pointer text-blue-600 hover:text-blue-800 ${
+                    uploadProgress.isUploading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  Click to upload images
+                  {uploadProgress.isUploading ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Uploading...
+                    </div>
+                  ) : (
+                    'Click to upload images'
+                  )}
                 </label>
                 <p className="text-xs text-gray-500 mt-2">
                   Drag and drop images here or click to browse
                 </p>
+                
+                {/* Upload Progress Indicator */}
+                {uploadProgress.isUploading && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center gap-2 text-sm text-blue-700 mb-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>
+                        {uploadProgress.currentFile ? `Uploading ${uploadProgress.currentFile}...` : 'Uploading...'}
+                      </span>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress.progress}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-blue-600 mt-1">
+                      {uploadProgress.uploadedFiles}/{uploadProgress.totalFiles} files uploaded
+                    </p>
+                  </div>
+                )}
               </div>
               {/* Display uploaded images */}
               {newVariant.images && newVariant.images.length > 0 && (
@@ -482,7 +499,7 @@ export default function ProductVariantManager({
             </Button>
           </CardContent>
         </Card>
-        )}
+      )}
 
       {/* Existing Variants */}
       <div className="space-y-3">
@@ -638,9 +655,7 @@ function VariantEditForm({
   variantIndex,
   onSave,
   onCancel,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onImageUpload,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onImageRemove,
 }: {
   variant: Partial<ProductVariant>;
@@ -767,3 +782,5 @@ function VariantEditForm({
     </div>
   );
 }
+
+

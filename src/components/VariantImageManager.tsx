@@ -15,11 +15,14 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Upload,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useUppyWithSupabase } from '@/hooks/use-uppy-with-supabase';
+import { useUppyWithSupabase, UploadProgress } from '@/hooks/use-uppy-with-supabase';
 import { getPublicUrlOfUploadedFile } from '@/lib/utils';
 import Image from 'next/image';
+import { UploadProgressInline } from '@/components/ui/upload-progress';
 
 interface VariantImageManagerProps {
   variantId: string;
@@ -41,8 +44,16 @@ export default function VariantImageManager({
   const [editingImage, setEditingImage] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Partial<ProductImage>>({});
 
-  // Initialize Uppy for image uploads
-  const uppy = useUppyWithSupabase({ bucketName: 'file-bucket', folderName: 'variants' });
+  // Initialize Uppy for image uploads with progress tracking
+  const { uppy, uploadProgress } = useUppyWithSupabase({ 
+    bucketName: 'file-bucket', 
+    folderName: 'variants',
+    callbacks: {
+      onStart: () => toast.info('Starting image upload...'),
+      onSuccess: (files) => toast.success(`${files.length} image(s) uploaded successfully`),
+      onError: (error) => toast.error(`Upload failed: ${error.message}`),
+    }
+  });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -79,7 +90,6 @@ export default function VariantImageManager({
         });
 
         onImagesChange([...images, ...newImages]);
-        toast.success(`${newImages.length} image(s) uploaded successfully`);
       }
     } catch (error) {
       console.error('Error handling image upload:', error);
@@ -199,10 +209,26 @@ export default function VariantImageManager({
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="cursor-pointer"
+                  disabled={uploadProgress.isUploading}
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   You can upload up to {maxImages - images.length} more image(s)
                 </p>
+                
+                {/* Upload Progress Indicator */}
+                <UploadProgressInline progress={uploadProgress} />
+                
+                {/* Upload Status */}
+                {uploadProgress.isUploading && (
+                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>
+                        {uploadProgress.currentFile ? `Uploading ${uploadProgress.currentFile}...` : 'Uploading...'}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
