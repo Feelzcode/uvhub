@@ -60,8 +60,8 @@ export default function ProductVariantManager({
   
   // Initialize Uppy for variant image uploads with progress tracking
   const { uppy, uploadProgress } = useUppyWithSupabase({ 
-    bucketName: 'file-bucket', 
-    folderName: 'variants',
+                    bucketName: 'file-bucket', 
+        folderName: 'variants',
     callbacks: {
       onStart: () => toast.info('Starting image upload...'),
       onSuccess: (files) => toast.success(`${files.length} image(s) uploaded successfully`),

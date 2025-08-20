@@ -74,6 +74,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogFooter,
 } from "@/components/ui/dialog"
 import {
     Drawer,
@@ -89,6 +90,11 @@ import { toast } from "sonner"
 import ProductVariantManager from "@/components/ProductVariantManager"
 import { CategoryTypeForm } from "@/components/CategoryTypeForm"
 import { useProductsStore, useSubcategories } from "@/store"
+import { useUppyWithSupabase } from "@/hooks/use-uppy-with-supabase"
+import { UploadProgressInline } from "@/components/ui/upload-progress"
+
+// Get Supabase project URL for URL construction
+const SUPABASE_PROJECT_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 import {
     getPaginatedCustomers,
     getPaginatedCategories,
@@ -98,7 +104,8 @@ import {
     getSubcategoriesByCategory,
     createProductVariant,
     updateProductVariant,
-    deleteProductVariant
+    deleteProductVariant,
+    createVariantImage
 } from "@/app/admin/dashboard/products/actions"
 import {
     AlertDialog,
@@ -274,6 +281,7 @@ function ProductActions({ product }: { product: Product }) {
     const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
     const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
+    const [isCreateVariantModalOpen, setIsCreateVariantModalOpen] = React.useState(false);
 
     const [formData, setFormData] = React.useState({
         name: product.name,
@@ -604,6 +612,10 @@ function ProductActions({ product }: { product: Product }) {
                         <IconEdit className="mr-2 size-4" />
                         Edit
                     </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => setIsCreateVariantModalOpen(true)}>
+                        <IconPlus className="mr-2 size-4" />
+                        Create Variant
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                         className="cursor-pointer text-destructive focus:text-destructive"
@@ -667,11 +679,18 @@ function ProductActions({ product }: { product: Product }) {
                     </DialogHeader>
                     
                     {/* Scrollable Content Area */}
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                        {/* Basic Product Information */}
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-medium">Basic Information</h3>
-                            <div className="grid grid-cols-2 gap-4">
+                    <div className="flex-1 overflow-y-auto p-6">
+                        <Tabs defaultValue="basic" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="basic">Basic Information</TabsTrigger>
+                                <TabsTrigger value="variants">Variants ({variants.length})</TabsTrigger>
+                            </TabsList>
+                            
+                            <TabsContent value="basic" className="space-y-6">
+                                {/* Basic Product Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-medium">Basic Information</h3>
+                                    <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-name">Product Name</Label>
                                     <Input 
@@ -784,40 +803,40 @@ function ProductActions({ product }: { product: Product }) {
                             </div>
                         </div>
 
-                        {/* Product Variants */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-medium">Product Variants</h3>
-                                <Badge variant="secondary">
-                                    {variants.length} variant{variants.length !== 1 ? 's' : ''}
-                                </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                                Manage variants of this product. Each variant can have its own pricing, stock, and images.
-                            </p>
+                            </TabsContent>
                             
-                            {isLoadingVariants ? (
-                                <div className="flex items-center justify-center py-8">
-                                    <IconLoader2 className="animate-spin mr-2" />
-                                    Loading variants...
+                            <TabsContent value="variants" className="space-y-6">
+                                {/* Product Variants */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-medium">Product Variants</h3>
+                                        <Badge variant="secondary">
+                                            {variants.length} variant{variants.length !== 1 ? 's' : ''}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Manage variants of this product. Each variant can have its own pricing, stock, and images.
+                                    </p>
+                                    
+                                    {isLoadingVariants ? (
+                                        <div className="flex items-center justify-center py-8">
+                                            <IconLoader2 className="animate-spin mr-2" />
+                                            Loading variants...
+                                        </div>
+                                    ) : (
+                                        <ProductVariantManager
+                                            variants={variants}
+                                            onVariantsChange={handleVariantsChange}
+                                            maxVariants={10}
+                                            categoryId={formData.category}
+                                            onVariantUpdate={handleVariantUpdate}
+                                            onVariantCreate={handleVariantCreate}
+                                            onVariantDelete={handleVariantDelete}
+                                        />
+                                    )}
                                 </div>
-                            ) : (
-                                <>
-
-                                    
-                                    <ProductVariantManager
-                                        variants={variants}
-                                        onVariantsChange={handleVariantsChange}
-                                        maxVariants={10}
-                                        categoryId={formData.category}
-                                        onVariantUpdate={handleVariantUpdate}
-                                        onVariantCreate={handleVariantCreate}
-                                        onVariantDelete={handleVariantDelete}
-                                    />
-                                    
-                                </>
-                            )}
-                        </div>
+                            </TabsContent>
+                        </Tabs>
                     </div>
                     
                     {/* Action Buttons */}
@@ -832,6 +851,27 @@ function ProductActions({ product }: { product: Product }) {
                 </DialogContent>
             </Dialog>
 
+            {/* Create Variant Modal */}
+            <Dialog open={isCreateVariantModalOpen} onOpenChange={setIsCreateVariantModalOpen}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>Create Variant for: {product.name}</DialogTitle>
+                        <DialogDescription>
+                            Add a new variant to this product with its own pricing, stock, and images.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="flex-1 overflow-y-auto p-6">
+                        <CreateVariantForm 
+                            productId={product.id}
+                            productName={product.name}
+                            categoryId={product.category}
+                            onClose={() => setIsCreateVariantModalOpen(false)}
+                        />
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
@@ -841,12 +881,12 @@ function ProductActions({ product }: { product: Product }) {
                             This action cannot be undone. This will permanently delete the product &quot;{product.name}&quot;.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
+                    <DialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                             Delete
                         </AlertDialogAction>
-                    </AlertDialogFooter>
+                    </DialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </>
@@ -1195,6 +1235,138 @@ const subcategoryColumns: ColumnDef<Subcategory>[] = [
     },
 ];
 
+// Variant columns
+const variantColumns: ColumnDef<ProductVariant>[] = [
+    {
+        id: "select",
+        header: ({ table }) => (
+            <div className="flex items-center justify-center">
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            </div>
+        ),
+        cell: ({ row }) => (
+            <div className="flex items-center justify-center">
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+    },
+    {
+        accessorKey: "name",
+        header: "Variant Name",
+        cell: ({ row }) => (
+            <div className="flex items-center gap-2">
+                <span className="font-medium">{row.original.name}</span>
+            </div>
+        ),
+    },
+    {
+        accessorKey: "product",
+        header: "Product",
+        cell: ({ row }) => {
+            // This would need to be populated with product data
+            return (
+                <div className="text-sm text-muted-foreground">
+                    {row.original.product_id || '-'}
+                </div>
+            );
+        },
+    },
+    {
+        accessorKey: "sku",
+        header: "SKU",
+        cell: ({ row }) => (
+            <div className="text-sm font-mono">
+                {row.original.sku || '-'}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "price",
+        header: () => <div className="w-full text-right">Price ($)</div>,
+        cell: ({ row }) => (
+            <div className="text-right font-medium">
+                ${row.original.price?.toFixed(2) || '0.00'}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "stock",
+        header: () => <div className="w-full text-right">Stock</div>,
+        cell: ({ row }) => (
+            <div className="text-right">
+                <Badge
+                    variant={row.original.stock > 10 ? "default" : row.original.stock > 0 ? "secondary" : "destructive"}
+                >
+                    {row.original.stock || 0}
+                </Badge>
+            </div>
+        ),
+    },
+    {
+        accessorKey: "is_active",
+        header: "Status",
+        cell: ({ row }) => (
+            <Badge variant={row.original.is_active ? "default" : "secondary"}>
+                {row.original.is_active ? "Active" : "Inactive"}
+            </Badge>
+        ),
+    },
+    {
+        accessorKey: "created_at",
+        header: "Created",
+        cell: ({ row }) => (
+            <div className="text-sm text-muted-foreground">
+                {new Date(row.original.created_at).toDateString()}
+            </div>
+        ),
+    },
+    {
+        id: "actions",
+        cell: ({ row }) => (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        className="h-8 w-8 p-0"
+                        size="icon"
+                    >
+                        <IconDotsVertical className="h-4 w-4" />
+                        <span className="sr-only">Open menu</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem>
+                        <IconEye className="mr-2 h-4 w-4" />
+                        View
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                        <IconEdit className="mr-2 h-4 w-4" />
+                        Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-red-600">
+                        <IconTrash className="mr-2 h-4 w-4" />
+                        Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        ),
+    },
+];
+
 // Category columns
 const categoryColumns: ColumnDef<Category>[] = [
     {
@@ -1350,12 +1522,12 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
         name: '',
         category: '',
         subcategory_id: 'none',
+        price: 0,
         stock: 0
     })
-    const [variants, setVariants] = React.useState<Partial<ProductVariant>[]>([])
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [subcategories, setSubcategories] = React.useState<Subcategory[]>([])
-    const { addProduct, getSubcategoriesByCategory, createProductVariant, createVariantImage, categories, getCategories } = useProductsStore();
+    const { addProduct, getSubcategoriesByCategory, categories, getCategories } = useProductsStore();
 
     // Debug: Log categories when they change
     React.useEffect(() => {
@@ -1383,17 +1555,8 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                 return;
             }
 
-            // Validate variants
-            if (variants.length === 0) {
-                toast.error('Please add at least one product variant');
-                setIsSubmitting(false);
-                return;
-            }
-
-            // Validate each variant has required fields
-            const invalidVariants = variants.filter(variant => !variant.name?.trim() || !variant.price || variant.price <= 0);
-            if (invalidVariants.length > 0) {
-                toast.error('All variants must have a name and valid price');
+            if (!formData.price || formData.price <= 0) {
+                toast.error('Please enter a valid fallback price');
                 setIsSubmitting(false);
                 return;
             }
@@ -1416,16 +1579,14 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                 throw new Error(`Invalid category ID format: ${formData.category}. Expected UUID format.`);
             }
 
-            // Create the main product (minimal info only)
+            // Create the main product (basic info only)
             const productData = {
                 name: formData.name,
                 category: formData.category, // Database expects 'category' column (UUID)
                 subcategory_id: formData.subcategory_id && formData.subcategory_id !== '' && formData.subcategory_id !== 'none' ? formData.subcategory_id : undefined,
-                // Set default values for required fields
                 description: formData.name, // Use product name as description
-                price: variants[0]?.price || 0, // Use first variant's price as fallback
-                stock: variants.reduce((total, variant) => total + (variant.stock || 0), 0), // Sum of all variant stocks
-                image: variants[0]?.images?.[0]?.image_url || '', // Use first variant's first image
+                price: formData.price || 0, // Use fallback price
+                stock: formData.stock || 0, // Use fallback stock
                 rating: 0,
             };
             
@@ -1436,71 +1597,15 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                 throw new Error('Failed to create product');
             }
 
-            // Create all variants for this product
-            const createdVariants = [];
-            for (const variant of variants) {
-                try {
-                    if (!variant.name || !variant.price) {
-                        console.warn('Skipping variant with missing name or price:', variant);
-                        continue;
-                    }
-
-                    const createdVariant = await createProductVariant({
-                        product_id: (product as { id: string }).id,
-                        category_id: formData.category, // Add category_id to satisfy foreign key constraint
-                        name: variant.name,
-                        description: variant.description || variant.name,
-                        price: variant.price || 0,
-                        price_ngn: variant.price_ngn || 0,
-                        price_ghs: variant.price_ghs || 0,
-                        stock: variant.stock || 0,
-                        sku: variant.sku || `${formData.name}-${variant.name}`.toLowerCase().replace(/\s+/g, '-'),
-                        is_active: variant.is_active !== false, // Default to true
-                        sort_order: variant.sort_order || createdVariants.length
-                    });
-
-                    if (createdVariant) {
-                        createdVariants.push(createdVariant);
-                        
-                        // Create images for this variant if they exist
-                        if (variant.images && variant.images.length > 0) {
-                            for (const image of variant.images) {
-                                try {
-                                    await createVariantImage({
-                                        variant_id: createdVariant.id,
-                                        product_id: (product as { id: string }).id,
-                                        image_url: image.image_url,
-                                        alt_text: image.alt_text || `${variant.name} image`,
-                                        is_primary: image.is_primary || false,
-                                        sort_order: image.sort_order || 0,
-                                    });
-                                } catch (imageError) {
-                                    console.error('Error creating variant image:', imageError);
-                                    // Continue with other images even if one fails
-                                }
-                            }
-                        }
-                    }
-                } catch (variantError) {
-                    console.error('Error creating variant:', variantError);
-                    toast.error(`Failed to create variant: ${variant.name}`);
-                    // Continue with other variants even if one fails
-                }
-            }
-
-            if (createdVariants.length === 0) {
-                throw new Error('No variants were created successfully');
-            }
-
-            toast.success(`Product "${formData.name}" created successfully with ${createdVariants.length} variant${createdVariants.length !== 1 ? 's' : ''}!`);
+            toast.success(`Product "${formData.name}" created successfully! You can now add variants to this product.`);
             // Reset form data
             setFormData({
                 name: '',
                 category: '',
                 subcategory_id: 'none',
+                price: 0,
                 stock: 0
             });
-            setVariants([]);
             onClose()
         } catch (error) {
             console.error('Error creating product:', error)
@@ -1522,9 +1627,7 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
         }
     }
 
-    const handleVariantsChange = (newVariants: Partial<ProductVariant>[]) => {
-        setVariants(newVariants);
-    };
+
 
     // Load categories when component mounts
     React.useEffect(() => {
@@ -1621,19 +1724,33 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <Label>Product Variants</Label>
-                <p className="text-xs text-muted-foreground">
-                    Add variants of this product. Each variant will have its own pricing, stock, and images.
-                </p>
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="price">Fallback Price ($)</Label>
+                    <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        value={formData.price}
+                        onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                        placeholder="0.00"
+                        required
+                    />
+                    <p className="text-xs text-muted-foreground">Base price for this product</p>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="stock">Stock</Label>
+                    <Input
+                        id="stock"
+                        type="number"
+                        value={formData.stock}
+                        onChange={(e) => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
+                        placeholder="0"
+                        required
+                    />
+                    <p className="text-xs text-muted-foreground">Initial stock level</p>
+                </div>
             </div>
-
-            <ProductVariantManager
-                variants={variants}
-                onVariantsChange={handleVariantsChange}
-                maxVariants={10}
-                categoryId={formData.category}
-            />
 
             <div className="flex justify-end space-x-2 pt-4">
                 <Button type="button" variant="outline" onClick={() => {
@@ -1642,9 +1759,9 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
                         name: '',
                         category: '',
                         subcategory_id: 'none',
+                        price: 0,
                         stock: 0
                     });
-                    setVariants([]);
                     onClose();
                 }}>
                     Cancel
@@ -1655,6 +1772,397 @@ function CreateProductForm({ onClose }: { onClose: () => void }) {
             </div>
         </form>
     )
+}
+
+// Variant creation form
+function CreateVariantForm({ 
+    productId, 
+    productName, 
+    categoryId, 
+    onClose 
+}: { 
+    productId: string; 
+    productName: string; 
+    categoryId: string; 
+    onClose: () => void; 
+}) {
+    const [formData, setFormData] = React.useState({
+        name: '',
+        sku: '',
+        price_ngn: 0,
+        price_ghs: 0,
+        stock: 0,
+        description: '',
+        is_active: true
+    });
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const [uploadedImageUrls, setUploadedImageUrls] = React.useState<string[]>([]);
+    const { createProductVariant } = useProductsStore();
+
+    // Initialize Uppy for image uploads
+    const { uppy, uploadProgress } = useUppyWithSupabase({ 
+        bucketName: 'file-bucket', 
+        folderName: 'variants',
+        callbacks: {
+            onStart: () => toast.info('Starting image upload...'),
+            onSuccess: (files) => {
+                // Extract URLs from the uploaded files
+                const urls = files.map((file: any) => {
+                    console.log('Processing file for URL extraction:', file);
+                    
+                    // Try different possible URL locations based on Uppy's response structure
+                    let url = null;
+                    
+                    // Method 1: Check response.body.url (most common)
+                    if (file.response?.body?.url) {
+                        url = file.response.body.url;
+                        console.log('Found URL in response.body.url:', url);
+                    }
+                    // Method 2: Check response.url
+                    else if (file.response?.url) {
+                        url = file.response.url;
+                        console.log('Found URL in response.url:', url);
+                    }
+                    // Method 3: Check uploadURL
+                    else if (file.uploadURL) {
+                        url = file.uploadURL;
+                        console.log('Found URL in uploadURL:', url);
+                    }
+                    // Method 4: Check file.url
+                    else if (file.url) {
+                        url = file.url;
+                        console.log('Found URL in file.url:', url);
+                    }
+                    // Method 5: Check meta.objectName and construct URL
+                    else if (file.meta?.objectName) {
+                        // Construct the public URL using the object name
+                        const objectName = file.meta.objectName;
+                        const bucketName = 'file-bucket';
+                        url = `${SUPABASE_PROJECT_URL}/storage/v1/object/public/${bucketName}/${objectName}`;
+                        console.log('Constructed URL from objectName:', url);
+                    }
+                    
+                    if (!url) {
+                        console.warn('Could not extract URL from file:', file);
+                    }
+                    
+                    return url;
+                }).filter(Boolean);
+                
+                console.log('Uploaded files:', files);
+                console.log('Extracted URLs:', urls);
+                
+                setUploadedImageUrls(urls);
+                toast.success(`${urls.length} image(s) uploaded successfully`);
+            },
+            onError: (error) => toast.error(`Upload failed: ${error.message}`),
+        }
+    });
+
+    // No need for Uppy cleanup since files are uploaded immediately
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        // Check if images were uploaded
+        if (uploadedImageUrls.length === 0) {
+            toast.warning('Please upload at least one image for the variant.');
+            setIsSubmitting(false);
+            return;
+        }
+
+        try {
+            // Create the variant
+            const variant = await createProductVariant({
+                product_id: productId,
+                category_id: categoryId,
+                name: formData.name,
+                sku: formData.sku || `${productName}-${formData.name}`.toLowerCase().replace(/\s+/g, '-'),
+                price: 0, // Use 0 as fallback since no general price field
+                price_ngn: formData.price_ngn || undefined,
+                price_ghs: formData.price_ghs || undefined,
+                stock: formData.stock,
+                description: formData.description || formData.name,
+                is_active: formData.is_active,
+                sort_order: 0
+            });
+
+            if (variant) {
+                // Handle image uploads if any images were uploaded
+                if (uploadedImageUrls.length > 0) {
+                    try {
+                        // Create variant image records for each uploaded image
+                        for (const imageUrl of uploadedImageUrls) {
+                            await createVariantImage({
+                                variant_id: variant.id,
+                                image_url: imageUrl,
+                                alt_text: `${formData.name} variant image`,
+                                is_primary: uploadedImageUrls.indexOf(imageUrl) === 0, // First image is primary
+                                sort_order: uploadedImageUrls.indexOf(imageUrl)
+                            });
+                        }
+                        toast.success(`${uploadedImageUrls.length} image${uploadedImageUrls.length !== 1 ? 's' : ''} linked to variant successfully!`);
+                    } catch (imageError) {
+                        console.error('Error linking images to variant:', imageError);
+                        toast.warning('Variant created but there was an issue linking images');
+                    }
+                }
+                
+                toast.success(`Variant "${formData.name}" created successfully!`);
+                // Clear uploaded URLs after successful submission
+                setUploadedImageUrls([]);
+                onClose();
+            } else {
+                throw new Error('Failed to create variant');
+            }
+        } catch (error) {
+            console.error('Error creating variant:', error);
+            toast.error('Failed to create variant. Please try again.');
+            // Clear uploaded URLs on error too
+            setUploadedImageUrls([]);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Product Name (Read-only) */}
+            <div className="space-y-2">
+                <Label>Product Name</Label>
+                <Input value={productName} disabled className="bg-gray-50" />
+                <p className="text-xs text-muted-foreground">This variant will be added to this product</p>
+            </div>
+
+            {/* Variant Details */}
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="variant-name">Variant Name *</Label>
+                    <Input
+                        id="variant-name"
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="e.g., Small, Red, Premium"
+                        required
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="variant-sku">SKU</Label>
+                    <Input
+                        id="variant-sku"
+                        value={formData.sku}
+                        onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
+                        placeholder="Auto-generated if empty"
+                    />
+                </div>
+            </div>
+
+            {/* Pricing */}
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="variant-price-ngn">Nigeria Price (₦)</Label>
+                    <Input
+                        id="variant-price-ngn"
+                        type="number"
+                        step="0.01"
+                        value={formData.price_ngn}
+                        onChange={(e) => setFormData(prev => ({ ...prev, price_ngn: parseFloat(e.target.value) || 0 }))}
+                        placeholder="Optional"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="variant-price-ghs">Ghana Price (₵)</Label>
+                    <Input
+                        id="variant-price-ghs"
+                        type="number"
+                        step="0.01"
+                        value={formData.price_ghs}
+                        onChange={(e) => setFormData(prev => ({ ...prev, price_ghs: parseFloat(e.target.value) || 0 }))}
+                        placeholder="Optional"
+                    />
+                </div>
+            </div>
+
+            {/* Stock and Description */}
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="variant-stock">Stock *</Label>
+                    <Input
+                        id="variant-stock"
+                        type="number"
+                        value={formData.stock}
+                        onChange={(e) => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
+                        placeholder="0"
+                        required
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="variant-active">Active</Label>
+                    <div className="flex items-center space-x-2 pt-2">
+                        <Checkbox
+                            id="variant-active"
+                            checked={formData.is_active}
+                            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked as boolean }))}
+                        />
+                        <Label htmlFor="variant-active" className="text-sm">Available for purchase</Label>
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="variant-description">Description</Label>
+                <Textarea
+                    id="variant-description"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Optional description for this variant"
+                    rows={3}
+                />
+            </div>
+
+            {/* Image Upload */}
+            <div className="space-y-2">
+                <Label>Variant Images</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                                         <input
+                         type="file"
+                         multiple
+                         accept="image/*"
+                                                 onChange={async (e) => {
+                            if (e.target.files) {
+                                const files = Array.from(e.target.files);
+                                console.log('Files selected:', files);
+                                
+                                // Add files to Uppy and upload immediately
+                                try {
+                                    files.forEach(file => {
+                                        uppy.addFile({
+                                            name: file.name,
+                                            type: file.type,
+                                            data: file,
+                                            source: 'input'
+                                        });
+                                        console.log('File added to Uppy:', file.name);
+                                    });
+                                    
+                                    // Upload files immediately after adding them
+                                    console.log('Starting immediate upload of', files.length, 'files');
+                                    toast.info(`Uploading ${files.length} image(s)...`);
+                                    
+                                    const uploadResult = await uppy.upload();
+                                    console.log('Upload completed, result:', uploadResult);
+                                    
+                                    // Check if we have uploaded URLs after upload
+                                    setTimeout(() => {
+                                        console.log('Uploaded URLs after timeout:', uploadedImageUrls);
+                                        if (uploadedImageUrls.length === 0) {
+                                            console.warn('No URLs were captured after upload');
+                                        }
+                                    }, 1000);
+                                    
+                                } catch (error) {
+                                    console.error('Error uploading files:', error);
+                                    toast.error('Failed to upload images. Please try again.');
+                                }
+                            }
+                        }}
+                         className="hidden"
+                         id="variant-images"
+                         disabled={uploadProgress.isUploading}
+                     />
+                    <label 
+                        htmlFor="variant-images"
+                        className={`cursor-pointer text-center space-y-2 ${
+                            uploadProgress.isUploading ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                    >
+                        <div className="mx-auto h-12 w-12 text-gray-400">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                            {uploadProgress.isUploading ? 'Uploading...' : 'Click to upload images'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                            PNG, JPG, GIF up to 5MB each
+                        </p>
+                    </label>
+                </div>
+                
+                                 {/* Upload Progress */}
+                 <UploadProgressInline progress={uploadProgress} />
+                 
+                 {/* Upload Status */}
+                 {uploadProgress.isUploading && (
+                     <div className="mt-4">
+                         <p className="text-sm font-medium mb-2 text-blue-600">
+                             Uploading Images...
+                         </p>
+                         <div className="w-full bg-gray-200 rounded-full h-2">
+                             <div 
+                                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                 style={{ width: `${uploadProgress.progress}%` }}
+                             ></div>
+                         </div>
+                         <p className="text-xs text-gray-500 mt-1">
+                             {uploadProgress.progress}% complete
+                         </p>
+                     </div>
+                 )}
+                 
+                 {/* Uploaded Images Preview */}
+                 {uploadedImageUrls.length > 0 && (
+                    <div className="mt-4">
+                        <p className="text-sm font-medium mb-2">
+                            Uploaded Images ({uploadedImageUrls.length})
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                            {uploadedImageUrls.map((url, index) => (
+                                <div key={index} className="relative">
+                                    <img 
+                                        src={url} 
+                                        alt={`Variant image ${index + 1}`}
+                                        className="w-full h-20 object-cover rounded border"
+                                    />
+                                    {index === 0 && (
+                                        <span className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1 rounded">
+                                            Primary
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+                             {/* Debug Info (remove in production) */}
+                 {process.env.NODE_ENV === 'development' && (
+                     <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
+                         <p className="font-medium mb-2">Debug Info:</p>
+                         <p>Uploaded URLs: {uploadedImageUrls.length}</p>
+                         <p>Upload Progress: {uploadProgress.progress}%</p>
+                         <p>Is Uploading: {uploadProgress.isUploading ? 'Yes' : 'No'}</p>
+                     </div>
+                 )}
+                 
+                 {/* Action Buttons */}
+                 <div className="flex justify-end space-x-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => {
+                    // Clear uploaded URLs when canceling
+                    setUploadedImageUrls([]);
+                    onClose();
+                }}>
+                    Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting || uploadProgress.isUploading}>
+                    {isSubmitting ? 'Creating...' : 'Create Variant'}
+                </Button>
+            </div>
+        </form>
+    );
 }
 
 // Subcategory creation form
@@ -1769,7 +2277,7 @@ export function ProductsDataTable({
     categoriesData: PaginatedResponse<Category>;
     customersData: PaginatedResponse<Customer>;
 }) {
-    const [activeTab, setActiveTab] = React.useState("categories")
+         const [activeTab, setActiveTab] = React.useState("variants")
     const [isCreateSubcategoryDialogOpen, setIsCreateSubcategoryDialogOpen] = React.useState(false)
     const [isCreateProductDialogOpen, setIsCreateProductDialogOpen] = React.useState(false)
     const [currentCustomersData, setCurrentCustomersData] = React.useState(customersData)
@@ -1786,17 +2294,29 @@ export function ProductsDataTable({
         }
     })
 
-    const [productsData, setProductsData] = React.useState<PaginatedResponse<Product>>({
-        documents: [],
-        total: 0,
-        meta: {
-            page: 1,
-            limit: 10,
-            totalPages: 0,
-            previousPage: null,
-            nextPage: null,
-        }
-    })
+         const [productsData, setProductsData] = React.useState<PaginatedResponse<Product>>({
+         documents: [],
+         total: 0,
+         meta: {
+             page: 1,
+             limit: 10,
+             totalPages: 0,
+             previousPage: null,
+             nextPage: null,
+         }
+     })
+
+     const [variantsData, setVariantsData] = React.useState<PaginatedResponse<ProductVariant>>({
+         documents: [],
+         total: 0,
+         meta: {
+             page: 1,
+             limit: 10,
+             totalPages: 0,
+             previousPage: null,
+             nextPage: null,
+         }
+     })
 
     // Update state when prop changes
     React.useEffect(() => {
@@ -1804,28 +2324,61 @@ export function ProductsDataTable({
         setCurrentCategoriesData(categoriesData)
     }, [customersData, categoriesData])
 
-    // Fetch products when component mounts
-    React.useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const products = await getProducts();
-                setProductsData({
-                    documents: products,
-                    total: products.length,
-                    meta: {
-                        page: 1,
-                        limit: 10,
-                        totalPages: Math.ceil(products.length / 10),
-                        previousPage: null,
-                        nextPage: products.length > 10 ? 2 : null,
-                    }
-                });
-            } catch (error) {
-                console.error('Error fetching products:', error);
-            }
-        };
-        fetchProducts();
-    }, []);
+         // Fetch products when component mounts
+     React.useEffect(() => {
+         const fetchProducts = async () => {
+             try {
+                 const products = await getProducts();
+                 setProductsData({
+                     documents: products,
+                     total: products.length,
+                     meta: {
+                         page: 1,
+                         limit: 10,
+                         totalPages: Math.ceil(products.length / 10),
+                         previousPage: null,
+                         nextPage: products.length > 10 ? 2 : null,
+                     }
+                 });
+             } catch (error) {
+                 console.error('Error fetching products:', error);
+             }
+         };
+         fetchProducts();
+     }, []);
+
+     // Fetch variants when component mounts
+     React.useEffect(() => {
+         const fetchVariants = async () => {
+             try {
+                 // Get all variants from all products
+                 const allVariants: ProductVariant[] = [];
+                 const products = await getProducts();
+                 
+                 for (const product of products) {
+                     const productVariants = await getProductVariants(product.id);
+                     if (Array.isArray(productVariants)) {
+                         allVariants.push(...productVariants);
+                     }
+                 }
+                 
+                 setVariantsData({
+                     documents: allVariants,
+                     total: allVariants.length,
+                     meta: {
+                         page: 1,
+                         limit: 10,
+                         totalPages: Math.ceil(allVariants.length / 10),
+                         previousPage: null,
+                         nextPage: allVariants.length > 10 ? 2 : null,
+                     }
+                 });
+             } catch (error) {
+                 console.error('Error fetching variants:', error);
+             }
+         };
+         fetchVariants();
+     }, []);
 
     // Internal pagination handlers
     const handleCustomersPageChange = React.useCallback(async (updaterOrValue: Updater<PaginationState> | PaginationState) => {
@@ -1885,27 +2438,31 @@ export function ProductsDataTable({
                     >
                         <SelectValue placeholder="Select a view" />
                     </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="categories">Categories</SelectItem>
-                        <SelectItem value="products">Products</SelectItem>
-                        <SelectItem value="subcategories">Subcategories</SelectItem>
-                        <SelectItem value="customers">Customers</SelectItem>
-                    </SelectContent>
+                                     <SelectContent>
+                     <SelectItem value="categories">Categories</SelectItem>
+                     <SelectItem value="products">Products</SelectItem>
+                     <SelectItem value="variants">Variants</SelectItem>
+                     <SelectItem value="subcategories">Subcategories</SelectItem>
+                     <SelectItem value="customers">Customers</SelectItem>
+                 </SelectContent>
                 </Select>
                 <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
 
-                    <TabsTrigger value="categories">
-                         Categories <Badge variant="secondary">{categoriesData.total}</Badge>
-                    </TabsTrigger>
-                    <TabsTrigger value="products">
-                        Products <Badge variant="secondary">{productsData.total}</Badge>
-                    </TabsTrigger>
-                    <TabsTrigger value="subcategories">
-                        Subcategories <Badge variant="secondary">{subcategoriesData.total}</Badge>
-                    </TabsTrigger>
-                    <TabsTrigger value="customers">
-                        Customers <Badge variant="secondary">{customersData.total}</Badge>
-                    </TabsTrigger>
+                                         <TabsTrigger value="categories">
+                          Categories <Badge variant="secondary">{categoriesData.total}</Badge>
+                     </TabsTrigger>
+                     <TabsTrigger value="products">
+                         Products <Badge variant="secondary">{productsData.total}</Badge>
+                     </TabsTrigger>
+                     <TabsTrigger value="variants">
+                         Variants <Badge variant="secondary">{variantsData.total}</Badge>
+                     </TabsTrigger>
+                     <TabsTrigger value="subcategories">
+                         Subcategories <Badge variant="secondary">{subcategoriesData.total}</Badge>
+                     </TabsTrigger>
+                     <TabsTrigger value="customers">
+                         Customers <Badge variant="secondary">{customersData.total}</Badge>
+                     </TabsTrigger>
                 </TabsList>
             <div className="flex items-center gap-2">
                 <DropdownMenu>
@@ -2062,29 +2619,51 @@ export function ProductsDataTable({
                         </div>
                     </div>
                 </div>
-            </TabsContent><TabsContent
-                value="products"
-                className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
-            >
-                <DataTable
-                    data={productsData.documents}
-                    columns={productColumns}
-                    pagination={{
-                        pageIndex: productsData.meta.page - 1,
-                        pageSize: productsData.meta.limit,
-                    }}
-                    onPaginationChange={() => {}} />
-                <div className="flex items-center justify-between px-4">
-                    <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-                        Showing {productsData.documents.length} of {productsData.total} products
-                    </div>
-                    <div className="flex w-full items-center gap-8 lg:w-fit">
-                        <div className="flex w-fit items-center justify-center text-sm font-medium">
-                            Page {productsData.meta.page} of {productsData.meta.totalPages}
-                        </div>
-                    </div>
-                </div>
-            </TabsContent><TabsContent
+                         </TabsContent><TabsContent
+                 value="products"
+                 className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
+             >
+                 <DataTable
+                     data={productsData.documents}
+                     columns={productColumns}
+                     pagination={{
+                         pageIndex: productsData.meta.page - 1,
+                         pageSize: productsData.meta.limit,
+                     }}
+                     onPaginationChange={() => {}} />
+                 <div className="flex items-center justify-between px-4">
+                     <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
+                         Showing {productsData.documents.length} of {productsData.total} products
+                     </div>
+                     <div className="flex w-full items-center gap-8 lg:w-fit">
+                         <div className="flex w-fit items-center justify-center text-sm font-medium">
+                             Page {productsData.meta.page} of {productsData.meta.totalPages}
+                         </div>
+                     </div>
+                 </div>
+             </TabsContent><TabsContent
+                 value="variants"
+                 className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
+             >
+                 <DataTable
+                     data={variantsData.documents}
+                     columns={variantColumns}
+                     pagination={{
+                         pageIndex: variantsData.meta.page - 1,
+                         pageSize: variantsData.meta.limit,
+                     }}
+                     onPaginationChange={() => {}} />
+                 <div className="flex items-center justify-between px-4">
+                     <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
+                         Showing {variantsData.documents.length} of {variantsData.total} variants
+                     </div>
+                     <div className="flex w-full items-center gap-8 lg:w-fit">
+                         <div className="flex w-fit items-center justify-center text-sm font-medium">
+                             Page {variantsData.meta.page} of {variantsData.meta.totalPages}
+                         </div>
+                     </div>
+                 </div>
+             </TabsContent><TabsContent
                 value="categories"
                 className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
             >

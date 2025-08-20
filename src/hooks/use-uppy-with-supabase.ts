@@ -78,6 +78,15 @@ export const useUppyWithSupabase = ({
                 data: { session },
             } = await supabase.auth.getSession();
             
+            // Debug logging
+            console.log('Uppy initialization debug info:');
+            console.log('1. Project URL:', PROJECT_URL);
+            console.log('2. Bucket name:', bucketName);
+            console.log('3. Folder name:', folderName);
+            console.log('4. User session exists:', !!session);
+            console.log('5. User ID:', session?.user?.id);
+            console.log('6. Access token exists:', !!session?.access_token);
+            
             // Check if Tus plugin is already added
             if (!uppy.getPlugin('Tus')) {
                 uppy.use(Tus, {
@@ -98,6 +107,14 @@ export const useUppyWithSupabase = ({
                     ], // Metadata fields allowed for the upload
                     onError: (error: Error) => {
                         console.error("Upload error:", error);
+                        // Log more details about the error
+                        if (error.message.includes('Bucket not found')) {
+                            console.error('Bucket not found error. Please check:');
+                            console.error('1. Bucket name:', bucketName);
+                            console.error('2. Project URL:', PROJECT_URL);
+                            console.error('3. User session:', !!session);
+                            console.error('4. User permissions for bucket:', bucketName);
+                        }
                         callbacks?.onError?.(error);
                         resetProgress();
                     },
