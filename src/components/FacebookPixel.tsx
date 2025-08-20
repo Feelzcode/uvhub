@@ -9,12 +9,9 @@ declare global {
     }
 }
 
-interface FacebookPixelProps {
-    children: React.ReactNode;
-}
-
-export default function FacebookPixel({ children }: FacebookPixelProps) {
-    const { settings } = useSettingsStore();
+export default function FacebookPixel() {
+    const { getCurrentSettings } = useSettingsStore();
+    const settings = getCurrentSettings();
 
     useEffect(() => {
         if (!settings?.facebook_pixel_enabled || !settings?.facebook_pixel_id) {
@@ -66,7 +63,7 @@ export default function FacebookPixel({ children }: FacebookPixelProps) {
         };
     }, [settings?.facebook_pixel_enabled, settings?.facebook_pixel_id]);
 
-    return <>{children}</>;
+    return null;
 }
 
 // Facebook Pixel event tracking functions

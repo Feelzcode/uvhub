@@ -10,12 +10,9 @@ declare global {
     }
 }
 
-interface GoogleAnalyticsProps {
-    children: React.ReactNode;
-}
-
-export default function GoogleAnalytics({ children }: GoogleAnalyticsProps) {
-    const { settings } = useSettingsStore();
+export default function GoogleAnalytics() {
+    const { getCurrentSettings } = useSettingsStore();
+    const settings = getCurrentSettings();
 
     useEffect(() => {
         if (!settings?.google_analytics_enabled || !settings?.google_analytics_id) {
@@ -48,7 +45,7 @@ export default function GoogleAnalytics({ children }: GoogleAnalyticsProps) {
         };
     }, [settings?.google_analytics_enabled, settings?.google_analytics_id]);
 
-    return <>{children}</>;
+    return null;
 }
 
 // Google Analytics event tracking functions
