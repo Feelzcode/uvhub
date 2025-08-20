@@ -1,3 +1,8 @@
+import { assertServerOnly } from './server-only';
+
+// Assert this module is only used on the server
+assertServerOnly();
+
 import { Order, User } from '@/store/types';
 import nodemailer from 'nodemailer';
 import {

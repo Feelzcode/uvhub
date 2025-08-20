@@ -29,8 +29,8 @@ const defaultSettings: Settings = {
     site_description: 'Your Ultimate Shopping Destination',
     contact_email: '',
     contact_phone: '',
-    created_at: new Date('2024-01-01T00:00:00.000Z'), // Static date
-    updated_at: new Date('2024-01-01T00:00:00.000Z'), // Static date
+    created_at: '2024-01-01T00:00:00.000Z', // Static date
+    updated_at: '2024-01-01T00:00:00.000Z', // Static date
 };
 
 export const useSettingsStore = create<SettingsStore>((set, get) => ({

@@ -1,6 +1,11 @@
 /* eslint-disable prefer-const */
 'use server'
 
+import { assertServerOnly } from "@/lib/server-only";
+
+// Assert this module is only used on the server
+assertServerOnly();
+
 import { Customer, Order, OrderItem, PaginatedResponse } from "@/store/types";
 import { createClient } from "@/utils/supabase/server";
 import { paginationSchema, searchSchema } from "@/utils/schema";

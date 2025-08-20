@@ -40,28 +40,44 @@ export default function ProductVariantLightbox({
   const { formatPrice, currentCurrency } = useCurrencyStore();
   const { addToCart } = useCartStore();
 
-  const currentVariant = variants[currentVariantIndex];
-  
-  // Safety check to ensure currentVariant exists
-  if (!currentVariant) {
-    return (
-      <div className={`bg-white rounded-2xl shadow-xl overflow-hidden ${className}`}>
-        <div className="p-8 text-center">
-          <p className="text-gray-500">No variant data available.</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Debug logging to help identify object rendering issues
-  console.log('ProductVariantLightbox render:', {
-    product: product?.name,
-    variantsCount: variants?.length,
-    currentVariantIndex,
-    currentVariant: currentVariant?.name,
-    category: product?.category,
-    subcategory: product?.subcategory
-  });
+  // Navigation functions (defined before hooks)
+  // Pause auto-play when user interacts
+  const pauseOnInteraction = useCallback(() => {
+    if (isAutoPlaying) {
+      setIsAutoPlaying(false);
+      // Resume auto-play after 10 seconds of inactivity
+      setTimeout(() => setIsAutoPlaying(true), 10000);
+    }
+  }, [isAutoPlaying]);
+
+  const changeVariant = useCallback((newIndex: number) => {
+    if (newIndex === currentVariantIndex || isTransitioning) return;
+    
+    pauseOnInteraction();
+    setIsTransitioning(true);
+    setCurrentVariantIndex(newIndex);
+    
+    // Reset transition state after animation completes
+    setTimeout(() => setIsTransitioning(false), 300);
+  }, [currentVariantIndex, isTransitioning, pauseOnInteraction]);
+
+  const nextVariant = useCallback(() => {
+    changeVariant((currentVariantIndex + 1) % variants.length);
+  }, [changeVariant, currentVariantIndex, variants.length]);
+
+  const previousVariant = useCallback(() => {
+    changeVariant((currentVariantIndex - 1 + variants.length) % variants.length);
+  }, [changeVariant, currentVariantIndex, variants.length]);
+
+  const toggleAutoPlay = useCallback(() => {
+    setIsAutoPlaying(!isAutoPlaying);
+  }, [isAutoPlaying]);
+
+  const handleAddToCart = () => {
+    if (currentVariant && currentVariant.stock > 0) {
+      addToCart(product);
+    }
+  };
 
   // Auto-sliding functionality with progress bar
   useEffect(() => {
@@ -101,46 +117,7 @@ export default function ProductVariantLightbox({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Handle variant change with smooth transition
-  const changeVariant = useCallback((newIndex: number) => {
-    if (newIndex === currentVariantIndex || isTransitioning) return;
-    
-    pauseOnInteraction();
-    setIsTransitioning(true);
-    setCurrentVariantIndex(newIndex);
-    
-    // Reset transition state after animation completes
-    setTimeout(() => setIsTransitioning(false), 300);
-  }, [currentVariantIndex, isTransitioning]);
-
-  const nextVariant = () => {
-    changeVariant((currentVariantIndex + 1) % variants.length);
-  };
-
-  const previousVariant = () => {
-    changeVariant((currentVariantIndex - 1 + variants.length) % variants.length);
-  };
-
-  const toggleAutoPlay = () => {
-    setIsAutoPlaying(!isAutoPlaying);
-  };
-
-  const handleAddToCart = () => {
-    if (currentVariant && currentVariant.stock > 0) {
-      addToCart(product);
-    }
-  };
-
-  // Pause auto-play when user interacts
-  const pauseOnInteraction = useCallback(() => {
-    if (isAutoPlaying) {
-      setIsAutoPlaying(false);
-      // Resume auto-play after 10 seconds of inactivity
-      setTimeout(() => setIsAutoPlaying(true), 10000);
-    }
-  }, [isAutoPlaying]);
+  }, [nextVariant, previousVariant, toggleAutoPlay]);
 
   // Touch/swipe handlers for mobile
   const onTouchStart = (e: React.TouchEvent) => {
@@ -166,6 +143,8 @@ export default function ProductVariantLightbox({
     }
   };
 
+  const currentVariant = variants[currentVariantIndex];
+
   if (isLoading) {
     return (
       <div className={`bg-white rounded-2xl shadow-xl overflow-hidden ${className}`}>
@@ -190,6 +169,16 @@ export default function ProductVariantLightbox({
       <div className={`bg-white rounded-2xl shadow-xl overflow-hidden ${className}`}>
         <div className="p-8 text-center">
           <p className="text-gray-500">No variants available for this product.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentVariant) {
+    return (
+      <div className={`bg-white rounded-2xl shadow-xl overflow-hidden ${className}`}>
+        <div className="p-8 text-center">
+          <p className="text-gray-500">No variant data available.</p>
         </div>
       </div>
     );

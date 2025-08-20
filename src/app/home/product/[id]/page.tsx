@@ -22,11 +22,13 @@ type PageProps = { params: Promise<{ id: string }> }
 export default function ProductDetails({ params }: PageProps) {
   const router = useRouter();
   // Use cart store directly for variant support
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { addToCart } = useCartStore();
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setsimilarProducts] = useState<Product[] | []>([]);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { formatPrice, currentCurrency } = useCurrencyStore();
   const { getProductImages } = useProductsStore();
   const id = use(params).id;

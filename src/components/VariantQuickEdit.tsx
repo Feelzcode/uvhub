@@ -9,10 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Edit, 
   Save, 
-  X, 
-  Loader2
+  X,
+  Loader2 
 } from 'lucide-react';
 import { toast } from 'sonner';
 

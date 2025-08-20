@@ -1,6 +1,5 @@
 import OrdersOverview from '@/components/OrdersOverview'
 import React from 'react'
-import { getAllOrders } from './actions';
 import { getAllCustomers } from '../products/actions';
 import { OrdersDatatable } from '@/components/OrdersDatatable';
 import type { Metadata } from "next";
@@ -11,10 +10,13 @@ export const metadata: Metadata = {
 };
 
 async function OrdersPage() {
-  const [orders, customers] = await Promise.all([
-    getAllOrders(),
-    getAllCustomers(),
-  ]);
+  // Fetch orders from the API route instead of importing server actions directly
+  const ordersResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/orders`, {
+    cache: 'no-store'
+  });
+  const orders = ordersResponse.ok ? await ordersResponse.json() : [];
+  
+  const customers = await getAllCustomers();
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-2">

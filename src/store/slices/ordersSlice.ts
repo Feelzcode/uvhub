@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { Customer, Order, OrderItem, OrdersState } from '../types';
-import { getAllOrders, placeOrder } from '@/app/admin/dashboard/orders/actions';
+import { ordersApi } from '@/lib/api/orders';
 
 interface OrdersActions {
     // Actions
@@ -13,7 +13,7 @@ interface OrdersActions {
         paymentMethod: string,
     }) => Promise<Order | null>;
     updateOrder: (id: string, updates: Partial<Order>) => Promise<Order | null>;
-    deleteOrder: (id: string) => void;
+    deleteOrder: (id: string) => Promise<boolean>;
     setSelectedOrder: (order: Order | null) => void;
     setLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
@@ -42,7 +42,7 @@ export const useOrdersStore = create<OrdersState & OrdersActions>()(
             setOrders: async () => {
                 set({ loading: true, error: null });
                 try {
-                    const orders = await getAllOrders();
+                    const orders = await ordersApi.getAllOrders();
                     set({ orders, loading: false, error: null });
                 } catch (error) {
                     console.error(error);
@@ -53,7 +53,7 @@ export const useOrdersStore = create<OrdersState & OrdersActions>()(
             placeOrder: async (orderDetails) => {
                 set({ loading: true, error: null });
                 try {
-                    const newOrder = await placeOrder(orderDetails);
+                    const newOrder = await ordersApi.placeOrder(orderDetails);
                     if (newOrder) {
                         set((state) => ({
                             orders: [...state.orders, newOrder],
@@ -69,17 +69,39 @@ export const useOrdersStore = create<OrdersState & OrdersActions>()(
                 }
             },
 
-            updateOrder: (id, updates) =>
-                set((state) => ({
-                    orders: state.orders.map((order) =>
-                        order.id === id ? { ...order, ...updates, updatedAt: new Date() } : order
-                    ),
-                })),
+            updateOrder: async (id, updates) => {
+                try {
+                    const updatedOrder = await ordersApi.updateOrder(id, updates);
+                    if (updatedOrder) {
+                        set((state) => ({
+                            orders: state.orders.map((order) =>
+                                order.id === id ? updatedOrder : order
+                            ),
+                        }));
+                        return updatedOrder;
+                    }
+                    return null;
+                } catch (error) {
+                    console.error('Error updating order:', error);
+                    return null;
+                }
+            },
 
-            deleteOrder: (id) =>
-                set((state) => ({
-                    orders: state.orders.filter((order) => order.id !== id),
-                })),
+            deleteOrder: async (id) => {
+                try {
+                    const success = await ordersApi.deleteOrder(id);
+                    if (success) {
+                        set((state) => ({
+                            orders: state.orders.filter((order) => order.id !== id),
+                        }));
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('Error deleting order:', error);
+                    return false;
+                }
+            },
 
             setSelectedOrder: (order) => set({ selectedOrder: order }),
 

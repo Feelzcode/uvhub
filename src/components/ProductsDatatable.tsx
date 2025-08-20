@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import Image from "next/image"
 import {
     Select,
     SelectContent,
@@ -90,11 +91,11 @@ import { toast } from "sonner"
 import ProductVariantManager from "@/components/ProductVariantManager"
 import { CategoryTypeForm } from "@/components/CategoryTypeForm"
 import { useProductsStore, useSubcategories } from "@/store"
-import { useUppyWithSupabase } from "@/hooks/use-uppy-with-supabase"
+import { useCloudinaryUpload } from "@/hooks/use-cloudinary-upload"
 import { UploadProgressInline } from "@/components/ui/upload-progress"
 
-// Get Supabase project URL for URL construction
-const SUPABASE_PROJECT_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+// Get Supabase project URL for URL construction (keep for potential future use)
+// const SUPABASE_PROJECT_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 import {
     getPaginatedCustomers,
     getPaginatedCategories,
@@ -1335,6 +1336,7 @@ const variantColumns: ColumnDef<ProductVariant>[] = [
     },
     {
         id: "actions",
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         cell: ({ row }) => (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -1799,59 +1801,14 @@ function CreateVariantForm({
     const [uploadedImageUrls, setUploadedImageUrls] = React.useState<string[]>([]);
     const { createProductVariant } = useProductsStore();
 
-    // Initialize Uppy for image uploads
-    const { uppy, uploadProgress } = useUppyWithSupabase({ 
-        bucketName: 'file-bucket', 
-        folderName: 'variants',
+    // Initialize Cloudinary for image uploads
+    const { uploadFiles, uploadProgress } = useCloudinaryUpload({ 
+        folder: 'variants',
         callbacks: {
             onStart: () => toast.info('Starting image upload...'),
             onSuccess: (files) => {
                 // Extract URLs from the uploaded files
-                const urls = files.map((file: any) => {
-                    console.log('Processing file for URL extraction:', file);
-                    
-                    // Try different possible URL locations based on Uppy's response structure
-                    let url = null;
-                    
-                    // Method 1: Check response.body.url (most common)
-                    if (file.response?.body?.url) {
-                        url = file.response.body.url;
-                        console.log('Found URL in response.body.url:', url);
-                    }
-                    // Method 2: Check response.url
-                    else if (file.response?.url) {
-                        url = file.response.url;
-                        console.log('Found URL in response.url:', url);
-                    }
-                    // Method 3: Check uploadURL
-                    else if (file.uploadURL) {
-                        url = file.uploadURL;
-                        console.log('Found URL in uploadURL:', url);
-                    }
-                    // Method 4: Check file.url
-                    else if (file.url) {
-                        url = file.url;
-                        console.log('Found URL in file.url:', url);
-                    }
-                    // Method 5: Check meta.objectName and construct URL
-                    else if (file.meta?.objectName) {
-                        // Construct the public URL using the object name
-                        const objectName = file.meta.objectName;
-                        const bucketName = 'file-bucket';
-                        url = `${SUPABASE_PROJECT_URL}/storage/v1/object/public/${bucketName}/${objectName}`;
-                        console.log('Constructed URL from objectName:', url);
-                    }
-                    
-                    if (!url) {
-                        console.warn('Could not extract URL from file:', file);
-                    }
-                    
-                    return url;
-                }).filter(Boolean);
-                
-                console.log('Uploaded files:', files);
-                console.log('Extracted URLs:', urls);
-                
+                const urls = files.map((file: { secure_url: string }) => file.secure_url).filter(Boolean);
                 setUploadedImageUrls(urls);
                 toast.success(`${urls.length} image(s) uploaded successfully`);
             },
@@ -2034,32 +1991,13 @@ function CreateVariantForm({
                                 const files = Array.from(e.target.files);
                                 console.log('Files selected:', files);
                                 
-                                // Add files to Uppy and upload immediately
+                                // Upload files to Cloudinary
                                 try {
-                                    files.forEach(file => {
-                                        uppy.addFile({
-                                            name: file.name,
-                                            type: file.type,
-                                            data: file,
-                                            source: 'input'
-                                        });
-                                        console.log('File added to Uppy:', file.name);
-                                    });
-                                    
-                                    // Upload files immediately after adding them
-                                    console.log('Starting immediate upload of', files.length, 'files');
+                                    console.log('Starting upload of', files.length, 'files');
                                     toast.info(`Uploading ${files.length} image(s)...`);
                                     
-                                    const uploadResult = await uppy.upload();
+                                    const uploadResult = await uploadFiles(files);
                                     console.log('Upload completed, result:', uploadResult);
-                                    
-                                    // Check if we have uploaded URLs after upload
-                                    setTimeout(() => {
-                                        console.log('Uploaded URLs after timeout:', uploadedImageUrls);
-                                        if (uploadedImageUrls.length === 0) {
-                                            console.warn('No URLs were captured after upload');
-                                        }
-                                    }, 1000);
                                     
                                 } catch (error) {
                                     console.error('Error uploading files:', error);
@@ -2121,9 +2059,11 @@ function CreateVariantForm({
                         <div className="grid grid-cols-3 gap-2">
                             {uploadedImageUrls.map((url, index) => (
                                 <div key={index} className="relative">
-                                    <img 
+                                    <Image 
                                         src={url} 
                                         alt={`Variant image ${index + 1}`}
+                                        width={100}
+                                        height={80}
                                         className="w-full h-20 object-cover rounded border"
                                     />
                                     {index === 0 && (

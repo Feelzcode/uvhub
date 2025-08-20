@@ -2,10 +2,17 @@
  * Utility functions to safely render data and prevent "Objects are not valid as React child" errors
  */
 
+// Type definitions for the safe render functions
+type Category = string | { name?: string; description?: string; id?: string } | null | undefined;
+type Product = { name?: string; description?: string; id?: string } | null | undefined;
+type Variant = { name?: string; description?: string; id?: string } | null | undefined;
+type SafeValue = string | number | boolean | { name?: string; description?: string; id?: string } | null | undefined;
+type Price = string | number | null | undefined;
+
 /**
  * Safely extracts a category name from various possible formats
  */
-export function getCategoryName(category: any): string {
+export function getCategoryName(category: Category): string {
   if (!category) return 'Unknown';
   
   // If it's already a string, return it
@@ -31,7 +38,7 @@ export function getCategoryName(category: any): string {
 /**
  * Safely extracts a subcategory name from various possible formats
  */
-export function getSubcategoryName(subcategory: any): string {
+export function getSubcategoryName(subcategory: Category): string {
   if (!subcategory) return '';
   
   // If it's already a string, return it
@@ -57,7 +64,7 @@ export function getSubcategoryName(subcategory: any): string {
 /**
  * Safely renders any value as a string, preventing object rendering errors
  */
-export function safeRender(value: any, fallback: string = ''): string {
+export function safeRender(value: SafeValue, fallback: string = ''): string {
   if (value === null || value === undefined) return fallback;
   
   // If it's already a string, return it
@@ -96,28 +103,28 @@ export function safeRender(value: any, fallback: string = ''): string {
 /**
  * Safely renders a product name
  */
-export function getProductName(product: any): string {
+export function getProductName(product: Product): string {
   return safeRender(product?.name, 'Product');
 }
 
 /**
  * Safely renders a product description
  */
-export function getProductDescription(product: any): string {
+export function getProductDescription(product: Product): string {
   return safeRender(product?.description, '');
 }
 
 /**
  * Safely renders a variant name
  */
-export function getVariantName(variant: any, index: number): string {
+export function getVariantName(variant: Variant, index: number): string {
   return safeRender(variant?.name, `Variant ${index + 1}`);
 }
 
 /**
  * Safely renders a price value
  */
-export function getPriceValue(price: any): number {
+export function getPriceValue(price: Price): number {
   if (typeof price === 'number') return price;
   if (typeof price === 'string') {
     const parsed = parseFloat(price);

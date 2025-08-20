@@ -21,8 +21,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useUppyWithSupabase } from '@/hooks/use-uppy-with-supabase';
-import { getPublicUrlOfUploadedFile } from '@/lib/utils';
+import { useCloudinaryUpload } from '@/hooks/use-cloudinary-upload';
 import VariantImageManager from './VariantImageManager';
 
 interface ProductVariantManagerProps {
@@ -58,10 +57,9 @@ export default function ProductVariantManager({
     images: []
   });
   
-  // Initialize Uppy for variant image uploads with progress tracking
-  const { uppy, uploadProgress } = useUppyWithSupabase({ 
-                    bucketName: 'file-bucket', 
-        folderName: 'variants',
+  // Initialize Cloudinary for variant image uploads with progress tracking
+  const { uploadFiles, uploadProgress } = useCloudinaryUpload({ 
+    folder: 'variants',
     callbacks: {
       onStart: () => toast.info('Starting image upload...'),
       onSuccess: (files) => toast.success(`${files.length} image(s) uploaded successfully`),
@@ -200,28 +198,20 @@ export default function ProductVariantManager({
     if (!files || files.length === 0) return;
 
     try {
-      // Upload files to Supabase storage
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        uppy.addFile(file);
-      }
-
-      const response = await uppy.upload();
+      // Upload files to Cloudinary
+      const response = await uploadFiles(Array.from(files));
       
-      if (response?.successful) {
-        const newImages: ProductImage[] = response.successful.map((file, index) => {
-          const imageUrl = getPublicUrlOfUploadedFile(file.meta.objectName as string);
-          return {
-            id: `temp-${Date.now()}-${index}`,
-            product_id: '',
-            image_url: imageUrl,
-            alt_text: file.name,
-            is_primary: index === 0,
-            sort_order: index,
-            created_at: new Date(),
-            updated_at: new Date()
-          };
-        });
+      if (response && response.length > 0) {
+        const newImages: ProductImage[] = response.map((file: { secure_url: string; public_id: string }, index: number) => ({
+          id: `temp-${Date.now()}-${index}`,
+          product_id: '',
+          image_url: file.secure_url,
+          alt_text: file.public_id.split('/').pop() || file.public_id,
+          is_primary: index === 0,
+          sort_order: index,
+          created_at: new Date(),
+          updated_at: new Date()
+        }));
 
         if (variantIndex === -1) {
           // This is for the new variant form
@@ -258,29 +248,21 @@ export default function ProductVariantManager({
     if (!files || files.length === 0) return;
 
     try {
-      // Upload files to Supabase storage
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        uppy.addFile(file);
-      }
-
-      const response = await uppy.upload();
+      // Upload files to Cloudinary
+      const response = await uploadFiles(Array.from(files));
       
-      if (response?.successful) {
-        const newImages: ProductImage[] = response.successful.map((file, index) => {
-          const imageUrl = getPublicUrlOfUploadedFile(file.meta.objectName as string);
-          return {
-            id: `temp-${Date.now()}-${index}`,
-            product_id: variants[variantIndex].product_id || '',
-            variant_id: variants[variantIndex].id,
-            image_url: imageUrl,
-            alt_text: file.name,
-            is_primary: index === 0,
-            sort_order: index,
-            created_at: new Date(),
-            updated_at: new Date()
-          };
-        });
+      if (response && response.length > 0) {
+        const newImages: ProductImage[] = response.map((file: { secure_url: string; public_id: string }, index: number) => ({
+          id: `temp-${Date.now()}-${index}`,
+          product_id: variants[variantIndex].product_id || '',
+          variant_id: variants[variantIndex].id,
+          image_url: file.secure_url,
+          alt_text: file.public_id.split('/').pop() || file.public_id,
+          is_primary: index === 0,
+          sort_order: index,
+          created_at: new Date(),
+          updated_at: new Date()
+        }));
 
         // This is for editing an existing variant
         const updatedVariants = variants.map((variant, i) =>
@@ -655,7 +637,9 @@ function VariantEditForm({
   variantIndex,
   onSave,
   onCancel,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onImageUpload,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onImageRemove,
 }: {
   variant: Partial<ProductVariant>;

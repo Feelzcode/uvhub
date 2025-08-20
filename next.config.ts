@@ -1,5 +1,6 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
@@ -34,7 +35,24 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'nassausportsng.com',
       },
+      {
+        protocol: 'https',
+        hostname: '*.cloudinary.com',
+      },
     ],
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Exclude Node.js modules from client bundle
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        nodemailer: false,
+        handlebars: false,
+      };
+    }
+    return config;
   },
 };
 

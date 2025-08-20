@@ -1,27 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { ProductImage } from '@/store/types';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
   Trash2, 
-  Edit, 
   Star,
-  Eye,
-  X,
-  ChevronLeft,
-  ChevronRight,
   Upload,
   Loader2,
+  GripVertical,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useUppyWithSupabase } from '@/hooks/use-uppy-with-supabase';
-import { getPublicUrlOfUploadedFile } from '@/lib/utils';
+import { useCloudinaryUpload } from '@/hooks/use-cloudinary-upload';
 import { UploadProgressInline } from '@/components/ui/upload-progress';
 
 interface ProductImageManagerProps {
@@ -37,10 +32,9 @@ export default function ProductImageManager({
     productId,
     maxImages = 6 
 }: ProductImageManagerProps) {
-    // Initialize Uppy for image uploads with progress tracking
-    const { uppy, uploadProgress } = useUppyWithSupabase({ 
-        bucketName: 'file-bucket', 
-        folderName: 'products',
+    // Initialize Cloudinary for image uploads with progress tracking
+    const { uploadFiles, uploadProgress } = useCloudinaryUpload({ 
+        folder: 'products',
         callbacks: {
             onStart: () => toast.info('Starting image upload...'),
             onSuccess: (files) => toast.success(`${files.length} image(s) uploaded successfully`),
@@ -59,21 +53,15 @@ export default function ProductImageManager({
         try {
             const newImages: ProductImage[] = [];
             
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                uppy.addFile(file);
-            }
-
-            const response = await uppy.upload();
+            const response = await uploadFiles(Array.from(files));
             
-            if (response?.successful) {
-                response.successful.forEach((file, index) => {
-                    const imageUrl = getPublicUrlOfUploadedFile(file.meta.objectName as string);
+            if (response && response.length > 0) {
+                response.forEach((file, index) => {
                     const newImage: ProductImage = {
                         id: `temp-${Date.now()}-${index}`,
                         product_id: productId || 'temp',
-                        image_url: imageUrl,
-                        alt_text: file.name,
+                        image_url: file.secure_url,
+                        alt_text: file.public_id.split('/').pop() || file.public_id,
                         is_primary: images.length === 0 && index === 0, // First image becomes primary if no images exist
                         sort_order: images.length + index,
                         created_at: new Date(),

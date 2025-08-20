@@ -6,6 +6,7 @@ export async function GET() {
         const supabase = await createClient();
 
         // First, try to get the current user to check authentication
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         // Check if settings table exists and has data

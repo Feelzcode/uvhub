@@ -160,11 +160,11 @@ export const useUppyWithSupabase = ({
             });
 
             // Upload success
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             uppy.on('upload-success', (file: any, response: any) => {
-                updateProgress(prev => ({
-                    ...prev,
-                    uploadedFiles: prev.uploadedFiles + 1
-                }));
+                updateProgress({
+                    uploadedFiles: uploadProgress.uploadedFiles + 1
+                });
             });
 
             // Upload complete
@@ -190,13 +190,8 @@ export const useUppyWithSupabase = ({
         // Cleanup function
         return () => {
             if (uppy) {
-                // Remove all event listeners instead of calling close()
-                uppy.off('file-added');
-                uppy.off('upload-progress');
-                uppy.off('upload-start');
-                uppy.off('upload-success');
-                uppy.off('complete');
-                uppy.off('error');
+                // Destroy the uppy instance which removes all listeners
+                uppy.destroy();
             }
         };
     }, [uppy, bucketName, folderName, callbacks, updateProgress, resetProgress]);

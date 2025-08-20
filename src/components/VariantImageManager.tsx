@@ -15,12 +15,10 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Upload,
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useUppyWithSupabase, UploadProgress } from '@/hooks/use-uppy-with-supabase';
-import { getPublicUrlOfUploadedFile } from '@/lib/utils';
+import { useCloudinaryUpload } from '@/hooks/use-cloudinary-upload';
 import Image from 'next/image';
 import { UploadProgressInline } from '@/components/ui/upload-progress';
 
@@ -44,10 +42,9 @@ export default function VariantImageManager({
   const [editingImage, setEditingImage] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Partial<ProductImage>>({});
 
-  // Initialize Uppy for image uploads with progress tracking
-  const { uppy, uploadProgress } = useUppyWithSupabase({ 
-                    bucketName: 'file-bucket', 
-        folderName: 'variants',
+  // Initialize Cloudinary for image uploads with progress tracking
+  const { uploadFiles, uploadProgress } = useCloudinaryUpload({ 
+    folder: 'variants',
     callbacks: {
       onStart: () => toast.info('Starting image upload...'),
       onSuccess: (files) => toast.success(`${files.length} image(s) uploaded successfully`),
@@ -65,29 +62,21 @@ export default function VariantImageManager({
     }
 
     try {
-      // Upload files to Supabase storage
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        uppy.addFile(file);
-      }
-
-      const response = await uppy.upload();
+      // Upload files to Cloudinary
+      const response = await uploadFiles(Array.from(files));
       
-      if (response?.successful) {
-        const newImages: ProductImage[] = response.successful.map((file, index) => {
-          const imageUrl = getPublicUrlOfUploadedFile(file.meta.objectName as string);
-          return {
-            id: `temp-${Date.now()}-${index}`,
-            product_id: productId,
-            variant_id: variantId,
-            image_url: imageUrl,
-            alt_text: file.name,
-            is_primary: images.length === 0 && index === 0, // First image becomes primary if no images exist
-            sort_order: images.length + index,
-            created_at: new Date(),
-            updated_at: new Date()
-          };
-        });
+      if (response && response.length > 0) {
+        const newImages: ProductImage[] = response.map((file, index) => ({
+          id: `temp-${Date.now()}-${index}`,
+          product_id: productId,
+          variant_id: variantId,
+          image_url: file.secure_url,
+          alt_text: file.public_id.split('/').pop() || file.public_id,
+          is_primary: images.length === 0 && index === 0, // First image becomes primary if no images exist
+          sort_order: images.length + index,
+          created_at: new Date(),
+          updated_at: new Date()
+        }));
 
         onImagesChange([...images, ...newImages]);
       }

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ProductVariant, ProductImage, Product } from '@/store/types';
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { ProductVariant, Product } from '@/store/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,16 +14,13 @@ import {
   Edit, 
   Save, 
   X, 
-  Eye, 
   Trash2, 
   Plus,
   Image as ImageIcon,
-  Star,
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useUppyWithSupabase } from '@/hooks/use-uppy-with-supabase';
-import VariantImageManager from './VariantImageManager';
+import { useCloudinaryUpload } from '@/hooks/use-cloudinary-upload';
 import { 
   Dialog, 
   DialogContent, 
@@ -56,6 +54,7 @@ export default function ProductVariantViewer({
   variants,
   onVariantsChange,
   onVariantUpdate,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onVariantCreate,
   onVariantDelete,
   className = ''
@@ -195,9 +194,10 @@ export default function ProductVariantViewer({
               {/* Variant Image */}
               {variant.image_url && (
                 <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                  <img
+                  <Image
                     src={variant.image_url}
                     alt={variant.name}
+                    fill
                     className="w-full h-full object-cover"
                   />
                   {variant.images && variant.images.length > 0 && (
@@ -398,7 +398,7 @@ export default function ProductVariantViewer({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Variant</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{variantToDelete?.name}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{variantToDelete?.name}&quot;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -444,31 +444,13 @@ function CreateVariantForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   
-  // Initialize Uppy for image uploads
-  const { uppy, uploadProgress } = useUppyWithSupabase({ 
-    bucketName: 'file-bucket', 
-    folderName: 'variants',
+  // Initialize Cloudinary for image uploads
+  const { uploadFiles, uploadProgress } = useCloudinaryUpload({ 
+    folder: 'variants',
     callbacks: {
       onStart: () => toast.info('Starting image upload...'),
       onSuccess: (files) => {
-        const urls = files.map((file: any) => {
-          let url = null;
-          if (file.response?.body?.url) {
-            url = file.response.body.url;
-          } else if (file.response?.url) {
-            url = file.response.url;
-          } else if (file.uploadURL) {
-            url = file.uploadURL;
-          } else if (file.url) {
-            url = file.url;
-          } else if (file.meta?.objectName) {
-            const objectName = file.meta.objectName;
-            const bucketName = 'file-bucket';
-            url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucketName}/${objectName}`;
-          }
-          return url;
-        }).filter(Boolean);
-        
+        const urls = files.map((file: { secure_url: string }) => file.secure_url).filter(Boolean);
         setUploadedImageUrls(urls);
         toast.success(`${urls.length} image(s) uploaded successfully`);
       },
@@ -637,17 +619,8 @@ function CreateVariantForm({
                 const files = Array.from(e.target.files);
                 
                 try {
-                  files.forEach(file => {
-                    uppy.addFile({
-                      name: file.name,
-                      type: file.type,
-                      data: file,
-                      source: 'input'
-                    });
-                  });
-                  
                   toast.info(`Uploading ${files.length} image(s)...`);
-                  await uppy.upload();
+                  await uploadFiles(files);
                   
                 } catch (error) {
                   console.error('Error uploading files:', error);
@@ -706,9 +679,11 @@ function CreateVariantForm({
             <div className="grid grid-cols-3 gap-2">
               {uploadedImageUrls.map((url, index) => (
                 <div key={index} className="relative">
-                  <img 
+                  <Image 
                     src={url} 
                     alt={`Variant image ${index + 1}`}
+                    width={100}
+                    height={80}
                     className="w-full h-20 object-cover rounded border"
                   />
                   {index === 0 && (

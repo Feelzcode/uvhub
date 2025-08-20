@@ -11,6 +11,7 @@ interface AnalyticsWrapperProps {
 }
 
 export default function AnalyticsWrapper({ children }: AnalyticsWrapperProps) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { getSettings, error, loading } = useSettingsStore();
     const [isClient, setIsClient] = useState(false);
 

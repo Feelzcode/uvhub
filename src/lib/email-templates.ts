@@ -1,4 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { assertServerOnly } from './server-only';
+
+// Assert this module is only used on the server
+assertServerOnly();
+
 import Handlebars from 'handlebars';
 import fs from 'fs';
 import path from 'path';
