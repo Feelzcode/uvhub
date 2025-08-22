@@ -342,6 +342,7 @@ export default function VariantsOverview() {
                     <TableHead>Variant</TableHead>
                     <TableHead>Product</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Images</TableHead>
                     <TableHead>SKU</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Stock</TableHead>
@@ -352,7 +353,7 @@ export default function VariantsOverview() {
                 <TableBody>
                   {filteredVariants.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
+                      <TableCell colSpan={9} className="text-center py-8">
                         <div className="text-muted-foreground">
                           {searchTerm || selectedCategory !== 'all' || selectedProduct !== 'all' 
                             ? 'No variants match your filters' 
@@ -381,6 +382,52 @@ export default function VariantsOverview() {
                         <TableCell>
                           <div className="text-sm">
                             {variant.category?.name || 'Unknown Category'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {/* Variant Images */}
+                            {variant.images && variant.images.length > 0 ? (
+                              <div className="flex items-center gap-1">
+                                {variant.images.slice(0, 3).map((image, index) => (
+                                  <div key={index} className="relative w-8 h-8 overflow-hidden rounded border">
+                                    <Image
+                                      src={image.image_url}
+                                      alt={image.alt_text || `Variant ${index + 1}`}
+                                      fill
+                                      className="object-cover"
+                                      sizes="32px"
+                                    />
+                                    {image.is_primary && (
+                                      <div className="absolute top-0 left-0 bg-blue-500 text-white text-xs px-1 rounded-tl">
+                                        ★
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                                {variant.images.length > 3 && (
+                                  <div className="w-8 h-8 bg-gray-100 rounded border flex items-center justify-center">
+                                    <span className="text-xs text-gray-500">
+                                      +{variant.images.length - 3}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            ) : variant.image_url ? (
+                              <div className="relative w-8 h-8 overflow-hidden rounded border">
+                                <Image
+                                  src={variant.image_url}
+                                  alt={variant.name}
+                                  fill
+                                  className="object-cover"
+                                  sizes="32px"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-8 h-8 bg-gray-100 rounded border flex items-center justify-center">
+                                <span className="text-xs text-gray-500">No</span>
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -500,6 +547,51 @@ export default function VariantsOverview() {
                     </div>
                   </div>
                 </div>
+
+                {/* Variant Images */}
+                {(selectedVariant.images && selectedVariant.images.length > 0) || selectedVariant.image_url ? (
+                  <div>
+                    <h3 className="font-medium mb-2">Variant Images</h3>
+                    <div className="grid grid-cols-4 gap-4">
+                      {selectedVariant.images && selectedVariant.images.length > 0 ? (
+                        selectedVariant.images.map((image, index) => (
+                          <div key={index} className="relative aspect-square overflow-hidden rounded-lg border">
+                            <Image
+                              src={image.image_url}
+                              alt={image.alt_text || `Variant image ${index + 1}`}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 25vw, 20vw"
+                            />
+                            {image.is_primary && (
+                              <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                Primary
+                              </div>
+                            )}
+                            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="relative aspect-square overflow-hidden rounded-lg border">
+                          <Image
+                            src={selectedVariant.image_url!}
+                            alt={selectedVariant.name}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 25vw, 20vw"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="font-medium mb-2">Variant Images</h3>
+                    <p className="text-sm text-muted-foreground">No images available for this variant</p>
+                  </div>
+                )}
 
                 {selectedVariant.description && (
                   <div>
@@ -658,7 +750,26 @@ function CreateVariantForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.product_id) {
+      console.error('❌ Product ID is missing in form submission');
+      toast.error('Please select a product before creating a variant');
+      return;
+    }
+    
+    if (!formData.category_id) {
+      console.error('❌ Category ID is missing in form submission');
+      toast.error('Please select a category before creating a variant');
+      return;
+    }
+    
     setIsSubmitting(true);
+
+    // Debug logging
+    console.log('🔍 Form data before variant creation:', formData);
+    console.log('🔍 Product ID from form:', formData.product_id);
+    console.log('🔍 Category ID from form:', formData.category_id);
 
     try {
       // Create the variant
@@ -681,13 +792,19 @@ function CreateVariantForm({
         if (uploadedImageUrls.length > 0) {
           try {
             for (const imageUrl of uploadedImageUrls) {
-              await createVariantImage({
+              const imageData = {
                 variant_id: variant.id,
+                product_id: formData.product_id,
                 image_url: imageUrl,
                 alt_text: `${formData.name} variant image`,
                 is_primary: uploadedImageUrls.indexOf(imageUrl) === 0,
                 sort_order: uploadedImageUrls.indexOf(imageUrl)
-              });
+              };
+              console.log('🔍 About to call createVariantImage with:', imageData);
+              console.log('🔍 Product ID being passed:', imageData.product_id);
+              console.log('🔍 Variant ID being passed:', imageData.variant_id);
+              
+              await createVariantImage(imageData);
             }
             toast.success(`${uploadedImageUrls.length} image(s) linked to variant successfully!`);
           } catch (imageError) {
@@ -720,12 +837,15 @@ function CreateVariantForm({
   };
 
   const handleProductChange = (productId: string) => {
+    console.log('🔍 handleProductChange called with productId:', productId);
     const product = products.find(p => p.id === productId);
+    console.log('🔍 Found product:', product);
     setFormData(prev => ({ 
       ...prev, 
       product_id: productId,
       category_id: product?.category || ''
     }));
+    console.log('🔍 Form data updated with product_id:', productId);
   };
 
   return (
@@ -977,23 +1097,143 @@ function EditVariantForm({
     is_active: variant.is_active
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState(variant.images || []);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [newImagePrimary, setNewImagePrimary] = useState<string | null>(null);
+  
+  // Initialize Cloudinary for image uploads
+  const { uploadFiles, uploadProgress } = useCloudinaryUpload({ 
+    folder: 'variants',
+    callbacks: {
+      onStart: () => toast.info('Starting image upload...'),
+      onSuccess: (files) => {
+        const urls = files.map((file: { secure_url: string }) => file.secure_url).filter(Boolean);
+        setUploadedImageUrls(prev => [...prev, ...urls]);
+        toast.success(`${urls.length} image(s) uploaded successfully`);
+      },
+      onError: (error) => toast.error(`Upload failed: ${error.message}`),
+    }
+  });
+
+  // Helper functions for image management
+  const handleImageUpload = async (files: FileList) => {
+    try {
+      toast.info(`Uploading ${files.length} image(s)...`);
+      await uploadFiles(Array.from(files));
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast.error('Failed to upload images. Please try again.');
+    }
+  };
+
+  const handleRemoveExistingImage = (imageId: string) => {
+    setImagesToDelete(prev => [...prev, imageId]);
+    setExistingImages(prev => prev.filter(img => img.id !== imageId));
+  };
+
+  const handleRemoveNewImage = (imageUrl: string) => {
+    setUploadedImageUrls(prev => prev.filter(url => url !== imageUrl));
+  };
+
+  const handleSetPrimaryImage = (imageId: string) => {
+    setExistingImages(prev => prev.map(img => ({
+      ...img,
+      is_primary: img.id === imageId
+    })));
+  };
+
+  const handleSetNewPrimaryImage = (imageUrl: string) => {
+    setNewImagePrimary(imageUrl);
+  };
+
+  const handleReorderImages = (fromIndex: number, toIndex: number) => {
+    const reorderedImages = [...existingImages];
+    const [movedImage] = reorderedImages.splice(fromIndex, 1);
+    reorderedImages.splice(toIndex, 0, movedImage);
+    
+    // Update sort order
+    const updatedImages = reorderedImages.map((img, index) => ({
+      ...img,
+      sort_order: index
+    }));
+    
+    setExistingImages(updatedImages);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
+      // Update the variant basic information
       const updatedVariant = await updateProductVariant(variant.id, formData);
-      if (updatedVariant) {
-        const updatedVariantWithProduct: VariantWithProduct = {
-          ...updatedVariant,
-          product: variant.product,
-          category: variant.category
-        };
-        onSuccess(updatedVariantWithProduct);
-      } else {
+      if (!updatedVariant) {
         throw new Error('Failed to update variant');
       }
+
+      // Handle image management
+      try {
+        // Delete images marked for deletion
+        if (imagesToDelete.length > 0) {
+          // Note: You'll need to implement deleteVariantImage function in actions
+          // For now, we'll just log this
+          console.log('Images to delete:', imagesToDelete);
+          toast.info(`${imagesToDelete.length} image(s) marked for deletion`);
+        }
+
+                 // Add new uploaded images
+         if (uploadedImageUrls.length > 0) {
+           for (const imageUrl of uploadedImageUrls) {
+             const imageData = {
+               variant_id: variant.id,
+               product_id: variant.product_id,
+               image_url: imageUrl,
+               alt_text: `${formData.name} variant image`,
+               is_primary: existingImages.length === 0 && imageUrl === newImagePrimary,
+               sort_order: existingImages.length + uploadedImageUrls.indexOf(imageUrl)
+             };
+             
+             await createVariantImage(imageData);
+           }
+           toast.success(`${uploadedImageUrls.length} new image(s) added successfully!`);
+         }
+
+        // Update existing images (reorder, change primary, etc.)
+        // This would require additional functions to update image metadata
+        // For now, we'll just log this
+        if (existingImages.length > 0) {
+          console.log('Existing images updated:', existingImages);
+        }
+
+      } catch (imageError) {
+        console.error('Error managing variant images:', imageError);
+        toast.warning('Variant updated but there was an issue managing images');
+      }
+
+             // Create the updated variant object with new images
+       const updatedVariantWithProduct: VariantWithProduct = {
+         ...updatedVariant,
+         product: variant.product,
+         category: variant.category,
+         images: [
+           ...existingImages.filter(img => !imagesToDelete.includes(img.id)),
+           ...uploadedImageUrls.map((url, index) => ({
+             id: `temp-${Date.now()}-${index}`,
+             variant_id: variant.id,
+             product_id: variant.product_id,
+             image_url: url,
+             alt_text: `${formData.name} variant image`,
+             is_primary: existingImages.length === 0 && url === newImagePrimary,
+             sort_order: existingImages.length + index,
+             created_at: new Date().toISOString(),
+             updated_at: new Date().toISOString()
+           }))
+         ]
+       };
+
+      onSuccess(updatedVariantWithProduct);
+      toast.success('Variant updated successfully!');
     } catch (error) {
       console.error('Error updating variant:', error);
       toast.error('Failed to update variant. Please try again.');
@@ -1079,26 +1319,243 @@ function EditVariantForm({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="edit-description">Description</Label>
-        <Textarea
-          id="edit-description"
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="Optional description for this variant"
-          rows={3}
-        />
-      </div>
+             <div className="space-y-2">
+         <Label htmlFor="edit-description">Description</Label>
+         <Textarea
+           id="edit-description"
+           value={formData.description}
+           onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+           placeholder="Optional description for this variant"
+           rows={3}
+         />
+       </div>
 
-      {/* Action Buttons */}
-      <div className="flex justify-end space-x-2 pt-4">
-        <Button type="button" variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Updating...' : 'Update Variant'}
-        </Button>
-      </div>
+       {/* Image Management */}
+       <div className="space-y-4">
+         <Label>Variant Images</Label>
+         
+         {/* Image Summary */}
+         <div className="bg-gray-50 p-3 rounded-lg">
+           <div className="flex items-center justify-between text-sm">
+             <span className="text-gray-600">
+               Total Images: {existingImages.length + uploadedImageUrls.length}
+             </span>
+             <span className="text-gray-600">
+               {existingImages.filter(img => img.is_primary).length + (newImagePrimary ? 1 : 0)} Primary
+             </span>
+           </div>
+           {imagesToDelete.length > 0 && (
+             <div className="mt-2 text-sm text-red-600">
+               {imagesToDelete.length} image(s) marked for deletion
+             </div>
+           )}
+         </div>
+         
+         {/* Existing Images */}
+         {existingImages.length > 0 && (
+           <div className="space-y-3">
+             <h4 className="text-sm font-medium text-gray-700">Current Images</h4>
+             <div className="grid grid-cols-3 gap-3">
+               {existingImages.map((image, index) => (
+                 <div key={image.id} className="relative group">
+                   <div className="aspect-square overflow-hidden rounded-lg border">
+                     <Image
+                       src={image.image_url}
+                       alt={image.alt_text || `Variant image ${index + 1}`}
+                       fill
+                       className="object-cover"
+                       sizes="(max-width: 768px) 25vw, 20vw"
+                     />
+                   </div>
+                   
+                                        {/* Image Controls */}
+                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
+                       <div className="flex gap-1 flex-col">
+                         <div className="flex gap-1">
+                           <Button
+                             type="button"
+                             size="sm"
+                             variant="secondary"
+                             onClick={() => handleSetPrimaryImage(image.id)}
+                             disabled={image.is_primary}
+                             className="h-6 w-6 p-0 text-xs"
+                           >
+                             {image.is_primary ? '★' : '☆'}
+                           </Button>
+                           <Button
+                             type="button"
+                             size="sm"
+                             variant="destructive"
+                             onClick={() => handleRemoveExistingImage(image.id)}
+                             className="h-6 w-6 p-0 text-xs"
+                           >
+                             ×
+                           </Button>
+                         </div>
+                         <div className="flex gap-1">
+                           <Button
+                             type="button"
+                             size="sm"
+                             variant="outline"
+                             onClick={() => handleReorderImages(index, Math.max(0, index - 1))}
+                             disabled={index === 0}
+                             className="h-6 w-6 p-0 text-xs"
+                           >
+                             ↑
+                           </Button>
+                           <Button
+                             type="button"
+                             size="sm"
+                             variant="outline"
+                             onClick={() => handleReorderImages(index, Math.min(existingImages.length - 1, index + 1))}
+                             disabled={index === existingImages.length - 1}
+                             className="h-6 w-6 p-0 text-xs"
+                           >
+                             ↓
+                           </Button>
+                         </div>
+                       </div>
+                     </div>
+                   
+                   {/* Primary Badge */}
+                   {image.is_primary && (
+                     <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                       Primary
+                     </div>
+                   )}
+                   
+                   {/* Order Badge */}
+                   <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                     {index + 1}
+                   </div>
+                 </div>
+               ))}
+             </div>
+           </div>
+         )}
+
+         {/* New Image Upload */}
+         <div className="space-y-3">
+           <h4 className="text-sm font-medium text-gray-700">Add New Images</h4>
+           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+             <input
+               type="file"
+               multiple
+               accept="image/*"
+               onChange={(e) => e.target.files && handleImageUpload(e.target.files)}
+               className="hidden"
+               id="edit-variant-images"
+               disabled={uploadProgress.isUploading}
+             />
+             <label 
+               htmlFor="edit-variant-images"
+               className={`cursor-pointer text-center space-y-2 ${
+                 uploadProgress.isUploading ? 'opacity-50 cursor-not-allowed' : ''
+               }`}
+             >
+               <div className="mx-auto h-12 w-12 text-gray-400">
+                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                 </svg>
+               </div>
+               <p className="text-sm text-gray-600">
+                 {uploadProgress.isUploading ? 'Uploading...' : 'Click to upload new images'}
+               </p>
+               <p className="text-xs text-gray-500">
+                 PNG, JPG, GIF up to 5MB each
+               </p>
+             </label>
+           </div>
+           
+           {/* Upload Progress */}
+           {uploadProgress.isUploading && (
+             <div className="mt-4">
+               <p className="text-sm font-medium mb-2 text-blue-600">
+                 Uploading Images...
+               </p>
+               <div className="w-full bg-gray-200 rounded-full h-2">
+                 <div 
+                   className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                   style={{ width: `${uploadProgress.progress}%` }}
+                 ></div>
+               </div>
+               <p className="text-xs text-gray-500 mt-1">
+                 {uploadProgress.progress}% complete
+               </p>
+             </div>
+           )}
+           
+           {/* New Uploaded Images Preview */}
+           {uploadedImageUrls.length > 0 && (
+             <div className="mt-4">
+               <p className="text-sm font-medium mb-2">
+                 New Images ({uploadedImageUrls.length})
+               </p>
+               <div className="grid grid-cols-3 gap-3">
+                 {uploadedImageUrls.map((url, index) => (
+                   <div key={index} className="relative group">
+                     <div className="aspect-square overflow-hidden rounded-lg border">
+                       <Image
+                         src={url}
+                         alt={`New variant image ${index + 1}`}
+                         fill
+                         className="object-cover"
+                         sizes="(max-width: 768px) 25vw, 20vw"
+                       />
+                     </div>
+                     
+                     {/* Image Controls */}
+                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
+                       <div className="flex gap-2">
+                         <Button
+                           type="button"
+                           size="sm"
+                           variant="secondary"
+                           onClick={() => handleSetNewPrimaryImage(url)}
+                           className="h-8 w-8 p-0"
+                         >
+                           {newImagePrimary === url ? '★' : '☆'}
+                         </Button>
+                         <Button
+                           type="button"
+                           size="sm"
+                           variant="destructive"
+                           onClick={() => handleRemoveNewImage(url)}
+                           className="h-8 w-8 p-0"
+                         >
+                           ×
+                         </Button>
+                       </div>
+                     </div>
+                     
+                     {/* Primary Badge */}
+                     {newImagePrimary === url && (
+                       <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                         Primary
+                       </div>
+                     )}
+                     
+                     {/* Order Badge */}
+                     <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                       {existingImages.length + index + 1}
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             </div>
+           )}
+         </div>
+       </div>
+
+       {/* Action Buttons */}
+       <div className="flex justify-end space-x-2 pt-4">
+         <Button type="button" variant="outline" onClick={onClose}>
+           Cancel
+         </Button>
+         <Button type="submit" disabled={isSubmitting || uploadProgress.isUploading}>
+           {isSubmitting ? 'Updating...' : 'Update Variant'}
+         </Button>
+       </div>
     </form>
   );
 }

@@ -2046,6 +2046,19 @@ function CreateVariantForm({
         }
 
         try {
+            // Validate required fields
+            if (!productId) {
+                console.error('❌ Product ID is missing in form submission');
+                toast.error('Product ID is required to create a variant');
+                return;
+            }
+            
+            if (!categoryId) {
+                console.error('❌ Category ID is missing in form submission');
+                toast.error('Category ID is required to create a variant');
+                return;
+            }
+            
             // Create the variant
             const variant = await createProductVariant({
                 product_id: productId,
@@ -2067,13 +2080,19 @@ function CreateVariantForm({
                     try {
                         // Create variant image records for each uploaded image
                         for (const imageUrl of uploadedImageUrls) {
-                            await createVariantImage({
+                            const imageData = {
                                 variant_id: variant.id,
+                                product_id: productId,
                                 image_url: imageUrl,
                                 alt_text: `${formData.name} variant image`,
                                 is_primary: uploadedImageUrls.indexOf(imageUrl) === 0, // First image is primary
                                 sort_order: uploadedImageUrls.indexOf(imageUrl)
-                            });
+                            };
+                            console.log('🔍 About to call createVariantImage with:', imageData);
+                            console.log('🔍 Product ID being passed:', imageData.product_id);
+                            console.log('🔍 Variant ID being passed:', imageData.variant_id);
+                            
+                            await createVariantImage(imageData);
                         }
                         toast.success(`${uploadedImageUrls.length} image${uploadedImageUrls.length !== 1 ? 's' : ''} linked to variant successfully!`);
                     } catch (imageError) {

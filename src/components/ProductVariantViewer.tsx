@@ -460,6 +460,20 @@ function CreateVariantForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!productId) {
+      console.error('❌ Product ID is missing in form submission');
+      toast.error('Product ID is required to create a variant');
+      return;
+    }
+    
+    if (!categoryId) {
+      console.error('❌ Category ID is missing in form submission');
+      toast.error('Category ID is required to create a variant');
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -483,13 +497,19 @@ function CreateVariantForm({
         if (uploadedImageUrls.length > 0) {
           try {
             for (const imageUrl of uploadedImageUrls) {
-              await createVariantImage({
+              const imageData = {
                 variant_id: variant.id,
+                product_id: productId,
                 image_url: imageUrl,
                 alt_text: `${formData.name} variant image`,
                 is_primary: uploadedImageUrls.indexOf(imageUrl) === 0,
                 sort_order: uploadedImageUrls.indexOf(imageUrl)
-              });
+              };
+              console.log('🔍 About to call createVariantImage with:', imageData);
+              console.log('🔍 Product ID being passed:', imageData.product_id);
+              console.log('🔍 Variant ID being passed:', imageData.variant_id);
+              
+              await createVariantImage(imageData);
             }
             toast.success(`${uploadedImageUrls.length} image(s) linked to variant successfully!`);
           } catch (imageError) {

@@ -38,11 +38,6 @@ const data = {
             icon: Package,
         },
         {
-            title: "Variant Test",
-            url: "/admin/dashboard/variant-test",
-            icon: Package,
-        },
-        {
             title: "Orders",
             url: "/admin/dashboard/orders",
             icon: ShoppingBag,

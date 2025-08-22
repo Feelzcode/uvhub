@@ -13,7 +13,7 @@ import Testimonials from "@/components/ui/HomeComponents/Testimonial";
 import { heroSlides, horizontalProducts, stats, whyUsFeatures } from "@/lib/sampleData";
 import { useCounter } from "@/hooks/use-counter";
 import Link from "next/link";
-import { getProductImage } from '@/utils/productImage';
+import { getProductImage, getBestVariantImage } from '@/utils/productImage';
 import { getProductPrice } from '@/utils/productPrice';
 
 // --- Main Component ---
@@ -351,10 +351,8 @@ const Home = () => {
           {realProducts.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                              {realProducts.map((product: Product) => {
-                 // Get the first variant image or fallback to product image
-                 const variantImage = product.variants && product.variants.length > 0 
-                   ? product.variants[0].image_url || product.image
-                   : product.image;
+                 // Get the best variant image or fallback to product image
+                 const variantImage = getBestVariantImage(product) || getProductImage(product);
                  
                  // Get the lowest variant price or fallback to product price
                  const lowestPrice = product.variants && product.variants.length > 0
@@ -375,6 +373,15 @@ const Home = () => {
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
                         sizes="(max-width: 768px) 100vw, 50vw"
                       />
+                      
+                      {/* Variant Images Indicator */}
+                      {product.variants && product.variants.length > 0 && (
+                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          {product.variants.length} variant{product.variants.length !== 1 ? 's' : ''}
+                        </div>
+                      )}
+                      
                       {/* View Details Overlay */}
                       <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-40 transition-all duration-500 flex items-center justify-center opacity-0 group-hover:opacity-100">
                         <button

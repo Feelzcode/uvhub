@@ -4,10 +4,10 @@ import { useCart } from '@/store/hooks';
 import { useCurrency } from '@/store/hooks/useCurrency';
 import { Currency, Product } from '@/store/types';
 import Image from 'next/image';
-import { getProductImage } from '@/utils/productImage';
+import { getProductImage, getAllVariantImages } from '@/utils/productImage';
 import { getProductPrice } from '@/utils/productPrice';
 import { Badge } from '@/components/ui/badge';
-import { Eye } from 'lucide-react';
+import { Eye, Image as ImageIcon } from 'lucide-react';
 
 interface ProductCardProps {
     product: Product;
@@ -32,9 +32,19 @@ export default function ProductCard({ product, currency }: ProductCardProps) {
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
+                
+                {/* Price Badge */}
                 <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-full text-sm font-semibold">
                     {formatCurrentPrice(getProductPrice(product, location), currency)}
                 </div>
+                
+                {/* Variant Images Indicator */}
+                {product.variants && product.variants.length > 0 && getAllVariantImages(product).length > 0 && (
+                    <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                        <ImageIcon className="w-3 h-3" />
+                        {getAllVariantImages(product).length} variant images
+                    </div>
+                )}
             </div>
 
             <div className="p-4">
@@ -76,10 +86,43 @@ export default function ProductCard({ product, currency }: ProductCardProps) {
                 <div className="space-y-2">
                     {product.variants && product.variants.length > 0 && (
                         <div className="text-xs text-gray-600">
-                            <div className="flex items-center gap-1 mb-1">
+                            <div className="flex items-center gap-1 mb-2">
                                 <Eye className="w-3 h-3" />
-                                <span>Hover to see variants</span>
+                                <span>Variants available</span>
                             </div>
+                            
+                            {/* Variant Images Preview */}
+                            {getAllVariantImages(product).length > 0 && (
+                                <div className="mb-2">
+                                    <div className="grid grid-cols-4 gap-1">
+                                        {getAllVariantImages(product).slice(0, 4).map((image, index) => (
+                                            <div key={index} className="relative aspect-square overflow-hidden rounded border">
+                                                <Image
+                                                    src={image.image_url}
+                                                    alt={image.alt_text || `Variant ${index + 1}`}
+                                                    fill
+                                                    className="object-cover"
+                                                    sizes="(max-width: 768px) 25vw, 20vw"
+                                                />
+                                                {image.is_primary && (
+                                                    <div className="absolute top-0 left-0 bg-blue-500 text-white text-xs px-1 rounded-tl">
+                                                        ★
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {getAllVariantImages(product).length > 4 && (
+                                            <div className="aspect-square bg-gray-100 rounded border flex items-center justify-center">
+                                                <span className="text-xs text-gray-500">
+                                                    +{getAllVariantImages(product).length - 4}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Variant Names */}
                             <div className="grid grid-cols-3 gap-1">
                                 {product.variants.slice(0, 3).map((variant) => (
                                     <div key={variant.id} className="text-center p-1 bg-gray-50 rounded text-xs">
