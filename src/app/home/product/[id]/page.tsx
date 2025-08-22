@@ -143,12 +143,33 @@ export default function ProductDetails({ params }: PageProps) {
 
       {/* Product Variants Lightbox */}
       {product.variants && product.variants.length > 0 ? (
-        <ProductVariantLightbox 
-          product={product}
-          variants={product.variants}
-          className="mb-16"
-          isLoading={false}
-        />
+        <div className="mb-16">
+          {/* Variant Images Summary */}
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-blue-700">
+                  {product.variants.length} variant{product.variants.length !== 1 ? 's' : ''} available
+                </span>
+                {product.variants.some(v => v.images && v.images.length > 0) && (
+                  <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                    With variant images
+                  </span>
+                )}
+              </div>
+              <div className="text-sm text-blue-600">
+                Click on variant indicators to view different options
+              </div>
+            </div>
+          </div>
+          
+          <ProductVariantLightbox 
+            product={product}
+            variants={product.variants}
+            className="mb-16"
+            isLoading={false}
+          />
+        </div>
       ) : (
         /* Fallback for products without variants */
         <div className="bg-white rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden mb-16">
@@ -162,7 +183,7 @@ export default function ProductDetails({ params }: PageProps) {
             ) : (
                              <div className="relative w-full h-80">
                  <Image
-                   src={product.image}
+                   src={getProductImage(product)}
                    alt={getProductName(product)}
                    fill
                    className="object-contain rounded-xl shadow-md"

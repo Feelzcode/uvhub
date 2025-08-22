@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import { getCategoryName, getSubcategoryName, getProductName, getProductDescription, getVariantName, safeRender } from '@/utils/safeRender';
+import { getProductImage } from '@/utils/productImage';
 
 interface ProductVariantLightboxProps {
   product: Product;
@@ -193,7 +194,63 @@ export default function ProductVariantLightbox({
       {/* Main Lightbox Container */}
       <div className="flex flex-col lg:flex-row min-h-[600px]">
         
-        {/* Left Panel - Product Details */}
+        {/* Left Panel - Product Images */}
+        <div className="lg:w-1/2 bg-gray-100 flex items-center justify-center p-8">
+          {/* Display variant images if available, otherwise fallback to product image */}
+          {currentVariant.images && currentVariant.images.length > 0 ? (
+            <div className="w-full">
+              <ProductImageGallery 
+                images={currentVariant.images} 
+                productName={getVariantName(currentVariant, currentVariantIndex)}
+                className="w-full mb-4"
+              />
+              
+              {/* Thumbnail Navigation for Variant Images */}
+              {currentVariant.images.length > 1 && (
+                <div className="flex gap-2 justify-center">
+                  {currentVariant.images.map((image, index) => (
+                    <div
+                      key={image.id}
+                      className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-colors cursor-pointer"
+                    >
+                      <Image
+                        src={image.image_url}
+                        alt={image.alt_text || `Variant image ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : currentVariant.image_url ? (
+            <div className="relative w-full h-80">
+              <Image
+                src={currentVariant.image_url}
+                alt={getVariantName(currentVariant, currentVariantIndex)}
+                fill
+                className="object-contain rounded-xl shadow-md"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
+            </div>
+          ) : (
+            <div className="relative w-full h-80">
+              <Image
+                src={getProductImage(product)}
+                alt={getProductName(product)}
+                fill
+                className="object-contain rounded-xl shadow-md"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
+            </div>
+          )}
+        </div>
+        
+        {/* Right Panel - Product Details */}
         <div className="lg:w-1/2 p-8 bg-gradient-to-br from-gray-50 to-white flex flex-col justify-center">
           <div className="space-y-6">
                          {/* Product Header */}
@@ -399,14 +456,24 @@ export default function ProductVariantLightbox({
 
               {/* Variant Properties */}
               <div className="space-y-3">
-                                 {currentVariant.sku && (
-                   <div className="flex items-center gap-2">
-                     <span className="text-sm font-medium text-gray-500">SKU:</span>
-                     <span className="text-sm text-gray-700 font-mono bg-gray-100 px-2 py-1 rounded">
-                       {safeRender(currentVariant.sku)}
-                     </span>
-                   </div>
-                 )}
+                {/* Variant Images Indicator */}
+                {currentVariant.images && currentVariant.images.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-500">Images:</span>
+                    <span className="text-sm text-gray-700 bg-blue-100 px-2 py-1 rounded">
+                      {currentVariant.images.length} image{currentVariant.images.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                )}
+                
+                {currentVariant.sku && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-500">SKU:</span>
+                    <span className="text-sm text-gray-700 font-mono bg-gray-100 px-2 py-1 rounded">
+                      {safeRender(currentVariant.sku)}
+                    </span>
+                  </div>
+                )}
 
                 {/* Price and Stock */}
                 <div className="space-y-3">
