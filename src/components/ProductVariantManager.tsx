@@ -32,6 +32,7 @@ interface ProductVariantManagerProps {
   onVariantUpdate?: (variantId: string, updates: Partial<ProductVariant>) => Promise<void>;
   onVariantCreate?: (variant: Partial<ProductVariant>) => Promise<void>;
   onVariantDelete?: (variantId: string) => Promise<void>;
+  productId?: string; // Add productId prop for proper image handling
 }
 
 export default function ProductVariantManager({
@@ -41,7 +42,8 @@ export default function ProductVariantManager({
   categoryId,
   onVariantUpdate,
   onVariantCreate,
-  onVariantDelete
+  onVariantDelete,
+  productId // Add productId prop
 }: ProductVariantManagerProps) {
   const [editingVariant, setEditingVariant] = useState<number | null>(null);
   const [newVariant, setNewVariant] = useState<Partial<ProductVariant>>({
@@ -198,13 +200,15 @@ export default function ProductVariantManager({
     if (!files || files.length === 0) return;
 
     try {
+      console.log(`🖼️ Uploading ${files.length} images for variant index: ${variantIndex}`);
+      
       // Upload files to Cloudinary
       const response = await uploadFiles(Array.from(files));
       
       if (response && response.length > 0) {
         const newImages: ProductImage[] = response.map((file: { secure_url: string; public_id: string }, index: number) => ({
           id: `temp-${Date.now()}-${index}`,
-          product_id: '',
+          product_id: productId || '', // Use productId prop
           image_url: file.secure_url,
           alt_text: file.public_id.split('/').pop() || file.public_id,
           is_primary: index === 0,
@@ -213,25 +217,30 @@ export default function ProductVariantManager({
           updated_at: new Date()
         }));
 
+        console.log('🖼️ New images created:', newImages);
+
         if (variantIndex === -1) {
           // This is for the new variant form
+          console.log('🆕 Adding images to new variant form');
           setNewVariant(prev => ({
             ...prev,
             images: [...(prev.images || []), ...newImages]
           }));
         } else {
           // This is for editing an existing variant
+          console.log(`✏️ Adding images to existing variant at index: ${variantIndex}`);
           const updatedVariants = variants.map((variant, i) =>
             i === variantIndex
               ? { ...variant, images: [...(variant.images || []), ...newImages] }
               : variant
           );
           
+          console.log('🔄 Calling onVariantsChange with updated variants:', updatedVariants);
           onVariantsChange(updatedVariants);
         }
       }
     } catch (error) {
-      console.error('Error handling image upload:', error);
+      console.error('❌ Error handling image upload:', error);
       toast.error('Failed to upload images. Please try again.');
     }
   };
@@ -248,6 +257,8 @@ export default function ProductVariantManager({
     if (!files || files.length === 0) return;
 
     try {
+      console.log(`🖼️ Uploading ${files.length} images for existing variant at index: ${variantIndex}`);
+      
       // Upload files to Cloudinary
       const response = await uploadFiles(Array.from(files));
       
@@ -264,6 +275,8 @@ export default function ProductVariantManager({
           updated_at: new Date()
         }));
 
+        console.log('🖼️ New images for existing variant:', newImages);
+
         // This is for editing an existing variant
         const updatedVariants = variants.map((variant, i) =>
           i === variantIndex
@@ -271,10 +284,11 @@ export default function ProductVariantManager({
             : variant
         );
         
+        console.log('🔄 Calling onVariantsChange with updated existing variants:', updatedVariants);
         onVariantsChange(updatedVariants);
       }
     } catch (error) {
-      console.error('Error handling image upload:', error);
+      console.error('❌ Error handling edit image upload:', error);
       toast.error('Failed to upload images. Please try again.');
     }
   };

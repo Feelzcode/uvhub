@@ -85,7 +85,7 @@ import {
     DrawerTitle,
 } from "@/components/ui/drawer"
 import { Textarea } from "@/components/ui/textarea"
-import { Category, Customer, PaginatedResponse, ProductVariant, Subcategory, Product } from "@/store/types"
+import { Category, Customer, PaginatedResponse, ProductVariant, Subcategory, Product, ProductImage } from "@/store/types"
 
 import { toast } from "sonner"
 import ProductVariantManager from "@/components/ProductVariantManager"
@@ -106,7 +106,10 @@ import {
     createProductVariant,
     updateProductVariant,
     deleteProductVariant,
-    createVariantImage
+    createVariantImage,
+    getVariantImages,
+    deleteVariantImage,
+    updateVariantImage
 } from "@/app/admin/dashboard/products/actions"
 import {
     AlertDialog,
@@ -340,45 +343,82 @@ function ProductActions({ product }: { product: Product }) {
     // Process variant changes (create, update, delete)
     const processVariantChanges = async () => {
         try {
+            console.log('🔄 Starting to process variant changes...');
+            console.log('📊 Current variants:', variants);
+            
             // Get the original variants from the database
             const originalVariants = await getProductVariants(product.id);
+            console.log('🗄️ Original variants from DB:', originalVariants);
+            
             const currentVariants = variants;
             
             // Find variants to delete (in original but not in current)
             const variantsToDelete = originalVariants.filter(original => 
                 !currentVariants.some(current => current.id === original.id)
             );
+            console.log('🗑️ Variants to delete:', variantsToDelete);
             
             // Find variants to create (in current but not in original - have temp IDs)
             const variantsToCreate = currentVariants.filter(current => 
                 current.id && current.id.startsWith('temp-')
             );
+            console.log('➕ Variants to create:', variantsToCreate);
             
             // Find variants to update (in both, but may have changes)
             const variantsToUpdate = currentVariants.filter(current => 
                 current.id && !current.id.startsWith('temp-')
             );
+            console.log('✏️ Variants to update:', variantsToUpdate);
             
-            // Delete removed variants
+            // Delete removed variants (images will be deleted automatically due to CASCADE)
             for (const variant of variantsToDelete) {
+                console.log('🗑️ Deleting variant:', variant.id);
                 await deleteProductVariant(variant.id);
             }
             
-            // Create new variants
+            // Create new variants and their images
             for (const variant of variantsToCreate) {
-                await createProductVariant({
+                console.log('➕ Creating variant:', variant.name);
+                const createdVariant = await createProductVariant({
                     ...variant,
                     product_id: product.id,
                     category_id: formData.category
                 });
+                
+                if (createdVariant && variant.images && variant.images.length > 0) {
+                    console.log(`🖼️ Saving ${variant.images.length} images for variant:`, createdVariant.id);
+                    // Save all images for the new variant
+                    for (const image of variant.images) {
+                        console.log('🖼️ Creating variant image:', image.image_url);
+                        const savedImage = await createVariantImage({
+                            variant_id: createdVariant.id,
+                            product_id: product.id,
+                            image_url: image.image_url,
+                            alt_text: image.alt_text,
+                            is_primary: image.is_primary || false,
+                            sort_order: image.sort_order || 0
+                        });
+                        console.log('✅ Variant image saved:', savedImage);
+                    }
+                } else if (createdVariant) {
+                    console.log('ℹ️ No images to save for variant:', createdVariant.id);
+                }
             }
             
-            // Update existing variants
+            // Update existing variants and handle their images
             for (const variant of variantsToUpdate) {
                 if (!variant.id) continue; // Skip variants without ID
+                
                 const originalVariant = originalVariants.find(orig => orig.id === variant.id);
                 if (originalVariant && hasVariantChanges(originalVariant, variant)) {
+                    console.log('✏️ Updating variant:', variant.id);
                     await updateProductVariant(variant.id!, variant);
+                }
+                
+                // Handle image changes for existing variants
+                if (variant.images) {
+                    console.log(`🖼️ Processing ${variant.images.length} images for variant:`, variant.id);
+                    await processVariantImageChanges(variant.id, variant.images);
                 }
             }
             
@@ -386,15 +426,87 @@ function ProductActions({ product }: { product: Product }) {
                 toast.success(`Processed ${variantsToDelete.length} deletions, ${variantsToCreate.length} creations, ${variantsToUpdate.length} updates`);
             }
             
+            console.log('✅ Finished processing variant changes');
+            
         } catch (error) {
-            console.error('Error processing variant changes:', error);
+            console.error('❌ Error processing variant changes:', error);
             toast.error('Failed to process variant changes');
+        }
+    };
+
+    // Helper function to process variant image changes
+    const processVariantImageChanges = async (variantId: string, currentImages: ProductImage[]) => {
+        try {
+            console.log(`🖼️ Processing image changes for variant: ${variantId}`);
+            console.log('📸 Current images:', currentImages);
+            
+            // Get existing images from database
+            const existingImages = await getVariantImages(variantId);
+            console.log('🗄️ Existing images from DB:', existingImages);
+            
+            // Find images to delete (in existing but not in current)
+            const imagesToDelete = existingImages.filter(existing => 
+                !currentImages.some(current => current.id === existing.id)
+            );
+            console.log('🗑️ Images to delete:', imagesToDelete);
+            
+            // Find images to create (in current but not in existing - have temp IDs)
+            const imagesToCreate = currentImages.filter(current => 
+                current.id && current.id.startsWith('temp-')
+            );
+            console.log('➕ Images to create:', imagesToCreate);
+            
+            // Find images to update (in both, but may have changes)
+            const imagesToUpdate = currentImages.filter(current => 
+                current.id && !current.id.startsWith('temp-')
+            );
+            console.log('✏️ Images to update:', imagesToUpdate);
+            
+            // Delete removed images
+            for (const image of imagesToDelete) {
+                console.log('🗑️ Deleting image:', image.id);
+                await deleteVariantImage(image.id);
+            }
+            
+            // Create new images
+            for (const image of imagesToCreate) {
+                console.log('➕ Creating image:', image.image_url);
+                const savedImage = await createVariantImage({
+                    variant_id: variantId,
+                    product_id: product.id,
+                    image_url: image.image_url,
+                    alt_text: image.alt_text,
+                    is_primary: image.is_primary || false,
+                    sort_order: image.sort_order || 0
+                });
+                console.log('✅ Image created:', savedImage);
+            }
+            
+            // Update existing images
+            for (const image of imagesToUpdate) {
+                if (!image.id) continue;
+                console.log('✏️ Updating image:', image.id);
+                const updatedImage = await updateVariantImage(image.id, {
+                    image_url: image.image_url,
+                    alt_text: image.alt_text,
+                    is_primary: image.is_primary || false,
+                    sort_order: image.sort_order || 0
+                });
+                console.log('✅ Image updated:', updatedImage);
+            }
+            
+            console.log(`✅ Finished processing images for variant: ${variantId}`);
+            
+        } catch (error) {
+            console.error(`❌ Error processing variant image changes for variant ${variantId}:`, error);
+            toast.error('Failed to process variant image changes');
         }
     };
 
     // Helper function to check if a variant has changes
     const hasVariantChanges = (original: ProductVariant, current: Partial<ProductVariant>): boolean => {
-        return (
+        // Check basic variant properties
+        const basicChanges = (
             original.name !== current.name ||
             original.description !== current.description ||
             original.price !== current.price ||
@@ -405,6 +517,30 @@ function ProductActions({ product }: { product: Product }) {
             original.is_active !== current.is_active ||
             original.sort_order !== current.sort_order
         );
+        
+        // Check if images have changed
+        const originalImages = original.images || [];
+        const currentImages = current.images || [];
+        
+        if (originalImages.length !== currentImages.length) {
+            return true;
+        }
+        
+        // Check if any image properties have changed
+        for (let i = 0; i < originalImages.length; i++) {
+            const origImg = originalImages[i];
+            const currImg = currentImages[i];
+            
+            if (!currImg || 
+                origImg.image_url !== currImg.image_url ||
+                origImg.alt_text !== currImg.alt_text ||
+                origImg.is_primary !== currImg.is_primary ||
+                origImg.sort_order !== currImg.sort_order) {
+                return true;
+            }
+        }
+        
+        return basicChanges;
     };
 
     const handleView = () => {
@@ -463,7 +599,10 @@ function ProductActions({ product }: { product: Product }) {
     };
 
     const handleVariantsChange = (newVariants: Partial<ProductVariant>[]) => {
+        console.log('🔄 handleVariantsChange called with:', newVariants);
+        console.log('📊 Previous variants state:', variants);
         setVariants(newVariants);
+        console.log('✅ Variants state updated');
     };
 
     // Handle variant updates
@@ -833,6 +972,7 @@ function ProductActions({ product }: { product: Product }) {
                                             onVariantUpdate={handleVariantUpdate}
                                             onVariantCreate={handleVariantCreate}
                                             onVariantDelete={handleVariantDelete}
+                                            productId={product.id}
                                         />
                                     )}
                                 </div>
