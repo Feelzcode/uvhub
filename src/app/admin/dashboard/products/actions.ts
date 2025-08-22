@@ -846,7 +846,10 @@ export async function getProductVariants(productId: string): Promise<ProductVari
 
     const { data, error } = await supabase
         .from('product_variants')
-        .select('*')
+        .select(`
+            *,
+            images:variant_images(*)
+        `)
         .eq('product_id', productId)
         .order('sort_order', { ascending: true });
 
@@ -863,9 +866,17 @@ export async function getProductVariants(productId: string): Promise<ProductVari
 
 export async function createProductVariant(variant: Partial<ProductVariant>) {
     const supabase = await createClient()
+    
+    // Prepare the variant data with timestamps
+    const variantData = {
+        ...variant,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+    
     const { data, error } = await supabase
         .from('product_variants')
-        .insert(variant)
+        .insert(variantData)
         .select()
         .single();
 
@@ -878,9 +889,16 @@ export async function createProductVariant(variant: Partial<ProductVariant>) {
 
 export async function updateProductVariant(id: string, variant: Partial<ProductVariant>) {
     const supabase = await createClient()
+    
+    // Add updated timestamp
+    const updateData = {
+        ...variant,
+        updated_at: new Date().toISOString()
+    };
+    
     const { data, error } = await supabase
         .from('product_variants')
-        .update(variant)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -920,16 +938,44 @@ export async function getVariantImages(variantId: string): Promise<ProductImage[
 
 export async function createVariantImage(variantImage: Partial<ProductImage>) {
     const supabase = await createClient()
+    
+    console.log('🔍 createVariantImage called with:', variantImage);
+    console.log('🔍 variantImage.product_id:', variantImage.product_id);
+    console.log('🔍 variantImage.variant_id:', variantImage.variant_id);
+    
+    // Validate required fields
+    if (!variantImage.product_id) {
+        console.error('❌ product_id is missing or null in createVariantImage');
+        return null;
+    }
+    
+    if (!variantImage.variant_id) {
+        console.error('❌ variant_id is missing or null in createVariantImage');
+        return null;
+    }
+    
+    if (!variantImage.image_url) {
+        console.error('❌ image_url is missing or null in createVariantImage');
+        return null;
+    }
+    
+    // Prepare the image data with timestamps
+    const imageData = {
+        variant_id: variantImage.variant_id,
+        product_id: variantImage.product_id,
+        image_url: variantImage.image_url,
+        alt_text: variantImage.alt_text,
+        is_primary: variantImage.is_primary || false,
+        sort_order: variantImage.sort_order || 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+    
+    console.log('🔍 About to insert imageData:', imageData);
+    
     const { data, error } = await supabase
         .from('variant_images')
-        .insert({
-            variant_id: variantImage.variant_id,
-            product_id: variantImage.product_id,
-            image_url: variantImage.image_url,
-            alt_text: variantImage.alt_text,
-            is_primary: variantImage.is_primary || false,
-            sort_order: variantImage.sort_order || 0
-        })
+        .insert(imageData)
         .select()
         .single();
 
@@ -937,14 +983,23 @@ export async function createVariantImage(variantImage: Partial<ProductImage>) {
         console.error('Error creating variant image:', error)
         return null
     }
+    
+    console.log('✅ Variant image created successfully:', data);
     return data;
 }
 
 export async function updateVariantImage(id: string, variantImage: Partial<ProductImage>) {
     const supabase = await createClient()
+    
+    // Add updated timestamp
+    const updateData = {
+        ...variantImage,
+        updated_at: new Date().toISOString()
+    };
+    
     const { data, error } = await supabase
         .from('variant_images')
-        .update(variantImage)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

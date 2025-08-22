@@ -345,6 +345,17 @@ function ProductActions({ product }: { product: Product }) {
         try {
             console.log('🔄 Starting to process variant changes...');
             console.log('📊 Current variants:', variants);
+            console.log('🏷️ Product ID being used:', product.id);
+            console.log('🏷️ Product object:', product);
+            console.log('🏷️ Product ID type:', typeof product.id);
+            console.log('🏷️ Product ID length:', product.id?.length);
+            
+            // Validate product ID
+            if (!product.id || typeof product.id !== 'string' || product.id.trim() === '') {
+                console.error('❌ Invalid product ID:', product.id);
+                toast.error('Invalid product ID. Cannot process variant changes.');
+                return;
+            }
             
             // Get the original variants from the database
             const originalVariants = await getProductVariants(product.id);
@@ -385,24 +396,56 @@ function ProductActions({ product }: { product: Product }) {
                     category_id: formData.category
                 });
                 
-                if (createdVariant && variant.images && variant.images.length > 0) {
-                    console.log(`🖼️ Saving ${variant.images.length} images for variant:`, createdVariant.id);
-                    // Save all images for the new variant
-                    for (const image of variant.images) {
-                        console.log('🖼️ Creating variant image:', image.image_url);
-                        const savedImage = await createVariantImage({
-                            variant_id: createdVariant.id,
-                            product_id: product.id,
-                            image_url: image.image_url,
-                            alt_text: image.alt_text,
-                            is_primary: image.is_primary || false,
-                            sort_order: image.sort_order || 0
-                        });
-                        console.log('✅ Variant image saved:', savedImage);
-                    }
-                } else if (createdVariant) {
-                    console.log('ℹ️ No images to save for variant:', createdVariant.id);
-                }
+                                 if (createdVariant && variant.images && variant.images.length > 0) {
+                     console.log(`🖼️ Saving ${variant.images.length} images for variant:`, createdVariant.id);
+                     
+                     // Validate that we have the required IDs
+                     if (!product.id) {
+                         console.error('❌ Product ID is missing!');
+                         toast.error('Product ID is missing. Cannot save variant images.');
+                         return;
+                     }
+                     
+                     if (!createdVariant.id) {
+                         console.error('❌ Created variant ID is missing!');
+                         toast.error('Created variant ID is missing. Cannot save variant images.');
+                         return;
+                     }
+                     
+                     // Save all images for the new variant
+                     for (const image of variant.images) {
+                         console.log('🖼️ Creating variant image:', image.image_url);
+                         console.log('📝 Image data:', {
+                             variant_id: createdVariant.id,
+                             product_id: product.id,
+                             image_url: image.image_url,
+                             alt_text: image.alt_text,
+                             is_primary: image.is_primary || false,
+                             sort_order: image.sort_order || 0
+                         });
+                         
+                         const imageData = {
+                             variant_id: createdVariant.id,
+                             product_id: product.id,
+                             image_url: image.image_url,
+                             alt_text: image.alt_text,
+                             is_primary: image.is_primary || false,
+                             sort_order: image.sort_order || 0
+                         };
+                         
+                         console.log('🚀 About to call createVariantImage with:', imageData);
+                         
+                         const savedImage = await createVariantImage(imageData);
+                         
+                         if (savedImage) {
+                             console.log('✅ Variant image saved:', savedImage);
+                         } else {
+                             console.error('❌ Failed to save variant image');
+                         }
+                     }
+                 } else if (createdVariant) {
+                     console.log('ℹ️ No images to save for variant:', createdVariant.id);
+                 }
             }
             
             // Update existing variants and handle their images
@@ -439,6 +482,21 @@ function ProductActions({ product }: { product: Product }) {
         try {
             console.log(`🖼️ Processing image changes for variant: ${variantId}`);
             console.log('📸 Current images:', currentImages);
+            console.log('🏷️ Product ID being used:', product.id);
+            console.log('🏷️ Variant ID being used:', variantId);
+            
+            // Validate that we have the required IDs
+            if (!product.id) {
+                console.error('❌ Product ID is missing in processVariantImageChanges!');
+                toast.error('Product ID is missing. Cannot process variant image changes.');
+                return;
+            }
+            
+            if (!variantId) {
+                console.error('❌ Variant ID is missing in processVariantImageChanges!');
+                toast.error('Variant ID is missing. Cannot process variant image changes.');
+                return;
+            }
             
             // Get existing images from database
             const existingImages = await getVariantImages(variantId);
@@ -468,19 +526,37 @@ function ProductActions({ product }: { product: Product }) {
                 await deleteVariantImage(image.id);
             }
             
-            // Create new images
-            for (const image of imagesToCreate) {
-                console.log('➕ Creating image:', image.image_url);
-                const savedImage = await createVariantImage({
-                    variant_id: variantId,
-                    product_id: product.id,
-                    image_url: image.image_url,
-                    alt_text: image.alt_text,
-                    is_primary: image.is_primary || false,
-                    sort_order: image.sort_order || 0
-                });
-                console.log('✅ Image created:', savedImage);
-            }
+                         // Create new images
+             for (const image of imagesToCreate) {
+                 console.log('➕ Creating image:', image.image_url);
+                 console.log('📝 Image data for existing variant:', {
+                     variant_id: variantId,
+                     product_id: product.id,
+                     image_url: image.image_url,
+                     alt_text: image.alt_text,
+                     is_primary: image.is_primary || false,
+                     sort_order: image.sort_order || 0
+                 });
+                 
+                 const imageData = {
+                     variant_id: variantId,
+                     product_id: product.id,
+                     image_url: image.image_url,
+                     alt_text: image.alt_text,
+                     is_primary: image.is_primary || false,
+                     sort_order: image.sort_order || 0
+                 };
+                 
+                 console.log('🚀 About to call createVariantImage in processVariantImageChanges with:', imageData);
+                 
+                 const savedImage = await createVariantImage(imageData);
+                 
+                 if (savedImage) {
+                     console.log('✅ Image created:', savedImage);
+                 } else {
+                     console.error('❌ Failed to create image');
+                 }
+             }
             
             // Update existing images
             for (const image of imagesToUpdate) {
