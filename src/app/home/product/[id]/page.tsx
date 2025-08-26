@@ -11,7 +11,7 @@ import { NextSeo } from 'next-seo';
 import { trackViewContent } from '@/components/FacebookPixel';
 import { trackGAViewItem } from '@/components/GoogleAnalytics';
 import ProductImageGallery from '@/components/ProductImageGallery';
-import ProductVariantLightbox from '@/components/ProductVariantLightbox';
+import ProductVariantCard from '@/components/ProductVariantCard';
 import { getProductImage } from '@/utils/productImage';
 import { getCategoryName, getSubcategoryName, getProductName, getProductDescription, getPriceValue } from '@/utils/safeRender';
 
@@ -48,6 +48,12 @@ export default function ProductDetails({ params }: PageProps) {
           productCategory: product.category,
           productSubcategory: product.subcategory,
           productVariants: product.variants,
+          productVariantsWithImages: product.variants?.map(v => ({
+            id: v.id,
+            name: v.name,
+            images: v.images,
+            image_url: v.image_url
+          })),
           categoryType: typeof product.category,
           subcategoryType: typeof product.subcategory
         });
@@ -141,34 +147,45 @@ export default function ProductDetails({ params }: PageProps) {
         Back to Products
       </button>
 
-      {/* Product Variants Lightbox */}
+      {/* Product Variants */}
       {product.variants && product.variants.length > 0 ? (
         <div className="mb-16">
-          {/* Variant Images Summary */}
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center justify-between">
+          {/* Variant Summary Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {getProductName(product)} - Available Variants
+              </h2>
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-blue-700">
+                <span className="text-sm font-medium text-blue-700 bg-blue-100 px-3 py-1 rounded-full">
                   {product.variants.length} variant{product.variants.length !== 1 ? 's' : ''} available
                 </span>
                 {product.variants.some(v => v.images && v.images.length > 0) && (
-                  <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                  <span className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
                     With variant images
                   </span>
                 )}
               </div>
-              <div className="text-sm text-blue-600">
-                Click on variant indicators to view different options
-              </div>
             </div>
+            {product.description && (
+              <p className="text-gray-600 text-lg leading-relaxed max-w-3xl">
+                {getProductDescription(product)}
+              </p>
+            )}
           </div>
           
-          <ProductVariantLightbox 
-            product={product}
-            variants={product.variants}
-            className="mb-16"
-            isLoading={false}
-          />
+          {/* Individual Variant Cards */}
+          <div className="space-y-8">
+            {product.variants.map((variant, index) => (
+              <ProductVariantCard
+                key={variant.id}
+                product={product}
+                variant={variant}
+                variantIndex={index}
+                className="shadow-lg hover:shadow-xl transition-shadow duration-300"
+              />
+            ))}
+          </div>
         </div>
       ) : (
         /* Fallback for products without variants */

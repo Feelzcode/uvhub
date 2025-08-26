@@ -119,7 +119,10 @@ export async function getProductById(id: string) {
             *,
             category:categories(*),
             subcategory:subcategories(*),
-            variants:product_variants(*)
+            variants:product_variants(
+                *,
+                images:variant_images(*)
+            )
         `)
         .eq('id', id)
         .single();
