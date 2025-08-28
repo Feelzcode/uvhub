@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ProductVariant, Product } from '@/store/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { 
   ShoppingCart, 
   Star, 
@@ -16,7 +16,7 @@ import {
 import Image from 'next/image';
 import { useCart } from '@/store/hooks';
 import { useCurrency } from '@/store/hooks/useCurrency';
-import { getCategoryName, getSubcategoryName, getProductName, getProductDescription, getVariantName, safeRender } from '@/utils/safeRender';
+import { getCategoryName, getSubcategoryName, getProductName, getVariantName, safeRender } from '@/utils/safeRender';
 import { getProductImage } from '@/utils/productImage';
 
 interface ProductVariantCardProps {
@@ -36,7 +36,7 @@ export default function ProductVariantCard({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   
   const { addToCart, isInCart } = useCart();
-  const { formatCurrentPrice, location } = useCurrency();
+  const { formatCurrentPrice } = useCurrency();
 
   const handleAddToCart = () => {
     if (variant.stock > 0) {
